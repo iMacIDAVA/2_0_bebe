@@ -1,0 +1,22 @@
+{
+  "name": "",
+  "css_prefix_text": "",
+  "css_use_suffix": false,
+  "hinting": true,
+  "units_per_em": 1000,
+  "ascent": 850,
+  "glyphs": [
+    {
+      "uid": "82f44f1094ffd1d78093e76c33cc08cc",
+      "css": "access_time",
+      "code": 59392,
+      "src": "material"
+    },
+    {
+      "uid": "06a2fbb04dffecdb444936073cae9123",
+      "css": "thumbs-up",
+      "code": 59393,
+      "src": "linecons"
+    }
+  ]
+}
