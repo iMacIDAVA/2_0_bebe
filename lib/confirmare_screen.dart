@@ -1,14 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:sos_bebe_app/register.dart';
 import 'package:sos_bebe_app/utils/utils_widgets.dart';
 
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 
-class ConfirmareScreen extends StatelessWidget {
+class ConfirmareScreen extends StatefulWidget {
   final bool correctCard;
 
   const ConfirmareScreen({super.key, required this.correctCard});
+
+  @override
+  State<ConfirmareScreen> createState() => _ConfirmareScreenState();
+}
+
+class _ConfirmareScreenState extends State<ConfirmareScreen> {
+  String? userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userName = prefs.getString('userNume');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +104,7 @@ class ConfirmareScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 25),
-                    correctCard
+                    widget.correctCard
                         ? Image.asset(
                             "assets/images/correct.png",
                             //height: 18,
@@ -115,8 +136,7 @@ class ConfirmareScreen extends StatelessWidget {
                           ),
 
                           Text(
-                            //'radutimofte@gmail.com', //old IGV
-                            l.confirmareUser,
+                            userName ?? '',
                             style: GoogleFonts.rubik(
                               color: const Color.fromRGBO(205, 211, 223, 1),
                               fontWeight: FontWeight.w400,
@@ -196,9 +216,7 @@ class ConfirmareScreen extends StatelessWidget {
                   height: 135.0,
                   width: 299.0,
                   margin: const EdgeInsets.all(15.0),
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                          color: const Color.fromRGBO(112, 112, 112, 1))),
+                  decoration: BoxDecoration(border: Border.all(color: const Color.fromRGBO(112, 112, 112, 1))),
                 ),
               ],
             ),

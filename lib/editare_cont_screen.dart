@@ -192,10 +192,6 @@ class EditareContScreenState extends State<EditareContScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /*
-            const IconDateProfil(iconPathPacient: './assets/images/user_profil_icon.png', textNume: 'Cristina Mihalache', textAdresaEmail: 'cristina.24@gmail.com',
-              textNumarTelefon: '+40 0770 545 224',),
-            */
             IconDateProfil(
               iconPathPacient: widget.contInfo!.linkPozaProfil ?? '',
               textNume: '${widget.contInfo!.prenume} ${widget.contInfo!.nume}',

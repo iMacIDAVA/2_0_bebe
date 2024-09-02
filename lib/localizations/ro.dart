@@ -38,7 +38,7 @@ Map<String, dynamic> values = {
     'master_card': 'Master Card',
     'card_number': '● ● ● ●  ● ● ● ●  ● ● ● ● 4455',
     'tip_plata': 'Paypal',
-    'user': 'radutimofte@gmail.com',
+    'user': 'User',
     'banca': 'Bank',
     'stripe': 'Stripe',
     'adauga_metoda_de_plata': 'ADAUGĂ METODĂ DE PLATĂ',

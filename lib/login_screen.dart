@@ -706,12 +706,16 @@ class _LoginScreenState extends State<LoginScreen> {
     Color backgroundColor = Colors.red;
     Color textColor = Colors.black;
 
-    String? user = 'george.iordache@gmail.com';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userEmail = prefs.getString('userEmail');
+    String? userPassMD5 = prefs.getString('userPassMD5');
 
-    String? userPassMD5 = apiCallFunctions.generateMd5('123456');
+    if (userEmail == null || userPassMD5 == null) {
+      return null;
+    }
 
     http.Response? resTrimitePushPrinOneSignal = await apiCallFunctions.trimitePushPrinOneSignal(
-      pUser: user,
+      pUser: userEmail,
       pParola: userPassMD5,
       pTipNotificare: '1',
     );

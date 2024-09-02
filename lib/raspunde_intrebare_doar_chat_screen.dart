@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -14,7 +13,6 @@ import 'package:uuid/uuid.dart';
 //import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import './utils/chat.dart' as chat;
 import './utils/chat_l10n.dart' as chat_l10n;
 import './utils/chat_theme.dart' as chat_theme;
@@ -22,7 +20,6 @@ import './utils/typing_indicator.dart' as typing_indicator;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
-import 'package:sos_bebe_app/utils_api/functions.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 
@@ -49,18 +46,15 @@ class RaspundeIntrebareDoarChatScreen extends StatefulWidget {
       required this.medic});
 
   @override
-  State<RaspundeIntrebareDoarChatScreen> createState() =>
-      _RaspundeIntrebareDoarChatScreenState();
+  State<RaspundeIntrebareDoarChatScreen> createState() => _RaspundeIntrebareDoarChatScreenState();
 }
 
-class _RaspundeIntrebareDoarChatScreenState
-    extends State<RaspundeIntrebareDoarChatScreen> {
+class _RaspundeIntrebareDoarChatScreenState extends State<RaspundeIntrebareDoarChatScreen> {
   String textNume = '';
   String textIntrebare = '';
   String textRaspuns = '';
 
   static const activ = EnumStatusMedicMobile.activ;
-  static const indisponibil = EnumStatusMedicMobile.indisponibil;
   static const inConsultatie = EnumStatusMedicMobile.inConsultatie;
 
   List<types.Message> _messages = [];
@@ -83,7 +77,7 @@ class _RaspundeIntrebareDoarChatScreenState
 
     getListaConversatii();
 
-    Timer.periodic(new Duration(seconds: 5), (timer) {
+    Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadMessagesFromList();
       if (_messages.length != newMessages.length) {
         setState(() {
@@ -105,11 +99,6 @@ class _RaspundeIntrebareDoarChatScreenState
           pParola: userPassMD5,
         ) ??
         [];
-
-    print(
-        'listaConversatii length: ${listaConversatii.length} ${listaConversatii[0].idDestinatar} ${listaConversatii[0].idExpeditor} ${listaConversatii[0].id.toString()}');
-    print(
-        'listaConversatii  id medic: ${widget.medic.id} id client: ${widget.contClientMobile.id}');
   }
 
   void _loadMessagesFromList() async {
@@ -124,8 +113,7 @@ class _RaspundeIntrebareDoarChatScreenState
 
     listaConversatii.retainWhere((element) {
       //do something when textType == "birth"
-      return ((element.idDestinatar == widget.medic.id) &&
-          (element.idExpeditor == widget.contClientMobile.id));
+      return ((element.idDestinatar == widget.medic.id) && (element.idExpeditor == widget.contClientMobile.id));
     });
 
     if (listaConversatii.isNotEmpty) {
@@ -149,8 +137,7 @@ class _RaspundeIntrebareDoarChatScreenState
           .map((e) => types.TextMessage(
               id: e.id.toString(),
               author: types.User(
-                  id: e.idExpeditor.toString() ==
-                          widget.contClientMobile.id.toString()
+                  id: e.idExpeditor.toString() == widget.contClientMobile.id.toString()
                       ? widget.contClientMobile.id.toString()
                       : e.idExpeditor.toString()),
               text: e.comentariu,
@@ -165,9 +152,9 @@ class _RaspundeIntrebareDoarChatScreenState
     });
   }
 
-  /* 
+  /*
   void _handleAttachmentPressed() {
-    
+
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext context) => SafeArea(
@@ -208,7 +195,7 @@ class _RaspundeIntrebareDoarChatScreenState
         ),
       ),
     );
-  } 
+  }
   */
 
   /*
@@ -268,10 +255,8 @@ class _RaspundeIntrebareDoarChatScreenState
 
       if (message.uri.startsWith('http')) {
         try {
-          final index =
-              _messages.indexWhere((element) => element.id == message.id);
-          final updatedMessage =
-              (_messages[index] as types.FileMessage).copyWith(
+          final index = _messages.indexWhere((element) => element.id == message.id);
+          final updatedMessage = (_messages[index] as types.FileMessage).copyWith(
             isLoading: true,
           );
 
@@ -290,10 +275,8 @@ class _RaspundeIntrebareDoarChatScreenState
             await file.writeAsBytes(bytes);
           }
         } finally {
-          final index =
-              _messages.indexWhere((element) => element.id == message.id);
-          final updatedMessage =
-              (_messages[index] as types.FileMessage).copyWith(
+          final index = _messages.indexWhere((element) => element.id == message.id);
+          final updatedMessage = (_messages[index] as types.FileMessage).copyWith(
             isLoading: null,
           );
 
@@ -383,9 +366,12 @@ class _RaspundeIntrebareDoarChatScreenState
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5)??'';
     */
 
-    String? user = 'george.iordache@gmail.com';
+    String? userEmail = prefs.getString('userEmail');
+    String? userPassMD5 = prefs.getString('userPassMD5');
 
-    String? userPassMD5 = apiCallFunctions.generateMd5('123456');
+    if (userEmail == null || userPassMD5 == null) {
+      return null;
+    }
 
     /*
     String textMessage = '';
@@ -393,19 +379,14 @@ class _RaspundeIntrebareDoarChatScreenState
     Color textColor = Colors.black;
     */
 
-    http.Response? resAdaugaMesaj =
-        await apiCallFunctions.adaugaMesajDinContClient(
-      pUser: user,
+    http.Response? resAdaugaMesaj = await apiCallFunctions.adaugaMesajDinContClient(
+      pUser: userEmail,
       pParola: userPassMD5,
       pIdMedic: widget.medic.id.toString(),
       pMesaj: mesaj,
     );
 
-    print(
-        'adaugaMesajDinContClient resAdaugaMesaj.body ${resAdaugaMesaj!.body}');
-
     if (int.parse(resAdaugaMesaj!.body) == 200) {
-      print('Mesaj adăugat cu succes!');
     } else if (int.parse(resAdaugaMesaj.body) == 400) {
       /*
       setState(() {
@@ -416,15 +397,12 @@ class _RaspundeIntrebareDoarChatScreenState
       });
       */
 
-      print('Apel invalid');
-
       /*
       textMessage = 'Apel invalid!';
       backgroundColor = Colors.red;
       textColor = Colors.black;
       */
-    } else if (int.parse(resAdaugaMesaj!.body) == 401) {
-      print('Eroare la adăugare mesaj!');
+    } else if (int.parse(resAdaugaMesaj.body) == 401) {
       /*
       setState(() {
 
@@ -432,14 +410,12 @@ class _RaspundeIntrebareDoarChatScreenState
         showButonTrimiteTestimonial = true;
 
       });
-      
+
       textMessage = 'Feedback-ul nu a fost trimis!';
       backgroundColor = Colors.red;
       textColor = Colors.black;
       */
-    } else if (int.parse(resAdaugaMesaj!.body) == 405) {
-      print('Informatii insuficiente');
-
+    } else if (int.parse(resAdaugaMesaj.body) == 405) {
       /*
       setState(() {
 
@@ -449,15 +425,13 @@ class _RaspundeIntrebareDoarChatScreenState
       });
 
       print('Informații insuficiente');
-    
-      
+
+
       textMessage = 'Informații insuficiente!';
       backgroundColor = Colors.red;
       textColor = Colors.black;
       */
-    } else if (int.parse(resAdaugaMesaj!.body) == 500) {
-      print('A apărut o eroare la execuția metodei');
-
+    } else if (int.parse(resAdaugaMesaj.body) == 500) {
       /*
         setState(() {
 
@@ -467,7 +441,7 @@ class _RaspundeIntrebareDoarChatScreenState
         });
 
         print('A apărut o eroare la execuția metodei');
-        
+
         textMessage = 'A apărut o eroare la execuția metodei!';
         backgroundColor = Colors.red;
         textColor = Colors.black;
@@ -505,11 +479,9 @@ class _RaspundeIntrebareDoarChatScreenState
             iconPath: widget.medic.linkPozaProfil,
             eInConsultatie: widget.medic.status == inConsultatie.value,
             eDisponibil: widget.medic.status == activ.value,
-            textNume:
-                '${widget.medic.titulatura}. ${widget.medic.numeleComplet}',
+            textNume: '${widget.medic.titulatura}. ${widget.medic.numeleComplet}',
             textSpital: widget.medic.locDeMunca,
-            textTipMedic:
-                '${widget.medic.functia}. ${widget.medic.specializarea}',
+            textTipMedic: '${widget.medic.functia}. ${widget.medic.specializarea}',
             idMedic: widget.medic.id,
           ),
         ),
@@ -527,11 +499,11 @@ class _RaspundeIntrebareDoarChatScreenState
                 //'Apel mesaje' //old IGV
                 l.raspundeIntrebareDoarChatApelMesaje,
               ),`
-              onPressed: () async 
+              onPressed: () async
               {
-      
+
                 _loadMessagesFromList();
-      
+
               },
             ),
             */
@@ -547,35 +519,27 @@ class _RaspundeIntrebareDoarChatScreenState
                 onPreviewDataFetched: _handlePreviewDataFetched,
                 showUserAvatars: true,
                 showUserNames: true,
-                typingIndicatorOptions:
-                    const typing_indicator.TypingIndicatorOptions(),
+                typingIndicatorOptions: const typing_indicator.TypingIndicatorOptions(),
                 //l10n: const ChatL10nRo().toChatL10n,
 
                 //l10n: const chat_l10n.ChatL10nRo(),// old IGV
                 l10n: chat_l10n.ChatL10nEn(
                   // attachmentButtonAccessibilityLabel : 'Trimite media', //old IGV
-                  attachmentButtonAccessibilityLabel:
-                      l.raspundeIntrebareDoarChatTrimiteMedia,
+                  attachmentButtonAccessibilityLabel: l.raspundeIntrebareDoarChatTrimiteMedia,
                   //emptyChatPlaceholder : 'Nu aveți nici un mesaj încă', //old IGV
-                  emptyChatPlaceholder:
-                      l.raspundeIntrebareDoarChatNuAvetiNiciUnMesaj,
+                  emptyChatPlaceholder: l.raspundeIntrebareDoarChatNuAvetiNiciUnMesaj,
                   //fileButtonAccessibilityLabel : 'Fișier', //old IGV
-                  fileButtonAccessibilityLabel:
-                      l.raspundeIntrebareDoarChatFisierMesajChat,
+                  fileButtonAccessibilityLabel: l.raspundeIntrebareDoarChatFisierMesajChat,
                   //inputPlaceholder : 'Scrie un mesaj...', //old IGV
                   inputPlaceholder: l.raspundeIntrebareDoarChatScrieMesaj,
                   //sendButtonAccessibilityLabel : 'Trimite', //old IGV
-                  sendButtonAccessibilityLabel:
-                      l.raspundeIntrebareDoarChatTrimite,
+                  sendButtonAccessibilityLabel: l.raspundeIntrebareDoarChatTrimite,
                   //unreadMessagesLabel : 'Mesaje necitite', //old IGV
-                  unreadMessagesLabel:
-                      l.raspundeIntrebareDoarChatMesajeNecitite,
+                  unreadMessagesLabel: l.raspundeIntrebareDoarChatMesajeNecitite,
                 ),
                 theme: const chat_theme.DefaultChatTheme(
-                  inputBackgroundColor: Color.fromRGBO(
-                      255, 255, 255, 1), // Color.fromRGBO(30, 214, 158, 1),
-                  inputTextColor: Color.fromRGBO(
-                      103, 114, 148, 1), // Color.fromRGBO(30, 214, 158, 1),
+                  inputBackgroundColor: Color.fromRGBO(255, 255, 255, 1), // Color.fromRGBO(30, 214, 158, 1),
+                  inputTextColor: Color.fromRGBO(103, 114, 148, 1), // Color.fromRGBO(30, 214, 158, 1),
                   //backgroundColor: Color.fromRGBO(14, 190, 127, 1),
                   primaryColor: Color.fromRGBO(14, 190, 127, 1),
                 ),
@@ -604,11 +568,9 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
   //final MedicMobile medicDetalii;
   final bool eInConsultatie;
   final bool eDisponibil;
-  final String
-      textNume; //'${widget.medic.titulatura}. ${widget.medic.numeleComplet}',
+  final String textNume; //'${widget.medic.titulatura}. ${widget.medic.numeleComplet}',
   final String textSpital; //widget.medic.locDeMunca,
-  final String
-      textTipMedic; //'${widget.medic.functia}. ${widget.medicDetalii.specializarea}',
+  final String textTipMedic; //'${widget.medic.functia}. ${widget.medicDetalii.specializarea}',
   final int idMedic;
 
   //const RaspundeIntrebareTopIconsTextWidget({super.key, required this.iconPath, required this.textNume});
@@ -624,8 +586,6 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('text Spital $textSpital $textTipMedic');
-
     return Column(
       children: [
         const SizedBox(height: 25),
@@ -648,8 +608,7 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
               children: [
                 iconPath.isNotEmpty
                     ? Image.network(iconPath, height: 60, width: 60)
-                    : Image.asset('./assets/images/user_fara_poza.png',
-                        height: 60, width: 60),
+                    : Image.asset('./assets/images/user_fara_poza.png', height: 60, width: 60),
                 Positioned(
                   bottom: 0.0,
                   right: 0.0,
@@ -672,9 +631,7 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
                       height: 17,
                       child: Text(textNume,
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(30, 214, 158, 1),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400)),
+                              color: const Color.fromRGBO(30, 214, 158, 1), fontSize: 14, fontWeight: FontWeight.w400)),
                     ),
                   ],
                 ),
@@ -686,9 +643,7 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
                       height: 17,
                       child: Text(textSpital,
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(64, 75, 109, 1),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w300)),
+                              color: const Color.fromRGBO(64, 75, 109, 1), fontSize: 12, fontWeight: FontWeight.w300)),
                     ),
                   ],
                 ),
@@ -700,9 +655,7 @@ class RaspundeIntrebareTopIconsTextWidget extends StatelessWidget {
                       height: 17,
                       child: Text(textTipMedic,
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(64, 75, 109, 1),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w300)),
+                              color: const Color.fromRGBO(64, 75, 109, 1), fontSize: 10, fontWeight: FontWeight.w300)),
                     ),
                   ],
                 ),
