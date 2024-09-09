@@ -5,15 +5,20 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:sos_bebe_app/firebase_options.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
+import 'package:sos_bebe_app/utils/consts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    // name: 'sos-bebe-pacient',
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  Stripe.publishableKey =
-      'pk_test_51PsjIREkJBCaEElsO4iROpmacZYcEvZDW9g1G12bOt65orp2D5c7nfimQlYjNiRekDwtxm853o9GMtsbuYH14c4u00SIW4iIEW';
+
+  Future<void> setupStripe() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    Stripe.publishableKey = stripePublishableKey;
+  }
+
+  await setupStripe();
 
   runApp(const MyApp());
 }

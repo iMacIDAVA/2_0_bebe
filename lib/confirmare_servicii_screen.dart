@@ -288,14 +288,27 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: ElevatedButton(
                           onPressed: () {
+                            // Navigator.push(
+                            //     context,
+                            //     MaterialPageRoute(
+                            //       builder: (context) => AdaugaMetodaPlataScreen(
+                            //         tipServiciu: widget.tipServiciu,
+                            //         contClientMobile: widget.contClientMobile,
+                            //         medicDetalii: widget.medicDetalii,
+                            //         pret: widget.pret,
+                            //       ),
+                            //     ));
+
+
+
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => AdaugaMetodaPlataScreen(
-                                    tipServiciu: widget.tipServiciu,
-                                    contClientMobile: widget.contClientMobile,
-                                    medicDetalii: widget.medicDetalii,
-                                    pret: widget.pret,
+                                  builder: (context) => HomePage(
+                                            tipServiciu: widget.tipServiciu,
+                                            contClientMobile: widget.contClientMobile,
+                                            medicDetalii: widget.medicDetalii,
+                                            pret: widget.pret, currency: 'RON',
                                   ),
                                 ));
                           },
