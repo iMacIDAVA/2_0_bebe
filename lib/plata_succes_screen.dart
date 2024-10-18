@@ -86,100 +86,101 @@ class _PlataRealizataCuSuccesScreenState
   Widget build(BuildContext context) {
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            //'Înapoi' //old IGV
-            l.universalInapoi,
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: Scaffold(
+          appBar: AppBar(
+            // title: Text(
+            //   //'Înapoi' //old IGV
+            //   l.universalInapoi,
+            // ),
+            backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+            foregroundColor: Colors.white,
+            leading: const SizedBox(),
           ),
-          backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-          foregroundColor: Colors.white,
-          leading: const BackButton(
-            color: Colors.white,
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 55),
-                Container(
-                  margin: const EdgeInsets.only(left: 25),
-                  child: Row(
+          body: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 55),
+                  Container(
+                    margin: const EdgeInsets.only(left: 25),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          //'Plată realizată cu succes', //old IGV
+                          l.plataSuccesTitlu,
+                          style: GoogleFonts.rubik(
+                              color: const Color.fromRGBO(103, 114, 148, 1),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text(
-                        //'Plată realizată cu succes', //old IGV
-                        l.plataSuccesTitlu,
-                        style: GoogleFonts.rubik(
-                            color: const Color.fromRGBO(103, 114, 148, 1),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500),
+                      Flexible(
+                        child: Container(
+                          margin: EdgeInsets.all(10),
+                          child: AutoSizeText.rich(
+                            // old value RichText(
+                            TextSpan(
+                              style: GoogleFonts.rubik(
+                                color: const Color.fromRGBO(103, 114, 148, 1),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w300,
+                              ),
+                              children: <TextSpan>[
+                                TextSpan(
+                                  //text: 'Vă mulțumim! Detaliile dvs. de plată vor fi trimise la adresa dvs. de e-mail.'
+                                  text: l.plataSuccesVaMultumimDetalii,
+                                ),
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 25),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      child: Container(
-                        margin: EdgeInsets.all(10),
-                        child: AutoSizeText.rich(
-                          // old value RichText(
-                          TextSpan(
-                            style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(103, 114, 148, 1),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w300,
-                            ),
-                            children: <TextSpan>[
-                              TextSpan(
-                                //text: 'Vă mulțumim! Detaliile dvs. de plată vor fi trimise la adresa dvs. de e-mail.'
-                                text: l.plataSuccesVaMultumimDetalii,
-                              ),
-                            ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.left,
-                        ),
+                  const SizedBox(height: 90),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        //'Vă mulțumim! ', //old IGV
+                        l.plataSuccesVaMultumimSimplu,
+                        style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(14, 190, 127, 1),
+                            fontSize: 26,
+                            fontWeight: FontWeight.w400),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 90),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      //'Vă mulțumim! ', //old IGV
-                      l.plataSuccesVaMultumimSimplu,
-                      style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(14, 190, 127, 1),
-                          fontSize: 26,
-                          fontWeight: FontWeight.w400),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 115),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      //'Vei fi redirectionat ...', //old IGV
-                      l.plataSuccesVeiFiRedirectionat,
-                      style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(103, 114, 148, 1),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 115),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        //'Vei fi redirectionat ...', //old IGV
+                        l.plataSuccesVeiFiRedirectionat,
+                        style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(103, 114, 148, 1),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

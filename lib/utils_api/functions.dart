@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import './shared_pref_keys.dart' as pref_keys;
 
+Future<void> savePaymentDetails(String customerId, String paymentMethodId) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString(pref_keys.userId, customerId);  // Assuming 'userId' in your shared keys is for storing customerId
+  await prefs.setString('PaymentMethodId', paymentMethodId);  // Use a new key for storing payment method id
+}
+
+
 extension StringExtension on String {
   String capitalizeFirst() {
     //return "${this[0].toUpperCase()}${substring(1).toLowerCase()}"; //old Andrei Bădescu

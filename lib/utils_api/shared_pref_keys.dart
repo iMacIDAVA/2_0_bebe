@@ -36,3 +36,4 @@ const String idJudet = 'idJudet';
 const String idLocalitate = 'idLocalitate';
 const String strada = 'strada';
 const String profileImageUrl = 'profileImageUrl';
+const String paymentMethodId = 'paymentMethodId';

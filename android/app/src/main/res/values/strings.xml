@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SOS Bebe Pacient</string>
-    <string name="facebook_app_id">1146767849669211</string>
+    <string name="facebook_app_id">1268721061236955</string>
     <string name="fb_login_protocol_scheme">fb1146767849669211</string>
-    <string name="facebook_client_token">3ebd6dca460ce45f77a75c0bb7b2dcae</string>
+    <string name="facebook_client_token">6bde3cfb4fb16389272e4a4c55ed3127</string>
 </resources>

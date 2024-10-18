@@ -106,7 +106,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> checkLoginWithFacebook() async {
     try {
-      final LoginResult result = await FacebookAuth.instance.login();
+      final LoginResult result = await FacebookAuth.instance.login(permissions: ['email', 'public_profile']);
+      print('bbbbbbbbbb : $result'); // Debugging
 
       if (result.status == LoginStatus.success) {
         final userData = await FacebookAuth.instance.getUserData();
@@ -133,8 +134,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       showSnackbar(context, 'An error occurred: $e', Colors.red, Colors.white);
+      print('aaaaaaaaa : $e'); // Debugging
     }
   }
+
 
   Future<User?> loginWithGoogle() async {
     try {
