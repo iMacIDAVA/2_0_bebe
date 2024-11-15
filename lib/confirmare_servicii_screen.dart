@@ -31,7 +31,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
   bool isDateFacturareComplete = true;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     persoanaFizica = widget.contClientMobile.tipPersoana;
     if (persoanaFizica == 0) {
@@ -59,12 +58,10 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
   @override
   Widget build(BuildContext context) {
     LocalizationsApp l = LocalizationsApp.of(context)!;
-    //print('l.confirmareServiciiTitlu ${l.confirmareServiciiTitlu}');
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
       child: Scaffold(
-        //begin added by George Valentin Iordache
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.black,
@@ -82,7 +79,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
             child: const Icon(Icons.arrow_back),
           ),
         ),
-        //end added by George Valentin Iordache
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Padding(
@@ -93,9 +89,7 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
               children: [
                 const SizedBox(height: 55),
                 Text(
-                  //'Confirmă plata', //old IGV
                   l.confirmareServiciiTitlu,
-
                   style: GoogleFonts.rubik(
                     color: const Color.fromRGBO(103, 114, 148, 1),
                     fontWeight: FontWeight.w500,
@@ -108,13 +102,12 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                   child: Stack(
                     children: [
                       Container(
-                        // constraints: BoxConstraints(minHeight: 100),
                         height: 100,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20), // Adjust this value as needed
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20), // Match the borderRadius above
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             './assets/images/servicii_pediatrie_dreptunghi.png',
                             fit: BoxFit.cover,
@@ -122,13 +115,12 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         ),
                       ),
                       Container(
-                        // constraints: BoxConstraints(minHeight: 100),
                         height: 100,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20), // Adjust this value as needed
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20), // Match the borderRadius above
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             './assets/images/servicii_pediatrie_adauga_efect_1.png',
                             fit: BoxFit.cover,
@@ -136,13 +128,12 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         ),
                       ),
                       Container(
-                        // constraints: BoxConstraints(minHeight: 100),
                         height: 100,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20), // Adjust this value as needed
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20), // Match the borderRadius above
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             './assets/images/servicii_pediatrie_adauga_efect_2.png',
                             fit: BoxFit.cover,
@@ -160,7 +151,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    //'Servicii Pediatrie', //old IGV
                                     l.confirmareServiciiServiciiPediatrie,
                                     style: GoogleFonts.rubik(
                                       color: const Color.fromRGBO(255, 255, 255, 1),
@@ -171,7 +161,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                                   const SizedBox(height: 10),
                                   SizedBox(
                                     child: Text(
-                                      //'Primiți o recomandare și rețetă medicală', //old IGV
                                       widget.tipServiciu == 1
                                           ? "Consultație video"
                                           : widget.tipServiciu == 2
@@ -190,28 +179,32 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                                 ],
                               ),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  widget.pret,
-                                  //'9.9',
-                                  style: GoogleFonts.rubik(
-                                    color: const Color.fromRGBO(255, 255, 255, 1),
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 32,
+                            Padding(
+                              padding: const EdgeInsets.only(right: 18.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    widget.pret,
+                                    style: GoogleFonts.rubik(
+                                      color: const Color.fromRGBO(255, 255, 255, 1),
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 32,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  //'RON', //old IGV
-                                  l.confirmareServiciiRON,
-                                  style: GoogleFonts.rubik(
-                                    color: const Color.fromRGBO(255, 255, 255, 1),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 15,
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 18.0),
+                                    child: Text(
+                                      l.confirmareServiciiRON,
+                                      style: GoogleFonts.rubik(
+                                        color: const Color.fromRGBO(255, 255, 255, 1),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -227,7 +220,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        //'Subtotal', //old IGV
                         l.confirmareServiciiSubtotal,
                         style: GoogleFonts.rubik(
                           color: const Color.fromRGBO(103, 114, 148, 1),
@@ -236,7 +228,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         ),
                       ),
                       Text(
-                        //'$pret RON', //old IGV
                         '${widget.pret} ${l.confirmareServiciiRON}',
                         style: GoogleFonts.rubik(
                           color: const Color.fromRGBO(103, 114, 148, 1),
@@ -257,7 +248,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        //'Total',  //old IGV
                         l.confirmareServiciiTotal,
                         style: GoogleFonts.rubik(
                           color: const Color.fromRGBO(103, 114, 148, 1),
@@ -266,7 +256,6 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         ),
                       ),
                       Text(
-                        //'$pret RON', //old IGV
                         '${widget.pret} ${l.confirmareServiciiRON}',
                         style: GoogleFonts.rubik(
                           color: const Color.fromRGBO(103, 114, 148, 1),
@@ -288,40 +277,25 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: ElevatedButton(
                           onPressed: () {
-                            // Navigator.push(
-                            //     context,
-                            //     MaterialPageRoute(
-                            //       builder: (context) => AdaugaMetodaPlataScreen(
-                            //         tipServiciu: widget.tipServiciu,
-                            //         contClientMobile: widget.contClientMobile,
-                            //         medicDetalii: widget.medicDetalii,
-                            //         pret: widget.pret,
-                            //       ),
-                            //     ));
-
-
-
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => HomePage(
-                                            tipServiciu: widget.tipServiciu,
-                                            contClientMobile: widget.contClientMobile,
-                                            medicDetalii: widget.medicDetalii,
-                                            pret: widget.pret, currency: 'RON',
+                                    tipServiciu: widget.tipServiciu,
+                                    contClientMobile: widget.contClientMobile,
+                                    medicDetalii: widget.medicDetalii,
+                                    pret: widget.pret,
+                                    currency: 'RON',
                                   ),
                                 ));
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-                              //const Color.fromARGB(255, 14, 190, 127), old
                               minimumSize: const Size.fromHeight(50), // NEW
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               )),
-                          child: Text(
-                              //'CONFIRMĂ PLATA', //old IGV
-                              l.confirmareServiciiConfirmaPlataButon,
+                          child: Text(l.confirmareServiciiConfirmaPlataButon,
                               style: GoogleFonts.rubik(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
@@ -344,14 +318,11 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-                              //const Color.fromARGB(255, 14, 190, 127), old
-                              minimumSize: const Size.fromHeight(50), // NEW
+                              minimumSize: const Size.fromHeight(50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               )),
-                          child: Text(
-                              //'CONFIRMĂ PLATA', //old IGV
-                              "Completeaza date facturare",
+                          child: Text("Completeaza date facturare",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.rubik(
                                 color: Colors.white,
