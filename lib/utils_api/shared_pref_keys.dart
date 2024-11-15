@@ -37,3 +37,7 @@ const String idLocalitate = 'idLocalitate';
 const String strada = 'strada';
 const String profileImageUrl = 'profileImageUrl';
 const String paymentMethodId = 'paymentMethodId';
+
+const String notificationTitle = 'notificationTitle';
+const String notificationBody = 'notificationBody';
+const String notificationData = 'notificationData';

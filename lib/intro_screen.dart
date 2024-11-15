@@ -31,7 +31,7 @@ class _IntroScreenState extends State<IntroScreen> {
 
   Future<void> initOneSignal() async {
     OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-    OneSignal.initialize("bf049046-edaf-41f1-bb07-e2ac883af161");
+
     await OneSignal.Notifications.requestPermission(true);
     await getPlayerId();
     await getUserData();
@@ -51,7 +51,6 @@ class _IntroScreenState extends State<IntroScreen> {
     }
     setState(() {});
 
-    // oneSignalId = id!;
   }
 
   Future<String> getUserData() async {

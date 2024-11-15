@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'api_call.dart';
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -15,12 +16,37 @@ class ApiCallFunctions {
     return md5.convert(utf8.encode(input)).toString();
   }
 
+  Future<void> trimitePushPrinOneSignalCatreMedic({
+    required String pCheie,
+    required int pIdMedic,
+    required String pTip,
+    required String pMesaj,
+    required String pObservatii,
+  }) async {
+    final Map<String, String> parametriiApiCall = {
+      'pCheie': pCheie,
+      'pIdMedic': pIdMedic.toString(),
+      'pTip': pTip,
+      'pMesaj': pMesaj,
+      'pObservatii': pObservatii,
+    };
+
+    parametriiApiCall.forEach((key, value) {});
+
+    http.Response? response = await postApelFunctie(
+      parametriiApiCall,
+      'TrimitePushPrinOneSignalCatreMedic',
+    );
+
+    if (response != null) {
+    } else {}
+  }
+
   Future<http.Response?> getApelFunctie(Map<String, String> parametriiApiCall, String numeMetoda) async {
     http.Response res;
 
     String url, key;
     key = api_config.keyAppPacienti;
-    //url = '${api_config.apiUrl}$pNumeMetoda';
 
     url = '${api_config.apiUrl}$numeMetoda?';
 
@@ -35,13 +61,11 @@ class ApiCallFunctions {
   }
 
   Future<void> uploadPicture({
-    //required String pNumeComplet,
     required String pUser,
     required String pParola,
     required String pExtensie,
     required String pSirBitiDocument,
   }) async {
-    //final String pParolaMD5 = generateMd5(pParola);
     final Map<String, String> parametriiApiCall = {
       'pUser': pUser, //IGV
       'pParolaMD5': pParola,

@@ -118,14 +118,14 @@ class _DateFacturareScreenState extends State<DateFacturareCompletareRapida> {
     if (statusResult!.body == '200') {
       Fluttertoast.showToast(msg: "Date actualizate cu succes !");
       await getContDetalii();
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
-        return ConfirmareServiciiScreen(
-          contClientMobile: contInfoUpdatat!,
-          pret: widget.pret,
-          medicDetalii: widget.medicDetalii,
-          tipServiciu: widget.tipServiciu,
-        );
-      }));
+      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) {
+      //   return ConfirmareServiciiScreen(
+      //     contClientMobile: contInfoUpdatat!,
+      //     pret: widget.pret,
+      //     medicDetalii: widget.medicDetalii,
+      //     tipServiciu: widget.tipServiciu,
+      //   );
+      // }));
     } else {
       Fluttertoast.showToast(msg: "Nu s-au putut actualiza datele!");
     }

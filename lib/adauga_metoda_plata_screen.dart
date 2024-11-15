@@ -5,9 +5,14 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:sos_bebe_app/plata_succes_screen.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
 import 'package:http/http.dart' as http;
+import 'package:sos_bebe_app/utils_api/api_config.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 
+import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'datefacturare/date_facturare_completare_rapida.dart';
 
 class HomePage extends StatefulWidget {
   final int tipServiciu;
@@ -31,7 +36,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   CardFieldInputDetails? _cardDetails;
-  final TextEditingController _nameController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final cardKey = GlobalKey<FormState>();
@@ -45,22 +49,20 @@ class _HomePageState extends State<HomePage> {
     Stripe.publishableKey = stripePublishableKey;
     Stripe.instance.applySettings();
 
+    // double pretValue = double.tryParse(widget.pret) ?? 0.0;
+    // print('InitState: pret value is $pretValue');
 
-    double pretValue = double.tryParse(widget.pret) ?? 0.0;
-    print('InitState: pret value is $pretValue');
-
-
-    if (pretValue == 0) {
-      print('InitState: pret is 0, navigating to success screen');
-      _directSuccessNavigation();
-    } else {
-      print('InitState: pret is not 0, checking for saved payment details');
-      _checkForSavedPaymentDetails();
-    }
+    // // Only navigate directly if the price is zero
+    // if (pretValue <= 0.0) {
+    //   print('InitState: pret is 0, navigating to success screen');
+    //   _directSuccessNavigation();
+    // } else {
+    //   print('InitState: pret is greater than 0, waiting for payment completion');
+    //   _checkForSavedPaymentDetails(); // Validate or wait for user to complete payment
+    // }
   }
 
   Future<void> _directSuccessNavigation() async {
-
     Future.delayed(const Duration(milliseconds: 300), () {
       Navigator.push(context, MaterialPageRoute(
         builder: (context) {
@@ -81,7 +83,6 @@ class _HomePageState extends State<HomePage> {
     savedCustomerId = prefs.getString('customerId');
 
     if (savedPaymentMethodId != null && savedCustomerId != null) {
-
       _useSavedPaymentMethod(savedPaymentMethodId!, savedCustomerId!);
     }
 
@@ -199,14 +200,9 @@ class _HomePageState extends State<HomePage> {
   Future<void> processPayment(String paymentMethodId, String customerId) async {
     final calculatedAmount = _calculateAmount(widget.pret);
 
-    // Convert widget.pret to double and compare
     double pretValue = double.tryParse(widget.pret) ?? 0.0;
-    print('processPayment: pret value is $pretValue');
-    print('processPayment: calculatedAmount value is $calculatedAmount');
-
 
     if (pretValue == 0) {
-      print('processPayment: pret is 0, navigating to success screen');
       Future.delayed(const Duration(milliseconds: 300), () {
         Navigator.push(context, MaterialPageRoute(
           builder: (context) {
@@ -222,65 +218,98 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-
-    print('processPayment: pret is not 0, proceeding with payment process');
     final url = Uri.parse('https://sosbebe.crmonline.ro/api/OnlineShopAPI/ChargeCustomer');
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'CustomerId': customerId,
-          'PaymentMethodId': paymentMethodId,
-          'Amount': calculatedAmount.toString(),
-          'Currency': 'RON',
-        }),
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'CustomerId': customerId,
+        'PaymentMethodId': paymentMethodId,
+        'Amount': calculatedAmount.toString(),
+        'Currency': 'RON',
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('paymentMethodId', paymentMethodId);
+      await prefs.setString('customerId', customerId);
+
+      String patientId = prefs.getString(pref_keys.userId) ?? '';
+      String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+      String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+      String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+
+      String pCheie = keyAppPacienti;
+      int pIdMedic = widget.medicDetalii.id;
+      String pTip = widget.tipServiciu.toString();
+      String pMesaj = 'Starea plății de la $patientPrenume $patientNume: plătit';
+
+      await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+        pCheie: pCheie,
+        pIdMedic: pIdMedic,
+        pTip: pTip,
+        pMesaj: pMesaj,
+        pObservatii: pObservatii,
       );
 
-      print('processPayment: response status is ${response.statusCode}');
+      await Future.delayed(const Duration(seconds: 2));
 
+      Future.delayed(const Duration(milliseconds: 300), () {
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) {
+            return PlataRealizataCuSuccesScreen(
+              tipServiciu: widget.tipServiciu,
+              contClientMobile: widget.contClientMobile,
+              medicDetalii: widget.medicDetalii,
+              pret: widget.pret,
+            );
+          },
+        ));
+      });
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Plata a eșuat'),
+          content: const Text('A apărut o eroare la procesarea plății dvs.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
 
-      if (response.statusCode == 200) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('paymentMethodId', paymentMethodId);
-        await prefs.setString('customerId', customerId);
+      await Future.delayed(const Duration(seconds: 2));
 
-        Future.delayed(const Duration(milliseconds: 300), () {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return PlataRealizataCuSuccesScreen(
-                tipServiciu: widget.tipServiciu,
-                contClientMobile: widget.contClientMobile,
-                medicDetalii: widget.medicDetalii,
-                pret: widget.pret,
-              );
-            },
-          ));
-        });
-      } else {
-        print('processPayment: payment failed, showing error dialog');
+      SharedPreferences prefs = await SharedPreferences.getInstance();
 
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Plata a eșuat'),
-            content: const Text('A apărut o eroare la procesarea plății dvs.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      print('processPayment: error occurred $e');
+      String patientId = prefs.getString(pref_keys.userId) ?? '';
+      String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+      String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+      String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+
+      String pCheie = keyAppPacienti;
+      int pIdMedic = widget.medicDetalii.id;
+      String pTip = widget.tipServiciu.toString();
+      String pMesaj = 'Starea plății de la $patientPrenume $patientNume: a eșuat';
+
+      await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+        pCheie: pCheie,
+        pIdMedic: pIdMedic,
+        pTip: pTip,
+        pMesaj: pMesaj,
+        pObservatii: pObservatii,
+      );
     }
   }
 
@@ -301,7 +330,7 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 savedPaymentMethodId != null || pretValue != 0.0
-                    ? Text(
+                    ? const Text(
                         'Introduceti detele cardului',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       )

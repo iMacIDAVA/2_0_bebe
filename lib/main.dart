@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:sos_bebe_app/firebase_options.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
@@ -12,6 +13,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  OneSignal.initialize("bf049046-edaf-41f1-bb07-e2ac883af161");
+  OneSignal.Notifications.requestPermission(true);
 
   Future<void> setupStripe() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -26,14 +31,12 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      //title: 'Flutter Demo',
-      title: 'SOS Bebe', //old IGV
-      //title: l.mainTitlu,
+      title: 'SOS Bebe',
       locale: const Locale('ro', 'RO'),
+      debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         LocalizationsApp.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -41,18 +44,13 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('ro', 'RO'), // Romanian
-        //Locale('en', 'US'), // English
-        //Locale('it', 'IT'), // Italian
-        //Locale('fr', 'FR') // French
+        Locale('ro', 'RO'),
       ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-
       home: const IntroScreen(),
-      // home: const AuthGate(),
     );
   }
 }

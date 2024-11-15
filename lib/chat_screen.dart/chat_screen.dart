@@ -336,15 +336,15 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
               ),
               GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) {
-                      return ConfirmareServiciiScreen(
-                          pret: widget.pret,
-                          tipServiciu: widget.tipServiciu,
-                          contClientMobile: widget.contClientMobile,
-                          medicDetalii: widget.medic);
-                    },
-                  ));
+                  // Navigator.push(context, MaterialPageRoute(
+                  //   builder: (context) {
+                  //     return ConfirmareServiciiScreen(
+                  //         pret: widget.pret,
+                  //         tipServiciu: widget.tipServiciu,
+                  //         contClientMobile: widget.contClientMobile,
+                  //         medicDetalii: widget.medic);
+                  //   },
+                  // ));
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

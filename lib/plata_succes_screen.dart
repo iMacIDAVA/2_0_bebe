@@ -38,22 +38,22 @@ class _PlataRealizataCuSuccesScreenState
     extends State<PlataRealizataCuSuccesScreen> {
   ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
-  Future<void> notificaDoctor() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  // Future<void> notificaDoctor() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-    apiCallFunctions.anuntaMedicDePlataEfectuata(
-        pUser: user,
-        pParola: userPassMD5,
-        pIdMedic: widget.medicDetalii.id.toString(),
-        tipPlata: widget.tipServiciu.toString());
-  }
+  //   String user = prefs.getString('user') ?? '';
+  //   String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  //   apiCallFunctions.anuntaMedicDePlataEfectuata(
+  //       pUser: user,
+  //       pParola: userPassMD5,
+  //       pIdMedic: widget.medicDetalii.id.toString(),
+  //       tipPlata: widget.tipServiciu.toString());
+  // }
 
   @override
   void initState() {
     print(widget.medicDetalii.numeleComplet);
-    notificaDoctor();
+    // notificaDoctor();
     Timer(const Duration(seconds: 5), () {
       if (widget.tipServiciu == 1) {
         Navigator.pushReplacement(
