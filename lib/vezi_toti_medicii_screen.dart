@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:sos_bebe_app/profil_pacient_screen.dart';
+import 'package:sos_bebe_app/utils_api/doctor_busy_service.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 import 'package:sos_bebe_app/utils_api/functions.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
@@ -40,6 +41,8 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
   ContClientMobile? contInfo;
 
   List<MedicMobile> listaFiltrata = [];
+
+  Map<int, bool> doctorBusyStatus = {};
 
   bool scrieOintrebareLista = false;
   bool consultatieVideoLista = false;
@@ -218,17 +221,11 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                                 builder: (context) => ProfilulMeuPacientScreen(contInfo: contInfo),
                               ));
                         },
-                        child:
-                        _profileImage == null
+                        child: _profileImage == null
                             ? Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)
                             : isDoneLoading && contInfo!.linkPozaProfil != null
-                            ? Image.network(width: 60, height: 60, contInfo!.linkPozaProfil!)
-                            :  Image.memory(_profileImage!, width: 60, height: 60)
-
-
-
-
-             ,
+                                ? Image.network(width: 60, height: 60, contInfo!.linkPozaProfil!)
+                                : Image.memory(_profileImage!, width: 60, height: 60),
                       ),
                       TextButton(
                         onPressed: () {
@@ -649,24 +646,26 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
     return GestureDetector(
-      onTap: () async {
-        medicSelectat = await getDetaliiMedic(widget.medicItem.id);
-        listaRecenziiMedicSelectat = await getListaRecenziiByIdMedic(widget.medicItem.id);
+      onTap: doctorStatusService.doctorBusyStatus[widget.medicItem.id] == true
+          ? null // Disable navigation when the doctor is busy
+          : () async {
+              medicSelectat = await getDetaliiMedic(widget.medicItem.id);
+              listaRecenziiMedicSelectat = await getListaRecenziiByIdMedic(widget.medicItem.id);
 
-        if (mounted) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProfilDoctorDisponibilitateServiciiScreen(
-                  medicDetalii: medicSelectat!,
-                  statusMedic: widget.medicItem.status,
-                  listaRecenzii: listaRecenziiMedicSelectat,
-                  ecranTotiMedicii: true,
-                  contClientMobileInfo: widget.contClientMobile,
-                ),
-              ));
-        }
-      },
+              if (mounted) {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfilDoctorDisponibilitateServiciiScreen(
+                        medicDetalii: medicSelectat!,
+                        statusMedic: widget.medicItem.status,
+                        listaRecenzii: listaRecenziiMedicSelectat,
+                        ecranTotiMedicii: true,
+                        contClientMobileInfo: widget.contClientMobile,
+                      ),
+                    ));
+              }
+            },
       child: Container(
         margin: const EdgeInsets.all(8),
         padding: const EdgeInsets.all(8),
@@ -743,6 +742,34 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
                                           fontWeight: FontWeight.w500)),
                                 )
                               : const SizedBox(width: 0, height: 0),
+                          if (doctorStatusService.doctorBusyStatus[widget.medicItem.id] == true)
+                            Container(
+                              color: Colors.red,
+                              child: const Text(
+                                'Doctorul este ocupat',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              color: Colors.green,
+                              child: const Padding(
+                                padding: EdgeInsets.all(1.0),
+                                child: Text(
+                                  'Doctorul este gata',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(
+                            width: 2,
+                          ),
                           RatingBar(
                               ignoreGestures: true,
                               initialRating: 4.9,

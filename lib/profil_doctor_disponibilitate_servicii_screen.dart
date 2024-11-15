@@ -8,6 +8,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:sos_bebe_app/doctor_confirmation_screen.dart';
 
 import 'package:sos_bebe_app/utils/utils_widgets.dart';
+import 'package:sos_bebe_app/utils_api/doctor_busy_service.dart';
 import 'package:sos_bebe_app/utils_api/api_config.dart';
 
 import 'package:sos_bebe_app/utils_api/classes.dart';
@@ -995,6 +996,10 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
             pMesaj: pMesaj,
             pObservatii: pObservatii,
           );
+
+          doctorStatusService.doctorBusyStatus[pIdMedic] = true;
+
+          setState(() {});
 
           await Future.delayed(const Duration(seconds: 1));
 
