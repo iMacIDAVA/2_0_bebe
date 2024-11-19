@@ -13,9 +13,7 @@ import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 class IntroScreen extends StatefulWidget {
-  const IntroScreen({
-    super.key,
-  });
+  const IntroScreen({super.key});
 
   @override
   State<IntroScreen> createState() => _IntroScreenState();
@@ -25,48 +23,55 @@ class _IntroScreenState extends State<IntroScreen> {
   ApiCallFunctions apiCallFunctions = ApiCallFunctions();
   List<MedicMobile> listaMedici = [];
   ContClientMobile? resGetCont;
-  bool userHasData = false;
   String? userApp;
   String oneSignalId = '';
 
+  @override
+  void initState() {
+    super.initState();
+    initOneSignal();
+  }
+
   Future<void> initOneSignal() async {
     OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-
     await OneSignal.Notifications.requestPermission(true);
     await getPlayerId();
-    await getUserData();
+    await checkUserLoginState();
   }
 
   Future<void> getPlayerId() async {
     final id = OneSignal.User.pushSubscription.id;
+    oneSignalId = id ?? '';
     if (id != null) {
-      oneSignalId = id;
-    } else {
-      oneSignalId = '';
-    }
-    if (id != null) {
-      SharedPreferences.getInstance().then((value) {
-        value.setString('oneSignalId', id);
-      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('oneSignalId', id);
     }
     setState(() {});
-
   }
 
-  Future<String> getUserData() async {
+  /// Check if the user is logged in or redirect to Login Screen if not
+  Future<void> checkUserLoginState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user') ?? "";
-    if (user != '') {
-      await getContUser();
-      await getListaMedici();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    if (user.isNotEmpty && userPassMD5.isNotEmpty) {
+      // User is logged in, fetch account and doctor list
+      try {
+        await getContUser();
+        await getListaMedici();
+      } catch (e) {
+        print('Error fetching user data: $e');
+        navigateToLoginScreen();
+      }
+    } else {
+      // User is not logged in
+      navigateToLoginScreen();
     }
-    userApp = user;
-    return user;
   }
 
-  getListaMedici() async {
+  Future<void> getListaMedici() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
@@ -77,34 +82,37 @@ class _IntroScreenState extends State<IntroScreen> {
         [];
   }
 
-  getContUser() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<void> getContUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
-      String user = prefs.getString('user') ?? '';
-      String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-      resGetCont = await apiCallFunctions.getContClient(
-        pUser: user,
-        pParola: userPassMD5,
-        pDeviceToken: prefs.getString('oneSignalId') ?? "",
-        pTipDispozitiv: Platform.isAndroid ? '1' : '2',
-        pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
-        pTokenVoip: '',
-      );
+    if (user.isEmpty || userPassMD5.isEmpty) {
+      throw Exception("Missing user credentials");
+    }
 
-      if (resGetCont == null) {
-        throw Exception('Failed to fetch account data');
-      }
-    } catch (e) {
-      // Handle the error gracefully
-      print('Error fetching user data: $e');
+    resGetCont = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    if (resGetCont == null) {
+      throw Exception("Failed to fetch account data");
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    initOneSignal();
+  /// Navigate to Login Screen
+  void navigateToLoginScreen() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+    );
   }
 
   @override
@@ -139,7 +147,6 @@ class _IntroScreenState extends State<IntroScreen> {
                       child: Image.asset(width: 100, height: 136, './assets/images/Sosbebe.png'),
                     ),
                     const Spacer(),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -179,66 +186,52 @@ class _IntroScreenState extends State<IntroScreen> {
                           height: 60,
                           width: 224,
                           child: ElevatedButton(
-                              onPressed: () async {
-                                await getPlayerId();
-                                if (userApp != '') {
-                                  // Ensure getContUser has completed
-                                  await getContUser();
-                                  if (resGetCont != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) {
-                                          return VeziTotiMediciiScreen(
-                                            listaMedici: listaMedici,
-                                            contClientMobile: resGetCont!,
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  } else {
-                                    // Handle the case where resGetCont is null
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Failed to fetch account data. Please try again."))
-                                    );
-                                  }
-                                } else {
-                                  Navigator.push(context, MaterialPageRoute(
+                            onPressed: () async {
+                              await getPlayerId();
+                              if (resGetCont != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
                                     builder: (context) {
-                                      return const LoginScreen();
+                                      return VeziTotiMediciiScreen(
+                                        listaMedici: listaMedici,
+                                        contClientMobile: resGetCont!,
+                                      );
                                     },
-                                  ));
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(60),
-                                  backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  shadowColor: const Color.fromRGBO(14, 190, 127, 1),
-                                  elevation: 20.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    l.introContinua,
-                                    style: GoogleFonts.rubik(
-                                        color: Colors.white, fontWeight: FontWeight.w500, fontSize: 22),
-                                  ),
-                                  const ImageIcon(
-                                    AssetImage("./assets/images/babyhead.png"),
-                                    color: Colors.white,
-                                    size: 40,
-                                  ),
-                                ],
-                              )),
+                                );
+                              } else {
+                                navigateToLoginScreen();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(60),
+                                backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                shadowColor: const Color.fromRGBO(14, 190, 127, 1),
+                                elevation: 20.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  l.introContinua,
+                                  style: GoogleFonts.rubik(
+                                      color: Colors.white, fontWeight: FontWeight.w500, fontSize: 22),
+                                ),
+                                const ImageIcon(
+                                  AssetImage("./assets/images/babyhead.png"),
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(
-                      height: 15,
-                    ),
+                    const SizedBox(height: 15),
                   ],
                 ),
               ),
