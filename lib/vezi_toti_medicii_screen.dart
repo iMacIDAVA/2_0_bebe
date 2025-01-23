@@ -66,6 +66,7 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     super.initState();
 
     _loadAndDecodeImage();
+    
 
     getContDetalii();
     listaFiltrata = widget.listaMedici;
@@ -138,18 +139,37 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     });
   }
 
-  getListaMedici() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+Future<void> getListaMedici() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  String user = prefs.getString('user') ?? '';
+  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
-    listaMediciInitiala = await apiCallFunctions.getListaMedici(
-          pUser: user,
-          pParola: userPassMD5,
-        ) ??
-        [];
+  // Force API call to fetch the latest data
+  listaMediciInitiala = await apiCallFunctions.getListaMedici(
+        pUser: user,
+        pParola: userPassMD5,
+      ) ??
+      [];
+
+  // Update online list
+  mediciOnline.clear();
+  for (var element in listaMediciInitiala) {
+    if (element.status == 1) { // Ensure status logic matches backend
+      mediciOnline.add(
+        IconStatusNumeRatingSpitalLikesMedic(
+          medicItem: element,
+          contClientMobile: widget.contClientMobile,
+        ),
+      );
+    }
   }
+
+  setState(() {
+    listaFiltrata = listaMediciInitiala;
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -742,31 +762,8 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
                                           fontWeight: FontWeight.w500)),
                                 )
                               : const SizedBox(width: 0, height: 0),
-                          if (doctorStatusService.doctorBusyStatus[widget.medicItem.id] == true)
-                            Container(
-                              color: Colors.red,
-                              child: const Text(
-                                'Doctorul este ocupat',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                          else
-                            Container(
-                              color: Colors.green,
-                              child: const Padding(
-                                padding: EdgeInsets.all(1.0),
-                                child: Text(
-                                  'Doctorul este gata',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
+               
+            
                           const SizedBox(
                             width: 2,
                           ),

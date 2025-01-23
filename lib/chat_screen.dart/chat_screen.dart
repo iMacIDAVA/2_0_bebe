@@ -1,19 +1,25 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/chat_screen.dart/chat_bubble.dart';
 import 'package:sos_bebe_app/chat_screen.dart/chat_textfield.dart';
 import 'package:sos_bebe_app/confirmare_servicii_screen.dart';
 import 'package:sos_bebe_app/factura_screen.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
+import 'package:sos_bebe_app/utils_api/api_config.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
+import 'package:sos_bebe_app/utils_api/doctor_busy_service.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 import 'package:path/path.dart' as path;
+import 'package:http/http.dart' as http;
+import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 class ChatScreenPage extends StatefulWidget {
   final MedicMobile medic;
@@ -36,21 +42,20 @@ class ChatScreenPage extends StatefulWidget {
 }
 
 class _ChatScreenPageState extends State<ChatScreenPage> {
-  bool isFirstEnterPage = true;
   final ScrollController _controller = ScrollController();
-  final ValueNotifier<bool> aRaspunsDoctorulNotifier = ValueNotifier(false);
-
   final TextEditingController _messageController = TextEditingController();
-  List<ConversatieMobile> listaConversatii = [];
-  ApiCallFunctions apiCallFunctions = ApiCallFunctions();
+  final ApiCallFunctions apiCallFunctions = ApiCallFunctions();
   List<MesajConversatieMobile> mesajeConversatie = [];
   Timer? _messageUpdateTimer;
 
-  Future<void> _fetchMessages() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  bool _initialFetchDone = false;
 
+Future<void> _fetchMessages() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String user = prefs.getString('user') ?? '';
+  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+  try {
     final newMessages = await apiCallFunctions.getListaMesajePeConversatie(
           pUser: user,
           pParola: userPassMD5,
@@ -58,165 +63,176 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
         ) ??
         [];
 
-    if (mounted && newMessages.length > mesajeConversatie.length) {
+    if (mounted && newMessages.isNotEmpty) {
       setState(() {
         mesajeConversatie = newMessages;
       });
+
+      // Check if the specific message exists
+// bool doctorLeftChat = newMessages.isNotEmpty &&
+//     newMessages.last.comentariu.trim() == "Doctorul a părăsit chatul";
+
+
+      // if (doctorLeftChat && _initialFetchDone) { // Navigate only after initialization
+      //   await notificaDoctor();
+      //   if (mounted && resGetCont != null && listaMedici.isNotEmpty) {
+      //     doctorStatusService.doctorBusyStatus[widget.medic.id] = false;
+      //     Navigator.pushReplacement(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => VeziTotiMediciiScreen(
+      //           listaMedici: listaMedici,
+      //           contClientMobile: resGetCont!,
+      //         ),
+      //       ),
+      //     );
+      //   }
+      // }
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_controller.hasClients) {
           _controller.jumpTo(_controller.position.maxScrollExtent);
         }
       });
+
+      // Mark that the initial fetch is done
+      _initialFetchDone = true;
     }
+  } catch (error) {
+    print("Error fetching messages: $error");
   }
+}
 
-  @override
-  void initState() {
-    super.initState();
 
-      OneSignal.Notifications.addForegroundWillDisplayListener(_onNotificationDisplayed);
-      
-    _fetchMessages(); // Fetch initial messages
+@override
+void initState() {
+  super.initState();
+  _fetchData();
+  OneSignal.Notifications.addForegroundWillDisplayListener(
+      _onNotificationDisplayed);
+  _fetchMessages().then((_) {
+    // Ensure the chat scrolls to the bottom on screen open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_controller.hasClients) {
+        _controller.jumpTo(_controller.position.maxScrollExtent);
+      }
+    });
+  });
+  _messageUpdateTimer = Timer.periodic(
+    const Duration(seconds: 5),
+    (timer) => _fetchMessages(),
+  );
+}
 
-    _messageUpdateTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (timer) => _fetchMessages(),
-    );
-  }
 
-  @override
-  void dispose() {
-    _messageUpdateTimer?.cancel();
 
-      OneSignal.Notifications.removeForegroundWillDisplayListener(_onNotificationDisplayed);
+@override
+void dispose() {
+  _messageUpdateTimer?.cancel();
+  OneSignal.Notifications.removeForegroundWillDisplayListener(
+    _onNotificationDisplayed,
+  );
+  super.dispose();
+}
 
-    super.dispose();
-  }
-
-  
   void _onNotificationDisplayed(OSNotificationWillDisplayEvent event) {
-    final notification = event.notification;
-
-    // Suppress notifications containing "Aveți un mesaj" in the alert text
-    if (notification.body != null && notification.body!.contains('Aveți un mesaj')) {
-      // Suppress the notification
-      OneSignal.Notifications.preventDefault(notification.notificationId!);
-      return;
+    print("Notification displayed: ${event.notification.body}");
+    if (event.notification.body?.contains('Aveți un mesaj') ?? false) {
+      OneSignal.Notifications.preventDefault(
+          event.notification.notificationId!);
     }
-
-    // Allow other notifications to show
-    OneSignal.Notifications.displayNotification(notification.notificationId!);
   }
 
-  void sendMessage() async {
-    if (_messageController.text.isNotEmpty) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String user = prefs.getString('user') ?? '';
-      String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  void _handleFileOpen(String fileUrl) async {
+    try {
+      // Download the file if necessary
+      String localPath = await _downloadFile(fileUrl);
 
-      await apiCallFunctions.adaugaMesajDinContClient(
+      // Open the file using OpenFilex
+      OpenFilex.open(localPath);
+    } catch (error) {
+      print("Error opening file: $error");
+    }
+  }
+
+  Future<String> _downloadFile(String url) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final fileName = path.basename(url);
+    final filePath = path.join(directory.path, fileName);
+
+    if (await File(filePath).exists()) {
+      return filePath; // File already exists
+    }
+
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes);
+      return filePath;
+    } else {
+      throw Exception('Failed to download file: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _sendFile(File file) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    String fileName = path.basenameWithoutExtension(file.path);
+    String extension = path.extension(file.path);
+    List<int> fileBytes = await file.readAsBytes();
+    String base64File = base64Encode(fileBytes);
+    String pCheie = keyAppPacienti;
+
+    try {
+      print("Sending file with the following data...");
+
+      // Upload file and get the URL
+      String? fileUrl =
+          await apiCallFunctions.adaugaMesajCuAtasamentDinContMedic(
+        pCheie: pCheie,
         pUser: user,
-        pParola: userPassMD5,
+        pParolaMD5: userPassMD5,
         pIdMedic: widget.medic.id.toString(),
-        pMesaj: _messageController.text,
+        pMesaj: "File Attachment: $fileName$extension",
+        pDenumireFisier: fileName,
+        pExtensie: extension,
+        pSirBitiDocument: base64File,
       );
 
-      _messageController.clear();
-      _fetchMessages();
+      if (fileUrl != null) {
+        print("File uploaded successfully. Sending URL as a message: $fileUrl");
+
+        // Send the URL as a text message
+        await apiCallFunctions.adaugaMesajDinContClient(
+          pUser: user,
+          pParola: userPassMD5,
+          pIdMedic: widget.medic.id.toString(),
+          pMesaj: fileUrl,
+        );
+
+        print("URL sent successfully as a message.");
+        _fetchMessages(); // Refresh chat messages
+      } else {
+        print("Failed to upload file. URL is null.");
+      }
+    } catch (error) {
+      print("Error sending file: $error");
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              children: [
-                _topAppBar(),
-                const SizedBox(height: 50),
-                Row(
-                  children: [
-                    Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[400],
-                      ),
-                      child: widget.medic.linkPozaProfil.isNotEmpty
-                          ? Image.network(widget.medic.linkPozaProfil)
-                          : Image.asset(
-                              './assets/images/user_fara_poza.png',
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    const SizedBox(width: 16),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${widget.medic.titulatura} ${widget.medic.numeleComplet}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Color(0xff0EBE7F),
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            widget.medic.locDeMunca,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xff677294),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            widget.medic.specializarea,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xff677294),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Expanded(
-                  child: _buildMessageList(),
-                ),
-                if (!widget.chatOnly) _trimiteAtasament(),
-                if (!widget.chatOnly) const SizedBox(height: 10),
-                ValueListenableBuilder(
-                  valueListenable: aRaspunsDoctorulNotifier,
-                  builder: (context, value, child) {
-                    if (value == true) {
-                      return _maiPuneIntrbeare();
-                    } else {
-                      return _buildMessageInput();
-                    }
-                  },
-                ),
-                const SizedBox(height: 15),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> _pickAndSendFile() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File file = File(pickedFile.path);
+      print("File selected: ${file.path}");
+      await _sendFile(file);
+    } else {
+      print("No file selected.");
+    }
   }
 
   Widget _buildMessageList() {
@@ -224,229 +240,332 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       controller: _controller,
       itemCount: mesajeConversatie.length,
       itemBuilder: (context, index) {
-        return _buildMessageItem(mesajeConversatie[index]);
+        final message = mesajeConversatie[index];
+        final isCurrentUser = message.idExpeditor == widget.contClientMobile.id;
+
+        // Extract the message text
+        final String text = message.comentariu.trim();
+        final bool isImageUrl = text.endsWith('.jpg') ||
+            text.endsWith('.png') ||
+            text.endsWith('.jpeg') ||
+            text.endsWith('.gif');
+        final bool isPdf = text.endsWith('.pdf');
+        final bool isUrl =
+            text.startsWith('http://') || text.startsWith('https://');
+
+        // Skip messages containing "File Attachment"
+        if (text.contains("File Attachment")) {
+          return const SizedBox
+              .shrink(); // Return an empty widget for such messages
+        }
+
+        // Skip rendering files if chatOnly is true
+        if (widget.chatOnly && isUrl) {
+          return const SizedBox
+              .shrink(); // Do not render files in chat-only mode
+        }
+
+        return Align(
+          alignment:
+              isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isCurrentUser
+                  ? const Color.fromRGBO(14, 190, 127, 1)
+                  : const Color.fromRGBO(240, 240, 240, 1),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(10),
+                topRight: const Radius.circular(10),
+                bottomLeft: Radius.circular(isCurrentUser ? 10 : 0),
+                bottomRight: Radius.circular(isCurrentUser ? 0 : 10),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  offset: Offset(0, 3),
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: isCurrentUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (isUrl &&
+                    !widget.chatOnly) // Render files only if chatOnly is false
+                  isImageUrl
+                      ? GestureDetector(
+                          onTap: () {
+                            print('Opening image: $text');
+                            _handleFileOpen(text);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Image.network(
+                              text,
+                              width: 150,
+                              height: 150,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Text(
+                                  "Failed to load image.",
+                                  style: TextStyle(color: Colors.red),
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      : GestureDetector(
+                          onTap: () => _handleFileOpen(text),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isPdf
+                                    ? Icons.picture_as_pdf
+                                    : Icons.insert_drive_file,
+                                color: isPdf ? Colors.red : Colors.blue,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  path.basename(text),
+                                  style: TextStyle(
+                                    color: isCurrentUser
+                                        ? Colors.white
+                                        : Colors.black,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                if (!isUrl)
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: isCurrentUser ? Colors.white : Colors.black,
+                      fontSize: 18,
+                      height: 1.5,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 
-  Widget _maiPuneIntrbeare() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 50),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            "Mai doriți o întrebare?",
-            style: TextStyle(
-              color: Color(0xff0EBE7F),
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 25),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  FacturaClientMobile? ultimaFactura;
-
-                  SharedPreferences prefs = await SharedPreferences.getInstance();
-                  String user = prefs.getString('user') ?? '';
-                  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-
-                  ultimaFactura = await apiCallFunctions.getUltimaFactura(
-                    pUser: user,
-                    pParola: userPassMD5,
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FacturaScreen(
-                        facturaDetalii: ultimaFactura!,
-                        user: user,
-                        isFromChat: true,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  height: 64,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(width: 1, color: Colors.grey[300]!),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "NU",
-                        style: TextStyle(
-                          color: Colors.grey[500]!,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Vă mulțumesc!",
-                        style: TextStyle(
-                          color: Colors.grey[500]!,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  // Handle further actions
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: const Color(0xff0EBE7F),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "DA",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Mai doresc o întrebare",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 25),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMessageInput() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: MyTextField(
-                  textEditingController: _messageController,
-                  hintText: 'Mesaj',
-                  obscureText: false,
+    return Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        children: [
+          if (!widget.chatOnly)
+            IconButton(
+              icon: const Icon(Icons.attach_file, color: Colors.grey),
+              onPressed: _pickAndSendFile,
+            ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: "Scrie un mesaj...",
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
                 ),
               ),
-              GestureDetector(
-                onTap: sendMessage,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  height: 60,
-                  width: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xff0EBE7F),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      "assets/icons/send (1).png",
-                      scale: 0.8,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
+          const SizedBox(width: 10),
+          IconButton(
+            icon:
+                const Icon(Icons.send, color: Color.fromRGBO(14, 190, 127, 1)),
+            onPressed: () async {
+              if (_messageController.text.isNotEmpty) {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                String user = prefs.getString('user') ?? '';
+                String userPassMD5 =
+                    prefs.getString(pref_keys.userPassMD5) ?? '';
+
+                await apiCallFunctions.adaugaMesajDinContClient(
+                  pUser: user,
+                  pParola: userPassMD5,
+                  pIdMedic: widget.medic.id.toString(),
+                  pMesaj: _messageController.text,
+                );
+                _messageController.clear();
+                _fetchMessages();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<MedicMobile> listaMedici = [];
+  ContClientMobile? resGetCont;
+
+Future<void> _fetchData() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String user = prefs.getString('user') ?? '';
+  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+  try {
+    listaMedici = await apiCallFunctions.getListaMedici(
+          pUser: user,
+          pParola: userPassMD5,
+        ) ??
+        [];
+
+    resGetCont = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  } catch (e) {
+    print("Error fetching data: $e");
+  }
+}
+
+
+  Future<void> notificaDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    apiCallFunctions.anuntaMedicDeServiciuTerminat(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medic.id.toString(),
+        tipPlata: widget.tipServiciu.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+     appBar: AppBar(
+      toolbarHeight: 75,
+      title: Text(
+        "${widget.medic.numeleComplet}",
+        style: const TextStyle(fontSize: 18),
+      ),
+leading: IconButton(
+  icon: const Icon(Icons.exit_to_app),
+  onPressed: () async {
+    // Show a confirmation dialog before exiting
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Exit"),
+        content: const Text("Do you really want to leave the chat?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit == true) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
         ),
-      ],
-    );
-  }
+      );
 
-  Widget _buildMessageItem(MesajConversatieMobile message) {
-    var alignment =
-        (message.idExpeditor == widget.contClientMobile.id) ? Alignment.centerRight : Alignment.centerLeft;
+      try {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String user = prefs.getString('user') ?? '';
+        String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
-    return Container(
-      alignment: alignment,
-      padding: const EdgeInsets.all(8),
-      child: ChatBubble(
-        data: message.dataMesaj,
-        message: message.comentariu,
-        linkPoza: message.linkFisier,
-        sentByCurrentUser: (message.idExpeditor == widget.contClientMobile.id),
+        // Send the "Pacientul a părăsit chatul" message ONLY here
+        // await apiCallFunctions.adaugaMesajDinContClient(
+        //   pUser: user,
+        //   pParola: userPassMD5,
+        //   pIdMedic: widget.medic.id.toString(),
+        //   pMesaj: "Pacientul a părăsit chatul",
+        // );
+
+        // Notify the doctor ONLY here
+        await notificaDoctor();
+
+        // Close the loading dialog
+        Navigator.pop(context);
+
+        // Navigate to the doctors list screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VeziTotiMediciiScreen(
+              listaMedici: listaMedici,
+              contClientMobile: resGetCont!,
+            ),
+          ),
+        );
+      } catch (e) {
+        // Close the loading dialog
+        Navigator.pop(context);
+
+        // Show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to send exit message")),
+        );
+      }
+    }
+  },
+),
+
+    ),
+      body: WillPopScope(
+        onWillPop: () async => false,
+        child: Column(
+          children: [
+            Expanded(child: _buildMessageList()),
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _topAppBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () {
-              confirmaIesireChat();
-            },
-            child: Icon(
-              Icons.arrow_back,
-              color: Colors.grey[400],
-              size: 28,
-            ),
-          ),
-        ],
+class ImagePreviewScreen extends StatelessWidget {
+  final String imageUrl;
+
+  const ImagePreviewScreen({Key? key, required this.imageUrl})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Image Preview"),
       ),
-    );
-  }
-
-  void confirmaIesireChat() {
-    // Logic for confirming exit
-  }
-
-  Widget _trimiteAtasament() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          GestureDetector(
-            onTap: () {
-              // Open dialog for attachments
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 5),
-              height: 46,
-              width: 45,
-              decoration: BoxDecoration(
-                color: const Color(0xff0EBE7F),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.image,
-                  size: 25,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
+      body: Center(
+        child: Image.network(imageUrl),
       ),
     );
   }

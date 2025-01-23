@@ -75,7 +75,7 @@ class _RaspundeIntrebareDoarChatScreenState extends State<RaspundeIntrebareDoarC
       id: widget.contClientMobile.id.toString(),
     );
 
-    getListaConversatii();
+    // getListaConversatii();
 
     Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadMessagesFromList();
@@ -87,19 +87,19 @@ class _RaspundeIntrebareDoarChatScreenState extends State<RaspundeIntrebareDoarC
     });
   }
 
-  void getListaConversatii() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  // void getListaConversatii() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    //prefs.setString(pref_keys.userPassMD5, controllerEmail.text);
+  //   //prefs.setString(pref_keys.userPassMD5, controllerEmail.text);
 
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-    listaConversatii = await apiCallFunctions.getListaConversatii(
-          pUser: user,
-          pParola: userPassMD5,
-        ) ??
-        [];
-  }
+  //   String user = prefs.getString('user') ?? '';
+  //   String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  //   listaConversatii = await apiCallFunctions.getListaConversatii(
+  //         pUser: user,
+  //         pParola: userPassMD5,
+  //       ) ??
+  //       [];
+  // }
 
   void _loadMessagesFromList() async {
     List<MesajConversatieMobile> listaMesaje = [];

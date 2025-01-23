@@ -38,49 +38,69 @@ class _PlataRealizataCuSuccesScreenState
     extends State<PlataRealizataCuSuccesScreen> {
   ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
-  // Future<void> notificaDoctor() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future<void> notificaDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  //   String user = prefs.getString('user') ?? '';
-  //   String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-  //   apiCallFunctions.anuntaMedicDePlataEfectuata(
-  //       pUser: user,
-  //       pParola: userPassMD5,
-  //       pIdMedic: widget.medicDetalii.id.toString(),
-  //       tipPlata: widget.tipServiciu.toString());
-  // }
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    apiCallFunctions.anuntaMedicDePlataEfectuata(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medicDetalii.id.toString(),
+        tipPlata: widget.tipServiciu.toString());
+  }
 
-  @override
-  void initState() {
-    print(widget.medicDetalii.numeleComplet);
-    // notificaDoctor();
-    Timer(const Duration(seconds: 5), () {
-      if (widget.tipServiciu == 1) {
+@override
+void initState() {
+  super.initState();
+
+  // Log the doctor's name for debugging
+  print(widget.medicDetalii.numeleComplet);
+
+  // Notify the doctor of the successful payment
+  notificaDoctor();
+
+  // Schedule navigation based on the type of service
+  Timer(const Duration(seconds: 5), () {
+    if (widget.tipServiciu == 1) {
+      // Navigate to the QuestionaireScreen for specific service type
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (BuildContext context) => QuestionaireScreen(
+            tipServiciu: widget.tipServiciu,
+            contClientMobile: widget.contClientMobile,
+            medicDetalii: widget.medicDetalii,
+          ),
+        ),
+      );
+    } else {
+      // Navigate to ChatScreenPage for chat or consultation services
+      if (widget.medicDetalii != null) {
         Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (BuildContext context) => QuestionaireScreen(
-                      tipServiciu: widget.tipServiciu,
-                      contClientMobile: widget.contClientMobile,
-                      medicDetalii: widget.medicDetalii,
-                    )));
-      } else {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            return ChatScreenPage(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreenPage(
               medic: widget.medicDetalii,
               contClientMobile: widget.contClientMobile,
               pret: widget.pret,
               tipServiciu: widget.tipServiciu,
               chatOnly: widget.tipServiciu == 3 ? true : false,
-            );
-          },
-        ));
+            ),
+          ),
+        );
+      } else {
+        // Show an error message if medicDetalii is null
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Error: Invalid doctor details. Please try again."),
+          ),
+        );
       }
-    });
+    }
+  });
+}
 
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {

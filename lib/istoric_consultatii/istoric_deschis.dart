@@ -25,24 +25,24 @@ class _IstoricDeschisState extends State<IstoricDeschis> {
   bool aRaspunsDoctorul = false;
   //! send function
 
-  void getListaConversatii() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-    listaConversatii = await apiCallFunctions.getListaConversatii(
-          pUser: user,
-          pParola: userPassMD5,
-        ) ??
-        [];
-    listaConversatii.forEach((element) {
-      if (widget.medic == element.idDestinatar &&
-          element.idExpeditor == widget.contClientMobile.id) {
-        conversatiaMeaMobile = element;
-      }
-    });
-    isDoneLoading = true;
-    setState(() {});
-  }
+  // void getListaConversatii() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   String user = prefs.getString('user') ?? '';
+  //   String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  //   listaConversatii = await apiCallFunctions.getListaConversatii(
+  //         pUser: user,
+  //         pParola: userPassMD5,
+  //       ) ??
+  //       [];
+  //   listaConversatii.forEach((element) {
+  //     if (widget.medic == element.idDestinatar &&
+  //         element.idExpeditor == widget.contClientMobile.id) {
+  //       conversatiaMeaMobile = element;
+  //     }
+  //   });
+  //   isDoneLoading = true;
+  //   setState(() {});
+  // }
 
   Future<List<MesajConversatieMobile>> streamListaMesaje() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -81,7 +81,7 @@ class _IstoricDeschisState extends State<IstoricDeschis> {
   @override
   void initState() {
     super.initState();
-    getListaConversatii();
+    // getListaConversatii();
   }
 
   //! timer

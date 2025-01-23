@@ -239,6 +239,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
                       tipServiciu: intrebare.value,
                       contClientMobile: widget.contClientMobileInfo,
                       medicDetalii: widget.medicDetalii,
+                      statusMedic: widget.statusMedic,
                     ),
                 if (widget.statusMedic == 1)
                   if (widget.medicDetalii.consultatieVideo)
@@ -256,6 +257,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
                       tipServiciu: consultVideo.value,
                       contClientMobile: widget.contClientMobileInfo,
                       medicDetalii: widget.medicDetalii,
+                      statusMedic: widget.statusMedic,
                     ),
                 if (widget.statusMedic == 1)
                   if (widget.medicDetalii.interpreteazaAnalize)
@@ -273,6 +275,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
                       tipServiciu: interpretareAnalize.value,
                       contClientMobile: widget.contClientMobileInfo,
                       medicDetalii: widget.medicDetalii,
+                      statusMedic: widget.statusMedic,
                     ),
                 Container(
                   padding: EdgeInsets.only(left: 20, right: 20, top: widget.statusMedic == 1 ? 40 : 0),
@@ -929,6 +932,7 @@ class ButtonServiciiProfilDoctor extends StatefulWidget {
   final int tipServiciu;
   final ContClientMobile contClientMobile;
   final MedicMobile medicDetalii;
+    final int statusMedic;
 
   const ButtonServiciiProfilDoctor({
     super.key,
@@ -941,6 +945,7 @@ class ButtonServiciiProfilDoctor extends StatefulWidget {
     required this.tipServiciu,
     required this.contClientMobile,
     required this.medicDetalii,
+    required this.statusMedic
   });
 
   @override

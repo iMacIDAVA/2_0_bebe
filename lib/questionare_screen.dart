@@ -802,7 +802,10 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
                   if (questionaireKey.currentState!.validate()) {
                     if (widget.tipServiciu == 1) {
                       Navigator.push(context, MaterialPageRoute(builder: (context) {
-                        return const ApelVideoPacientScreen();
+                        return  ApelVideoPacientScreen(
+                        medic: widget.medicDetalii,
+                            contClientMobile: widget.contClientMobile,
+                        );
                       }));
                     } else if (widget.tipServiciu == 2) {
                     } else if (widget.tipServiciu == 3) {

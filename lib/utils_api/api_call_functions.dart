@@ -60,6 +60,52 @@ class ApiCallFunctions {
     return res;
   }
 
+Future<String?> adaugaMesajCuAtasamentDinContMedic({
+  required String pCheie,
+  required String pUser,
+  required String pParolaMD5,
+  required String pIdMedic,
+  required String pMesaj,
+  required String pDenumireFisier,
+  required String pExtensie,
+  required String pSirBitiDocument,
+}) async {
+  final body = {
+    "Cheie": pCheie,
+    "User": pUser,
+    "ParolaMD5": pParolaMD5,
+    "IdClient": pIdMedic,
+    "Mesaj": pMesaj,
+    "DenumireFisier": pDenumireFisier,
+    "Extensie": pExtensie,
+    "SirBitiDocument": pSirBitiDocument,
+  };
+
+  final url = '${api_config.apiUrl}AdaugaMesajCuAtasamentDinContMedic';
+
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {"Content-Type": "application/json"},
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final responseBody = json.decode(response.body);
+      print("File sent successfully: $responseBody");
+      return responseBody as String; // Ensure this matches the backend's returned data format
+    } else {
+      print("Failed to send file: ${response.statusCode}, ${response.body}");
+      return null;
+    }
+  } catch (error) {
+    print("Error sending file: $error");
+    return null;
+  }
+}
+
+
+
   Future<void> uploadPicture({
     required String pUser,
     required String pParola,
@@ -479,41 +525,41 @@ class ApiCallFunctions {
     //return resGetContClient;
   }
 
-  Future<List<ConversatieMobile>?> getListaConversatii({
-    //required String pNumeComplet,
-    required String pUser,
-    required String pParola,
-    //required String pIdMedic,
-  }) async {
-    //final String pParolaMD5 = generateMd5(pParola);
-    final Map<String, String> parametriiApiCall = {
-      //'pNumeComplet': pNumeComplet,
-      'pUser': pUser, //IGV
+  // Future<List<ConversatieMobile>?> getListaConversatii({
+  //   //required String pNumeComplet,
+  //   required String pUser,
+  //   required String pParola,
+  //   //required String pIdMedic,
+  // }) async {
+  //   //final String pParolaMD5 = generateMd5(pParola);
+  //   final Map<String, String> parametriiApiCall = {
+  //     //'pNumeComplet': pNumeComplet,
+  //     'pUser': pUser, //IGV
 
-      'pParolaMD5': pParola,
-      //'pIdMedic': pIdMedic,
-    };
+  //     'pParolaMD5': pParola,
+  //     //'pIdMedic': pIdMedic,
+  //   };
 
-    http.Response? resGetListaConversatii;
+  //   http.Response? resGetListaConversatii;
 
-    resGetListaConversatii = await getApelFunctie(parametriiApiCall, 'GetListaConversatii');
+  //   resGetListaConversatii = await getApelFunctie(parametriiApiCall, 'GetListaConversatii');
 
-    if (resGetListaConversatii!.statusCode == 200) {
-      // If the server did return a 201 CREATED response,
-      // then parse the JSON.
+  //   if (resGetListaConversatii!.statusCode == 200) {
+  //     // If the server did return a 201 CREATED response,
+  //     // then parse the JSON.
 
-      List<ConversatieMobile> parseConversatii(String responseBody) {
-        final parsed = (jsonDecode(responseBody) as List).cast<Map<String, dynamic>>();
+  //     List<ConversatieMobile> parseConversatii(String responseBody) {
+  //       final parsed = (jsonDecode(responseBody) as List).cast<Map<String, dynamic>>();
 
-        return parsed.map<ConversatieMobile>((json) => ConversatieMobile.fromJson(json)).toList();
-      }
+  //       return parsed.map<ConversatieMobile>((json) => ConversatieMobile.fromJson(json)).toList();
+  //     }
 
-      print('resGetListaConversatii rezultat parsat: ${parseConversatii(resGetListaConversatii.body)}');
-      return parseConversatii(resGetListaConversatii.body);
-    } else {
-      return null;
-    }
-  }
+  //     print('resGetListaConversatii rezultat parsat: ${parseConversatii(resGetListaConversatii.body)}');
+  //     return parseConversatii(resGetListaConversatii.body);
+  //   } else {
+  //     return null;
+  //   }
+  // }
 
   Future<List<MesajConversatieMobile>?> getListaMesajePeConversatie({
     //required String pNumeComplet,
@@ -676,6 +722,31 @@ class ApiCallFunctions {
     resGetListaFacturi = await postApelFunctie(parametriiApiCall, 'AnuntaMedicDePlataEfectuata');
     return resGetListaFacturi!;
   }
+
+
+
+  Future<http.Response?> anuntaMedicDeServiciuTerminat({
+    required String pUser,
+    required String pParola,
+    required String pIdMedic,
+    required String tipPlata,
+  }) async {
+    final Map<String, String> parametriiApiCall = {
+      'pUser': pUser,
+      'pParolaMD5': pParola,
+      'pIdMedic': pIdMedic,
+      'pTipPlata': tipPlata,
+    };
+
+    http.Response? resGetListaFacturi;
+
+    resGetListaFacturi = await postApelFunctie(parametriiApiCall, 'AnuntaMedicDeServiciuTerminat');
+    return resGetListaFacturi!;
+  }
+
+
+
+
 
   Future<http.Response?> adaugaMesajCuAtasamentDinContClient({
     required String pUser,

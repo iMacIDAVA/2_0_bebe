@@ -4,14 +4,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
+import 'package:sos_bebe_app/utils_api/doctor_busy_service.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 class DoctorConfirmationReject extends StatefulWidget {
   final String body;
+    final MedicMobile medicDetalii;
+    
   const DoctorConfirmationReject({
     Key? key,
-    required this.body,
+    required this.body, required this.medicDetalii,
   }) : super(key: key);
 
   @override
@@ -97,27 +100,29 @@ class _DoctorConfirmationRejectState extends State<DoctorConfirmationReject> {
               ),
               const SizedBox(height: 50),
               GestureDetector(
-                onTap: () {
-                  if (resGetCont != null) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return VeziTotiMediciiScreen(
-                            listaMedici: listaMedici,
-                            contClientMobile: resGetCont!,
-                          );
-                        },
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Nu s-au putut prelua datele contului. Vă rugăm să încercați din nou"),
-                      ),
-                    );
-                  }
-                },
+    onTap: () {
+  if (resGetCont != null) {
+    doctorStatusService.doctorBusyStatus[widget.medicDetalii.id] = false;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return VeziTotiMediciiScreen(
+            listaMedici: listaMedici,
+            contClientMobile: resGetCont!,
+          );
+        },
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Nu s-au putut prelua datele contului. Vă rugăm să încercați din nou"),
+      ),
+    );
+  }
+},
+
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
                   decoration: BoxDecoration(

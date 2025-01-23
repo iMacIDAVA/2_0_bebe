@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,11 +30,23 @@ class NotificationDisplayScreen extends StatefulWidget {
 }
 
 class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
-  @override
-  void initState() {
-    super.initState();
-    initNotificationListener();
-  }
+
+  Timer? _timer;
+  
+@override
+void initState() {
+  super.initState();
+  initNotificationListener();
+  startTimeout();
+}
+
+void startTimeout() {
+  _timer = Timer(const Duration(seconds: 30), () {
+    if (mounted) {
+      navigateToRejectScreen("Timpul a expirat. Medicul nu a răspuns.");
+    }
+  });
+}
 
   void initNotificationListener() {
     OneSignal.Notifications.addForegroundWillDisplayListener((event) {
@@ -45,6 +59,7 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
   }
 
   Future<void> saveNotificationData(OSNotification notification) async {
+    _timer?.cancel(); 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(pref_keys.notificationTitle, notification.title ?? 'Fără Titlu');
@@ -53,6 +68,13 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
 
     handleNotification(notification);
   }
+
+  @override
+void dispose() {
+  _timer?.cancel();
+  super.dispose();
+}
+
 
   void handleNotification(OSNotification notification) async {
     String? alertMessage = notification.body;
@@ -91,6 +113,7 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
       MaterialPageRoute(
         builder: (context) =>
             DoctorConfirmationReject(
+              medicDetalii: widget.medicDetalii,
               body: body ?? "Fără conținut",
             ),
       ),
