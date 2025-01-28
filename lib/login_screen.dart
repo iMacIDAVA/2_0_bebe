@@ -585,7 +585,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.rubik(
                           color: Colors.white, fontWeight: FontWeight.w300, fontSize: 18)), //George Valentin Iordache
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 100),
                 // Text("OR", style: GoogleFonts.rubik(color: Colors.black45, fontWeight: FontWeight.w500)), old
                 Text(
                     //"OR", //old IGV
@@ -598,28 +598,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     await checkLoginWithFacebook();
                   },
                   style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50), // NEW
-                      side: const BorderSide(color: Colors.blue, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      )),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    backgroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(50), // NEW
+                    side: const BorderSide(color: Colors.blue, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Image.asset(
-                        './assets/images/facebook_icon.png',
-                        width: 25,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Image.asset(
+                          './assets/images/facebook_icon.png',
+                          width: 25,
+                        ),
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        //"CONECTARE CU FACEBOOK", //old IGV
-                        l.loginConectareCuFacebook,
-                        style: GoogleFonts.rubik(color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10.0),
+                        child: Text(
+                          l.loginConectareCuFacebook,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.rubik(color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 14),
+                        ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 10),
                 OutlinedButton(
                   onPressed: () async {
@@ -633,28 +640,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                   },
                   style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50), // NEW
-                      side: const BorderSide(color: Colors.red, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      )),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    backgroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(50), // NEW
+                    side: const BorderSide(color: Colors.red, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Image.asset(
-                        './assets/images/google_icon.png',
-                        width: 25,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Image.asset(
+                          './assets/images/google_icon.png',
+                          width: 25,
+                        ),
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        //"CONECTARE CU GOOGLE", //old IGV
-                        l.loginConectareCuGoogle,
-                        style: GoogleFonts.rubik(color: Colors.red, fontWeight: FontWeight.w400, fontSize: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10.0),
+                        child: Text(
+                          //"CONECTARE CU GOOGLE", //old IGV
+                          l.loginConectareCuGoogle,
+                          style: GoogleFonts.rubik(color: Colors.red, fontWeight: FontWeight.w400, fontSize: 14),
+                        ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 10),
                 OutlinedButton(
                   onPressed: () {
@@ -665,30 +679,42 @@ class _LoginScreenState extends State<LoginScreen> {
                         ));
                   },
                   style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50), // NEW
-                      side: const BorderSide(color: Color.fromRGBO(14, 190, 127, 1), width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      )),
+                    backgroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(50), // NEW
+                    side: const BorderSide(color: Color.fromRGBO(14, 190, 127, 1), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        //"NU AI CONT?", //old IGV
-                        l.loginNuAiCont,
-                        style: GoogleFonts.rubik(
-                            color: const Color.fromRGBO(14, 190, 127, 1), fontWeight: FontWeight.w300, fontSize: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10.0),
+                        child: Text(
+                          //"NU AI CONT?", //old IGV
+                          l.loginNuAiCont,
+                          style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(14, 190, 127, 1),
+                            fontWeight: FontWeight.w300,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
+                      const SizedBox(width: 2), // Slight space between the texts
                       Text(
                         //" INSCRIE-TE!", //old IGV
                         l.loginInscrieTe,
                         style: GoogleFonts.rubik(
-                            color: const Color.fromRGBO(14, 190, 127, 1), fontWeight: FontWeight.w400, fontSize: 14),
+                          color: const Color.fromRGBO(14, 190, 127, 1),
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(
                   height: 20,
                 ),

@@ -49,23 +49,19 @@ class _IntroScreenState extends State<IntroScreen> {
     setState(() {});
   }
 
-  /// Check if the user is logged in or redirect to Login Screen if not
   Future<void> checkUserLoginState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
     if (user.isNotEmpty && userPassMD5.isNotEmpty) {
-      // User is logged in, fetch account and doctor list
       try {
         await getContUser();
         await getListaMedici();
       } catch (e) {
-        print('Error fetching user data: $e');
         navigateToLoginScreen();
       }
     } else {
-      // User is not logged in
       navigateToLoginScreen();
     }
   }
@@ -76,9 +72,9 @@ class _IntroScreenState extends State<IntroScreen> {
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
     listaMedici = await apiCallFunctions.getListaMedici(
-      pUser: user,
-      pParola: userPassMD5,
-    ) ??
+          pUser: user,
+          pParola: userPassMD5,
+        ) ??
         [];
   }
 
@@ -105,7 +101,6 @@ class _IntroScreenState extends State<IntroScreen> {
     }
   }
 
-  /// Navigate to Login Screen
   void navigateToLoginScreen() {
     Navigator.pushReplacement(
       context,
@@ -154,7 +149,7 @@ class _IntroScreenState extends State<IntroScreen> {
                           child: Text(l.introGasesteDoctorPediatru,
                               style: GoogleFonts.rubik(
                                 color: const Color.fromRGBO(14, 190, 127, 1),
-                                fontSize: 28,
+                                fontSize: 37,
                                 fontWeight: FontWeight.w400,
                               )),
                         ),
@@ -166,17 +161,17 @@ class _IntroScreenState extends State<IntroScreen> {
                       children: [
                         Expanded(
                             child: AutoSizeText.rich(
-                              TextSpan(
-                                  text: l.introGasitiMediciSpecialisti,
-                                  style: GoogleFonts.rubik(
-                                    color: Colors.black,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w300,
-                                  )),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.start,
-                            )),
+                          TextSpan(
+                              text: l.introGasitiMediciSpecialisti,
+                              style: GoogleFonts.rubik(
+                                color: Colors.black,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w300,
+                              )),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.start,
+                        )),
                       ],
                     ),
                     const SizedBox(height: 30),
@@ -217,8 +212,8 @@ class _IntroScreenState extends State<IntroScreen> {
                               children: [
                                 Text(
                                   l.introContinua,
-                                  style: GoogleFonts.rubik(
-                                      color: Colors.white, fontWeight: FontWeight.w500, fontSize: 22),
+                                  style:
+                                      GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 22),
                                 ),
                                 const ImageIcon(
                                   AssetImage("./assets/images/babyhead.png"),
