@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/istoric_consultatii/istoric_deschis.dart';
-import 'package:sos_bebe_app/raspunde_intrebare_doar_chat_screen.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
@@ -25,9 +23,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
 
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-    consultatiiList =
-        await apiCallFunctions.getListaIstoricConsultatiiDinContClient(
-            pParola: userPassMD5, pUser: user);
+    consultatiiList = await apiCallFunctions.getListaIstoricConsultatiiDinContClient(pParola: userPassMD5, pUser: user);
     setState(() {});
   }
 
@@ -42,16 +38,16 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(30, 214, 158, 1),
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "Istoric consultații",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 17),
         ),
         backgroundColor: const Color.fromRGBO(30, 214, 158, 1),
         leading: GestureDetector(
           onTap: () {
             Navigator.pop(context);
           },
-          child: Icon(Icons.arrow_back, color: Colors.white),
+          child: const Icon(Icons.arrow_back, color: Colors.white),
         ),
       ),
       body: Container(
@@ -71,8 +67,8 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
               const SizedBox(
                 height: 50,
               ),
-              consultatiiList.length == 0
-                  ? Text("Nu aveti consultatii inregistrate.")
+              consultatiiList.isEmpty
+                  ? const Text("Nu aveti consultatii inregistrate.")
                   : Expanded(
                       child: ListView.builder(
                           itemCount: consultatiiList.length,
@@ -107,9 +103,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
             pTokenVoip: '',
           );
           Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return IstoricDeschis(
-                contClientMobile: resGetCont!,
-                medic: consultatiiList[index].idMedic);
+            return IstoricDeschis(contClientMobile: resGetCont!, medic: consultatiiList[index].idMedic);
           }));
         },
         child: Container(
@@ -134,8 +128,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
                   Container(
                     height: 50,
                     width: 50,
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.grey[400]),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[400]),
                     child: consultatiiList[index].linkPozaProfil.isEmpty
                         ? Image.asset('/assets/user_fara_poza.png')
                         : Image.network(consultatiiList[index].linkPozaProfil),
@@ -180,7 +173,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
               ),
               Text(
                 '${DateFormat('hh:mm a').format(DateTime.parse(consultatiiList[index].dataInceput))} - ${DateFormat('hh:mm a').format(DateTime.parse(consultatiiList[index].dataSfarsit))} (${consultatiiList[index].etichetaDurata})',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Color(0xff677294),
@@ -188,23 +181,16 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
               ),
               Text(
                 DateTime(
-                            DateTime.parse(consultatiiList[index].dataInceput)
-                                .year,
-                            DateTime.parse(consultatiiList[index].dataInceput)
-                                .month,
-                            DateTime.parse(consultatiiList[index].dataInceput)
-                                .day) ==
+                            DateTime.parse(consultatiiList[index].dataInceput).year,
+                            DateTime.parse(consultatiiList[index].dataInceput).month,
+                            DateTime.parse(consultatiiList[index].dataInceput).day) ==
                         DateTime(
-                            DateTime.parse(consultatiiList[index].dataSfarsit)
-                                .year,
-                            DateTime.parse(consultatiiList[index].dataSfarsit)
-                                .month,
-                            DateTime.parse(consultatiiList[index].dataSfarsit)
-                                .day)
-                    ? DateFormat('dd.MM.yyyy').format(
-                        DateTime.parse(consultatiiList[index].dataInceput))
+                            DateTime.parse(consultatiiList[index].dataSfarsit).year,
+                            DateTime.parse(consultatiiList[index].dataSfarsit).month,
+                            DateTime.parse(consultatiiList[index].dataSfarsit).day)
+                    ? DateFormat('dd.MM.yyyy').format(DateTime.parse(consultatiiList[index].dataInceput))
                     : '${DateFormat('dd.MM.yyyy').format(DateTime.parse(consultatiiList[index].dataInceput))} - ${DateFormat('dd.MM.yyyy').format(DateTime.parse(consultatiiList[index].dataSfarsit))}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: Color(0xff677294),
@@ -214,8 +200,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
                 height: 10,
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: consultatiiList[index].tipConsultatie == 1
@@ -234,8 +219,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
                           : consultatiiList[index].tipConsultatie == 3
                               ? "Întrebare"
                               : "",
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w500),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                 ),
               ),
             ],

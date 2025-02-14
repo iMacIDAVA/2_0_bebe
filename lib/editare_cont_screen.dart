@@ -223,7 +223,7 @@ class EditareContScreenState extends State<EditareContScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.only(top: 40, left: 30, right: 30),
+                        padding: const EdgeInsets.only(top: 10, left: 30, right: 30),
                         child: Column(
                           children: [
                             TextFormField(
@@ -233,10 +233,13 @@ class EditareContScreenState extends State<EditareContScreen> {
                               controller: controllerEmail,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                prefixIcon: Image.asset(
-                                  'assets/images/mail_icon.png',
-                                  width: 15,
-                                  height: 15, //fit: BoxFit.fill,
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.only(top: 10.0),
+                                  child: Image.asset(
+                                    'assets/images/mail_icon.png',
+                                    width: 15,
+                                    height: 15, //fit: BoxFit.fill,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(5),
@@ -292,10 +295,13 @@ class EditareContScreenState extends State<EditareContScreen> {
                               controller: controllerTelefon,
                               keyboardType: TextInputType.phone,
                               decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.phone,
-                                  color: Color.fromRGBO(30, 214, 158, 1),
-                                  size: 15,
+                                prefixIcon:  Padding(
+                                  padding: const EdgeInsets.only(top: 5.0),
+                                  child: Icon(
+                                    Icons.phone,
+                                    color: Color.fromRGBO(30, 214, 158, 1),
+                                    size: 15,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(5),
@@ -343,73 +349,73 @@ class EditareContScreenState extends State<EditareContScreen> {
                             ),
                             const SizedBox(height: 10),
                             customDividerProfil(),
-                            const SizedBox(height: 10),
-                            TextFormField(
-                              onFieldSubmitted: (String s) {
-                                focusNodeResetareParola.requestFocus();
-                              },
-                              controller: controllerUser,
-                              keyboardType: TextInputType.text,
-                              decoration: InputDecoration(
-                                prefixIcon: Image.asset(
-                                  'assets/images/user_icon.png',
-                                  width: 15,
-                                  height: 15, //fit: BoxFit.fill,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: const BorderSide(
-                                    color: Color.fromRGBO(205, 211, 223, 1),
-                                  ),
-                                ),
-                                border: InputBorder.none,
-                                /*
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: const BorderSide(
-                                    color: Color.fromRGBO(205, 211, 223, 1),
-                                    width: 1.0,
-                                  ),
-                                ),
-                                */
-                                filled: true,
-                                fillColor: Colors.white,
-                                //hintText: "User", //old IGV
-                                hintText: l.editareContUserHint,
-                                hintStyle: const TextStyle(
-                                    color: Color.fromRGBO(59, 86, 110, 1),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400), //added by George Valentin Iordache
-                              ),
-                              onChanged: (value) {
-                                if (value.isNotEmpty) {
-                                  controllerUser.value = TextEditingValue(
-                                    text: value[0].toUpperCase() + value.substring(1),
-                                    selection: controllerUser.selection,
-                                  );
-                                }
-                              },
-                              validator: (value) {
-                                //String emailPattern = r'.+@.+\.+';
-                                //RegExp emailRegExp = RegExp(emailPattern);
-                                //String phonePattern = r'(^(?:[+0]4)?[0-9]{10}$)';
-                                //RegExp phoneRegExp = RegExp(phonePattern);
-                                //String namePattern = r"^\s*([A-Za-z]{1,}([\.,] |[-']| ))+[A-Za-z]+\.?\s*$";
-                                //String namePattern = r'^[a-z A-Z,.\-]+$';
-                                //String userNamePattern = r'^(?=[a-zA-Z][a-zA-Z0-9._]{7,29}$)(?!.*[_.]{2})[^_.].*[^_.]$';
-                                //RegExp nameRegExp = RegExp(userNamePattern);
-                                if (value!.isEmpty)
-                                // || phoneRegExp.hasMatch(value) || nameRegExp.hasMatch(value)))
-                                {
-                                  //return "Introduceți un utilizator!";
-                                  return l.editareContIntroducetiUtilizator;
-                                } else {
-                                  return null;
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 10),
-                            customDividerProfil(),
+                            // const SizedBox(height: 10),
+                            // TextFormField(
+                            //   onFieldSubmitted: (String s) {
+                            //     focusNodeResetareParola.requestFocus();
+                            //   },
+                            //   controller: controllerUser,
+                            //   keyboardType: TextInputType.text,
+                            //   decoration: InputDecoration(
+                            //     prefixIcon: Image.asset(
+                            //       'assets/images/user_icon.png',
+                            //       width: 15,
+                            //       height: 15, //fit: BoxFit.fill,
+                            //     ),
+                            //     focusedBorder: OutlineInputBorder(
+                            //       borderRadius: BorderRadius.circular(5),
+                            //       borderSide: const BorderSide(
+                            //         color: Color.fromRGBO(205, 211, 223, 1),
+                            //       ),
+                            //     ),
+                            //     border: InputBorder.none,
+                            //     /*
+                            //     enabledBorder: OutlineInputBorder(
+                            //       borderRadius: BorderRadius.circular(5),
+                            //       borderSide: const BorderSide(
+                            //         color: Color.fromRGBO(205, 211, 223, 1),
+                            //         width: 1.0,
+                            //       ),
+                            //     ),
+                            //     */
+                            //     filled: true,
+                            //     fillColor: Colors.white,
+                            //     //hintText: "User", //old IGV
+                            //     hintText: l.editareContUserHint,
+                            //     hintStyle: const TextStyle(
+                            //         color: Color.fromRGBO(59, 86, 110, 1),
+                            //         fontSize: 14,
+                            //         fontWeight: FontWeight.w400), //added by George Valentin Iordache
+                            //   ),
+                            //   onChanged: (value) {
+                            //     if (value.isNotEmpty) {
+                            //       controllerUser.value = TextEditingValue(
+                            //         text: value[0].toUpperCase() + value.substring(1),
+                            //         selection: controllerUser.selection,
+                            //       );
+                            //     }
+                            //   },
+                            //   validator: (value) {
+                            //     //String emailPattern = r'.+@.+\.+';
+                            //     //RegExp emailRegExp = RegExp(emailPattern);
+                            //     //String phonePattern = r'(^(?:[+0]4)?[0-9]{10}$)';
+                            //     //RegExp phoneRegExp = RegExp(phonePattern);
+                            //     //String namePattern = r"^\s*([A-Za-z]{1,}([\.,] |[-']| ))+[A-Za-z]+\.?\s*$";
+                            //     //String namePattern = r'^[a-z A-Z,.\-]+$';
+                            //     //String userNamePattern = r'^(?=[a-zA-Z][a-zA-Z0-9._]{7,29}$)(?!.*[_.]{2})[^_.].*[^_.]$';
+                            //     //RegExp nameRegExp = RegExp(userNamePattern);
+                            //     if (value!.isEmpty)
+                            //     // || phoneRegExp.hasMatch(value) || nameRegExp.hasMatch(value)))
+                            //     {
+                            //       //return "Introduceți un utilizator!";
+                            //       return l.editareContIntroducetiUtilizator;
+                            //     } else {
+                            //       return null;
+                            //     }
+                            //   },
+                            // ),
+                            // const SizedBox(height: 10),
+                            // customDividerProfil(),
                             const SizedBox(height: 10),
                             TextFormField(
                               onFieldSubmitted: (String s) {
@@ -419,10 +425,13 @@ class EditareContScreenState extends State<EditareContScreen> {
                               controller: controllerNumeComplet,
                               keyboardType: TextInputType.text,
                               decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.account_circle,
-                                  color: Color.fromRGBO(30, 214, 158, 1),
-                                  size: 15,
+                                prefixIcon:  Padding(
+                                  padding: const EdgeInsets.only(top: 5.0),
+                                  child: Icon(
+                                    Icons.account_circle,
+                                    color: Color.fromRGBO(30, 214, 158, 1),
+                                    size: 15,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(5),
@@ -579,6 +588,7 @@ class EditareContScreenState extends State<EditareContScreen> {
                   const SizedBox(height: 20),
                   customDividerProfil(),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.07),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -638,8 +648,7 @@ class EditareContScreenState extends State<EditareContScreen> {
                                 borderRadius: BorderRadius.circular(5),
                               )),
                           child: Text(
-                              //'Salvare date', //old IGV
-                              l.editareContSalvareDate,
+                              'SALVEAZA',
                               style: GoogleFonts.rubik(
                                   color: const Color.fromRGBO(255, 255, 255, 1),
                                   fontSize: 14,
@@ -648,7 +657,7 @@ class EditareContScreenState extends State<EditareContScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.09),
+                  const SizedBox(height: 220),
                 ],
               ),
             ),
@@ -791,7 +800,7 @@ class _IconDateProfilState extends State<IconDateProfil> {
             Text(
               widget.textNume,
               style:
-                  const TextStyle(color: Color.fromRGBO(255, 255, 255, 1), fontSize: 24, fontWeight: FontWeight.w400),
+                  const TextStyle(color: Color.fromRGBO(255, 255, 255, 1), fontSize: 18, fontWeight: FontWeight.w400),
             ),
             Text(
               widget.textAdresaEmail,

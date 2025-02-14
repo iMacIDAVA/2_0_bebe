@@ -148,10 +148,10 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            l.universalInapoi,
-          ),
-          backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+          // title: Text(
+          //   l.universalInapoi,
+          // ),
+          // backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
           foregroundColor: Colors.white,
           leading: BackButton(
             onPressed: () async {
@@ -182,7 +182,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
               }
               // Navigator.pop(context);
             },
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
         resizeToAvoidBottomInset: false,
@@ -711,7 +711,7 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.only(left: 20 , right: 20 , top: 20 , bottom: 0),
       child: Container(
         height: 121,
         decoration: BoxDecoration(

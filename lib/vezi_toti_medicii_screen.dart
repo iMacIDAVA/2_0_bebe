@@ -36,13 +36,13 @@ class VeziTotiMediciiScreen extends StatefulWidget {
 }
 
 class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
-  //List<MedicMobile> listaFiltrata = [];
-
   ContClientMobile? contInfo;
 
   List<MedicMobile> listaFiltrata = [];
 
   Map<int, bool> doctorBusyStatus = {};
+
+  bool showSearchField = false;
 
   bool scrieOintrebareLista = false;
   bool consultatieVideoLista = false;
@@ -50,7 +50,21 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
   bool totiMediciiList = true;
   bool mediciOnlineList = false;
 
-  //
+  TextEditingController searchController = TextEditingController();
+  List<MedicMobile> listaCautata = [];
+
+  void filterDoctors(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        listaCautata = List.from(listaFiltrata);
+      } else {
+        listaCautata = listaFiltrata.where((doctor) {
+          return doctor.numeleComplet.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
   List<Widget> allMedics = [];
   List<Widget> intrebariMedics = [];
   List<Widget> consultatieMedics = [];
@@ -62,53 +76,50 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
 
   @override
   void initState() {
-    // Do some other stuff
     super.initState();
 
     _loadAndDecodeImage();
-    
-
     getContDetalii();
-    listaFiltrata = widget.listaMedici;
-    listaMediciInitiala = widget.listaMedici;
-    for (var element in listaMediciInitiala) {
-      allMedics.add(
-        IconStatusNumeRatingSpitalLikesMedic(
-          medicItem: element,
-          contClientMobile: widget.contClientMobile,
-        ),
-      );
-      if (element.status == 1) {
-        mediciOnline.add(
-          IconStatusNumeRatingSpitalLikesMedic(
-            medicItem: element,
-            contClientMobile: widget.contClientMobile,
-          ),
-        );
-      }
-      if (element.consultatieVideo == true) {
-        consultatieMedics.add(
-          IconStatusNumeRatingSpitalLikesMedic(
-            medicItem: element,
-            contClientMobile: widget.contClientMobile,
-          ),
-        );
-      }
-      if (element.interpreteazaAnalize == true) {
-        interpretareMedics.add(IconStatusNumeRatingSpitalLikesMedic(
-          medicItem: element,
-          contClientMobile: widget.contClientMobile,
-        ));
-      }
-      if (element.primesteIntrebari == true) {
-        intrebariMedics.add(IconStatusNumeRatingSpitalLikesMedic(
-          medicItem: element,
-          contClientMobile: widget.contClientMobile,
-        ));
-      }
-    }
 
-    //listaFiltrata = listaMedici;
+    getListaMedici();
+  }
+
+  Future<void> getListaMedici() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    listaMediciInitiala = await apiCallFunctions.getListaMedici(
+          pUser: user,
+          pParola: userPassMD5,
+        ) ??
+        [];
+
+    setState(() {
+      listaFiltrata = List.from(listaMediciInitiala);
+      allMedics.clear();
+      mediciOnline.clear();
+
+      for (var element in listaMediciInitiala) {
+        allMedics.add(
+          IconStatusNumeRatingSpitalLikesMedic(
+            medicItem: element,
+            contClientMobile: widget.contClientMobile,
+          ),
+        );
+
+        if (element.status == 1 || element.status == 2 || element.status == 3) {
+          mediciOnline.add(
+            IconStatusNumeRatingSpitalLikesMedic(
+              medicItem: element,
+              contClientMobile: widget.contClientMobile,
+            ),
+          );
+        }
+      }
+
+      isDoneLoading = true;
+    });
   }
 
   Future<void> _loadAndDecodeImage() async {
@@ -139,247 +150,229 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     });
   }
 
-Future<void> getListaMedici() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  String user = prefs.getString('user') ?? '';
-  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-
-  // Force API call to fetch the latest data
-  listaMediciInitiala = await apiCallFunctions.getListaMedici(
-        pUser: user,
-        pParola: userPassMD5,
-      ) ??
-      [];
-
-  // Update online list
-  mediciOnline.clear();
-  for (var element in listaMediciInitiala) {
-    if (element.status == 1) { // Ensure status logic matches backend
-      mediciOnline.add(
-        IconStatusNumeRatingSpitalLikesMedic(
-          medicItem: element,
-          contClientMobile: widget.contClientMobile,
-        ),
-      );
-    }
-  }
-
-  setState(() {
-    listaFiltrata = listaMediciInitiala;
-  });
-}
-
-
   @override
   Widget build(BuildContext context) {
     LocalizationsApp l = LocalizationsApp.of(context)!;
-
-    //var length = listaMedici.length;
-    //print('Size lista: $length');
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
       child: WillPopScope(
         onWillPop: () async {
-          // tapExit++;
-          // if (tapExit == 1) {
-          //   final message = "Apasa iar ca sa iesi";
-          //   Fluttertoast.showToast(msg: message, fontSize: 18);
-          //   return false;
-          // } else {
-          //   Fluttertoast.cancel();
-          //   tapExit = 0;
-          //   exit(1);
-          // }
-
           return true;
         },
         child: Scaffold(
-          // appBar: AppBar(
-          //   //title: const Text('Înapoi'), //old IGV
-          //   title: Text(
-          //     l.universalInapoi,
-          //   ),
-
-          //   backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-          //   foregroundColor: Colors.white,
-          //   leading: GestureDetector(
-          //     onTap: () {
-          //       Navigator.push(
-          //           context,
-          //           MaterialPageRoute(
-          //             builder: (context) => VeziMediciDisponibiliIntroScreen(
-          //               contClientMobile: widget.contClientMobile,
-          //             ), //LoginScreen(),
-          //           ));
-          //     },
-          //     child: const Icon(
-          //       Icons.arrow_back,
-          //       color: Colors.white,
-          //     ),
-          //   ),
-          // ),
-          resizeToAvoidBottomInset: false,
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 50,
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (isDoneLoading) {}
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProfilulMeuPacientScreen(contInfo: contInfo),
-                              ));
-                        },
-                        child: _profileImage == null
-                            ? Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)
-                            : isDoneLoading && contInfo!.linkPozaProfil != null
-                                ? Image.network(width: 60, height: 60, contInfo!.linkPozaProfil!)
-                                : Image.memory(_profileImage!, width: 60, height: 60),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          totiMediciiList = false;
-                          scrieOintrebareLista = false;
-                          consultatieVideoLista = false;
-                          interpretareAnalizeLista = false;
-                          mediciOnlineList = true;
-                          setState(() {});
-                        },
-                        style: const ButtonStyle(
-                          backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(236, 251, 247, 1)),
+            resizeToAvoidBottomInset: false,
+            body: isDoneLoading
+                ? SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          height: 50,
                         ),
-                        child: Text(l.veziTotiMediciiMediciOnline,
-                            style: GoogleFonts.rubik(
-                                color: const Color.fromRGBO(30, 214, 158, 1),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300)),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          totiMediciiList = true;
-                          scrieOintrebareLista = false;
-                          consultatieVideoLista = false;
-                          interpretareAnalizeLista = false;
-                          mediciOnlineList = false;
-                          setState(() {});
-                        },
-                        style: const ButtonStyle(
-                          backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(241, 248, 251, 1)),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  if (isDoneLoading) {}
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProfilulMeuPacientScreen(contInfo: contInfo),
+                                      ));
+                                },
+                                child: _profileImage == null
+                                    ? Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)
+                                    : isDoneLoading && contInfo!.linkPozaProfil != null
+                                        ? Image.network(width: 60, height: 60, contInfo!.linkPozaProfil!)
+                                        : Image.memory(_profileImage!, width: 60, height: 60),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  totiMediciiList = false;
+                                  scrieOintrebareLista = false;
+                                  consultatieVideoLista = false;
+                                  interpretareAnalizeLista = false;
+                                  mediciOnlineList = true;
+                                  setState(() {});
+                                },
+                                style: const ButtonStyle(
+                                  backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(236, 251, 247, 1)),
+                                ),
+                                child: Text(l.veziTotiMediciiMediciOnline,
+                                    style: GoogleFonts.rubik(
+                                        color: const Color.fromRGBO(30, 214, 158, 1),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w300)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  totiMediciiList = true;
+                                  scrieOintrebareLista = false;
+                                  consultatieVideoLista = false;
+                                  interpretareAnalizeLista = false;
+                                  mediciOnlineList = false;
+                                  setState(() {});
+                                },
+                                style: const ButtonStyle(
+                                  backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(241, 248, 251, 1)),
+                                ),
+                                child: Text(l.veziTotiMediciiTotiMedicii,
+                                    style: GoogleFonts.rubik(
+                                        color: const Color.fromRGBO(30, 166, 219, 1),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w300)),
+                              ),
+                              showSearchField
+                                  ? Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                        child: TextField(
+                                          controller: searchController,
+                                          decoration: InputDecoration(
+                                            hintText: "Caută doctor...",
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                              borderSide: BorderSide(color: Colors.grey.shade300),
+                                            ),
+                                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                                            suffixIcon: IconButton(
+                                              icon: const Icon(Icons.clear, color: Colors.grey),
+                                              onPressed: () {
+                                                searchController.clear();
+                                                filterDoctors('');
+                                                setState(() {
+                                                  showSearchField = false;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                          onChanged: filterDoctors,
+                                        ),
+                                      ),
+                                    )
+                                  : IconButton(
+                                      icon: const Icon(Icons.search, color: Colors.grey),
+                                      onPressed: () {
+                                        setState(() {
+                                          showSearchField = true;
+                                        });
+                                      },
+                                    ),
+                              const SizedBox(
+                                width: 2,
+                              )
+                            ],
+                          ),
                         ),
-                        child: Text(l.veziTotiMediciiTotiMedicii,
-                            style: GoogleFonts.rubik(
-                                color: const Color.fromRGBO(30, 166, 219, 1),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w300)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        totiMediciiList = false;
-                        scrieOintrebareLista = true;
-                        consultatieVideoLista = false;
-                        interpretareAnalizeLista = false;
-                        mediciOnlineList = false;
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                totiMediciiList = false;
+                                scrieOintrebareLista = true;
+                                consultatieVideoLista = false;
+                                interpretareAnalizeLista = false;
+                                mediciOnlineList = false;
 
-                        if (scrieOintrebareLista) {
-                          scrieOintrebareLista = false;
-                          totiMediciiList = true;
-                        }
-                        setState(() {});
-                      },
-                      child: ButtonSelectareOptiuni(
-                        colorBackground: const Color.fromRGBO(241, 248, 251, 1),
-                        colorScris: const Color.fromRGBO(30, 166, 219, 1),
-                        iconLocation: './assets/images/intrebare_icon.png',
-                        textServiciu: l.veziTotiMediciiScrieOIntrebare,
-                        widthScris: 60,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        totiMediciiList = false;
-                        scrieOintrebareLista = false;
-                        consultatieVideoLista = true;
-                        interpretareAnalizeLista = false;
-                        mediciOnlineList = false;
+                                if (scrieOintrebareLista) {
+                                  scrieOintrebareLista = false;
+                                  totiMediciiList = true;
+                                }
+                                setState(() {});
+                              },
+                              child: ButtonSelectareOptiuni(
+                                colorBackground: const Color.fromRGBO(241, 248, 251, 1),
+                                colorScris: const Color.fromRGBO(30, 166, 219, 1),
+                                iconLocation: './assets/images/intrebare_icon.png',
+                                textServiciu: l.veziTotiMediciiScrieOIntrebare,
+                                widthScris: 60,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                totiMediciiList = false;
+                                scrieOintrebareLista = false;
+                                consultatieVideoLista = true;
+                                interpretareAnalizeLista = false;
+                                mediciOnlineList = false;
 
-                        if (scrieOintrebareLista) {
-                          consultatieVideoLista = false;
-                          totiMediciiList = true;
-                        }
-                        setState(() {});
-                      },
-                      child: ButtonSelectareOptiuni(
-                        colorBackground: const Color.fromRGBO(236, 251, 247, 1),
-                        colorScris: const Color.fromRGBO(30, 214, 158, 1),
-                        iconLocation: './assets/images/phone-call_apel_video.png',
-                        textServiciu: l.veziTotiMediciiConsultatieVideo,
-                        widthScris: 70,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        totiMediciiList = false;
-                        scrieOintrebareLista = false;
-                        consultatieVideoLista = false;
-                        interpretareAnalizeLista = true;
-                        mediciOnlineList = false;
+                                if (scrieOintrebareLista) {
+                                  consultatieVideoLista = false;
+                                  totiMediciiList = true;
+                                }
+                                setState(() {});
+                              },
+                              child: ButtonSelectareOptiuni(
+                                colorBackground: const Color.fromRGBO(236, 251, 247, 1),
+                                colorScris: const Color.fromRGBO(30, 214, 158, 1),
+                                iconLocation: './assets/images/phone-call_apel_video.png',
+                                textServiciu: l.veziTotiMediciiConsultatieVideo,
+                                widthScris: 70,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                totiMediciiList = false;
+                                scrieOintrebareLista = false;
+                                consultatieVideoLista = false;
+                                interpretareAnalizeLista = true;
+                                mediciOnlineList = false;
 
-                        if (scrieOintrebareLista) {
-                          interpretareAnalizeLista = false;
-                          totiMediciiList = true;
-                        }
-                        setState(() {});
-                      },
-                      child: ButtonSelectareOptiuni(
-                        colorBackground: const Color.fromRGBO(253, 250, 234, 1),
-                        colorScris: const Color.fromRGBO(241, 201, 0, 1),
-                        iconLocation: './assets/images/analize_icon.png',
-                        textServiciu: l.veziTotiMediciiInterpretareAnalize,
-                        widthScris: 73,
-                      ),
+                                if (scrieOintrebareLista) {
+                                  interpretareAnalizeLista = false;
+                                  totiMediciiList = true;
+                                }
+                                setState(() {});
+                              },
+                              child: ButtonSelectareOptiuni(
+                                colorBackground: const Color.fromRGBO(253, 250, 234, 1),
+                                colorScris: const Color.fromRGBO(241, 201, 0, 1),
+                                iconLocation: './assets/images/analize_icon.png',
+                                textServiciu: l.veziTotiMediciiInterpretareAnalize,
+                                widthScris: 73,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 25),
+                        Center(
+                          child: Column(
+                            children: totiMediciiList
+                                ? allMedics
+                                : mediciOnlineList
+                                    ? mediciOnline
+                                    : scrieOintrebareLista
+                                        ? intrebariMedics
+                                        : consultatieVideoLista
+                                            ? consultatieMedics
+                                            : interpretareAnalizeLista
+                                                ? interpretareMedics
+                                                : allMedics,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 25),
-                Center(
-                  child: Column(
-                    children: totiMediciiList
-                        ? allMedics
-                        : scrieOintrebareLista
-                            ? intrebariMedics
-                            : consultatieVideoLista
-                                ? consultatieMedics
-                                : interpretareAnalizeLista
-                                    ? interpretareMedics
-                                    : mediciOnlineList
-                                        ? mediciOnline
-                                        : allMedics,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+                  )
+                : const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 15),
+                        Text(
+                          "Se încarcă lista de medici...",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )),
       ),
     );
   }
@@ -404,16 +397,13 @@ class ButtonSelectareOptiuni extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      //color: const Color.fromRGBO(241, 248, 251, 1),
       decoration: BoxDecoration(
           border: Border.all(
             color: colorBackground,
           ),
           borderRadius: BorderRadius.circular(15.0),
-          color: colorBackground //const Color.fromRGBO(241, 248, 251, 1),
-          ),
+          color: colorBackground),
       child: Row(
-        //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           const SizedBox(width: 5),
           Image.asset(iconLocation),
@@ -423,10 +413,7 @@ class ButtonSelectareOptiuni extends StatelessWidget {
             height: 35,
             child: Text(
               textServiciu,
-              style: GoogleFonts.rubik(
-                  color: colorScris,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400), //const Color.fromRGBO(30, 166, 219, 1),
+              style: GoogleFonts.rubik(color: colorScris, fontSize: 11, fontWeight: FontWeight.w400),
               maxLines: 2,
             ),
           ),
@@ -498,8 +485,6 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
         medicScosCuSucces = false;
 
         medicFavorit = true;
-
-        //showButonTrimiteTestimonial = false;
       });
 
       textMessage = l.profilDoctorDisponibilitateServiciiMedicAdaugatCuSucces;
@@ -574,7 +559,6 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
       setState(() {
         medicAdaugatCuSucces = false;
         medicScosCuSucces = true;
-        //showButonTrimiteTestimonial = false;
 
         medicFavorit = false;
       });
@@ -588,28 +572,21 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
         medicScosCuSucces = false;
       });
 
-      //textMessage = 'Apel invalid!'; //old IGV
-
       textMessage = l.profilDoctorDisponibilitateServiciiMedicScosApelInvalid;
       backgroundColor = Colors.red;
       textColor = Colors.black;
     } else if (int.parse(resScoateMedicDeLaFavorit.body) == 401) {
       setState(() {
-        //medicAdaugatCuSucces = false;
         medicScosCuSucces = false;
-        //showButonTrimiteTestimonial = false;
       });
 
-      //textMessage = 'Medicul nu a fost scos de la favorite!'; //old IGV
       textMessage = l.profilDoctorDisponibilitateServiciiMedicNescos;
 
       backgroundColor = Colors.red;
       textColor = Colors.black;
     } else if (int.parse(resScoateMedicDeLaFavorit.body) == 405) {
       setState(() {
-        //medicAdaugatCuSucces = false;
         medicScosCuSucces = false;
-        //showButonTrimiteTestimonial = false;
       });
 
       textMessage = l.profilDoctorDisponibilitateServiciiMedicScosInformatiiInsuficiente;
@@ -762,8 +739,6 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
                                           fontWeight: FontWeight.w500)),
                                 )
                               : const SizedBox(width: 0, height: 0),
-               
-            
                           const SizedBox(
                             width: 2,
                           ),

@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sos_bebe_app/apel_video_pacient_screen.dart';
+import 'package:sos_bebe_app/chat_screen.dart/chat_screen.dart';
 import 'package:sos_bebe_app/utils/utils_widgets.dart';
+import 'package:sos_bebe_app/utils_api/api_config.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 
 import 'package:sos_bebe_app/raspunde_intrebare_doar_chat_screen.dart';
@@ -15,6 +20,7 @@ import 'package:sos_bebe_app/utils_api/functions.dart';
 import 'package:intl/intl.dart';
 
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
+import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
@@ -22,16 +28,20 @@ ChestionarClientMobile? chestionarInitial;
 
 class QuestionaireScreen extends StatefulWidget {
   final int tipServiciu;
+  final String pret;
 
   final ContClientMobile contClientMobile;
 
   final MedicMobile medicDetalii;
 
+  final bool chatOnly;
+
+
   const QuestionaireScreen({
     super.key,
     required this.tipServiciu,
     required this.contClientMobile,
-    required this.medicDetalii,
+    required this.medicDetalii, required this.pret, required this.chatOnly,
   });
 
   @override
@@ -39,6 +49,139 @@ class QuestionaireScreen extends StatefulWidget {
 }
 
 class _QuestionaireScreenState extends State<QuestionaireScreen> {
+
+   int remainingTime = 180;
+  Timer? countdownTimer;
+  ApiCallFunctions apiCallFunctions = ApiCallFunctions();
+
+  List<MedicMobile> listaMedici = [];
+  ContClientMobile? resGetCont;
+  
+
+  ValueNotifier<int> remainingTimeNotifier = ValueNotifier(180);
+
+  Future<void> getContUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    if (user.isEmpty || userPassMD5.isEmpty) {
+      throw Exception("Missing user credentials");
+    }
+
+    resGetCont = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    if (resGetCont == null) {
+      throw Exception("Failed to fetch account data");
+    }
+  }
+
+  Future<void> getListaMedici() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    listaMedici = await apiCallFunctions.getListaMedici(
+      pUser: user,
+      pParola: userPassMD5,
+    ) ??
+        [];
+  }
+
+  Future<void> fetchDataBeforeNavigation() async {
+    try {
+      // ✅ Fetch account details if not already loaded
+      if (resGetCont == null) {
+        await getContUser();
+      }
+
+      // ✅ Fetch list of doctors
+      await getListaMedici();
+
+      // ✅ Ensure at least 1 doctor is in the list
+      while (listaMedici.isEmpty) {
+        print("🔄 Waiting for doctors list...");
+        await Future.delayed(const Duration(seconds: 1));
+        await getListaMedici();
+      }
+
+    } catch (e) {
+      print("❌ Error loading data before navigation: $e");
+    }
+  }
+
+
+  void startTimer() {
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (remainingTimeNotifier.value > 0) {
+        remainingTimeNotifier.value--;
+      } else {
+        timer.cancel();
+
+        await sendExitNotificationToDoctor();
+
+        // ✅ Load required data before navigating
+        await fetchDataBeforeNavigation();
+
+        // ✅ Optional: Add a delay to ensure UI loads properly
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (mounted && resGetCont != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VeziTotiMediciiScreen(
+                listaMedici: listaMedici,
+                contClientMobile: resGetCont!,
+              ),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+
+
+  Future<void> sendExitNotificationToDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String pCheie = keyAppPacienti; // App key for patients
+    int pIdMedic = widget.medicDetalii.id; // Doctor ID
+    String pTip = widget.tipServiciu.toString();
+
+    String patientId = prefs.getString(pref_keys.userId) ?? '';
+    String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+    String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+    String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+
+    // Exit message
+    String pMesaj = "Pacientul a părăsit sesiunea după 3 minute de inactivitate.";
+
+    await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+      pCheie: pCheie,
+      pIdMedic: pIdMedic,
+      pTip: pTip,
+      pMesaj: pMesaj,
+      pObservatii: pObservatii,
+    );
+
+    print("📢 Exit notification sent to doctor!");
+  }
+
   void callbackVisible(bool newIsVisible) {
     setState(() {
       isVisible = newIsVisible;
@@ -166,9 +309,13 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
   TextEditingController controllerDataNastere = TextEditingController();
   TextEditingController controllerGreutate = TextEditingController();
 
+  TextEditingController controllerNumePrenumeComplet = TextEditingController();
+
   final FocusNode focusNodeNumeComplet = FocusNode();
   final FocusNode focusNodeDataNastere = FocusNode();
   final FocusNode focusNodeGreutate = FocusNode();
+
+  final FocusNode focusNodePrenumeComplet = FocusNode();
 
   bool chestionarTrimis = false;
   bool showButonTrimite = true;
@@ -177,6 +324,7 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
   void initState() {
     super.initState();
     loadQuestionnaireData();
+       startTimer();
   }
 
   Future<void> loadQuestionnaireData() async {
@@ -186,6 +334,10 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
       setState(() {
         if (chestionarInitial!.numeCompletat.isNotEmpty) {
           controllerNumeComplet.text = chestionarInitial!.numeCompletat;
+        }
+
+        if (chestionarInitial!.numeCompletat.isNotEmpty) {
+          controllerNumePrenumeComplet.text = chestionarInitial!.numeCompletat + chestionarInitial!.prenumeCompletat;
         }
 
         if (chestionarInitial!.dataNastereCompletata.toString().isNotEmpty) {
@@ -247,6 +399,9 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
 
     controllerAlergicLaMedicamentText.dispose();
 
+     countdownTimer?.cancel(); // ✅ Cancel timer
+    remainingTimeNotifier.dispose();
+
     super.dispose();
   }
 
@@ -270,6 +425,8 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
     */
 
     String pNumeleComplet = controllerNumeComplet.text;
+
+    String pNumelePrenumeComplet = controllerNumePrenumeComplet.text;
 
     DateFormat dateFormat = DateFormat('dd.MM.yyyy');
     DateTime parsedDate = dateFormat.parse(controllerDataNastere.text);
@@ -410,6 +567,106 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
                       ],
                     ),
                     const SizedBox(height: 15),
+
+
+
+
+
+
+
+
+
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        //Text('Varsta', style: GoogleFonts.rubik(fontSize: 16, fontWeight: FontWeight.w400)), old
+                        //Text('1 an si 8 luni', style: GoogleFonts.rubik(fontSize: 14, fontWeight: FontWeight.w400)) old
+
+                        //adăugat de George Valentin Iordache
+                        Text(
+                          //'Data naștere',  //old IGV
+                            'Reprezentant legal al copilului\nNume și Prenume',
+                            style: GoogleFonts.rubik(
+                                color: const Color.fromRGBO(103, 114, 148, 1),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800)),
+                        //Text('1 an si 8 luni', style: GoogleFonts.rubik(color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 12, fontWeight: FontWeight.w300)),
+                        SizedBox(
+                          width: 150.0,
+                          child: TextFormField(
+                              onTap: () async {
+                                DateTime? date = await showDatePicker(
+                                  context: context,
+                                  locale: const Locale("ro", "RO"),
+                                  initialDate: DateTime.now(),
+                                  firstDate: DateTime(1960),
+                                  lastDate: DateTime.now(),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        splashColor: const Color.fromARGB(255, 200, 200, 200), //Colors.red,
+                                        colorScheme: const ColorScheme.light(
+                                          surface: Colors.white,
+                                          primary: Color.fromARGB(255, 14, 190, 127), // // <-- SEE HERE
+                                          //onSurface: Colors.white, // <-- SEE HERE
+                                        ),
+                                        textButtonTheme: TextButtonThemeData(
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.black, // button text color
+                                          ),
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+
+                                // setState(() {
+                                //   //controllerDataNastere.text = DateFormat('ddMMyyyy').format(date!).toString(); //old IGV
+                                //   controllerDataNastere.text =
+                                //       DateFormat(l.questionareDateFormat).format(date!).toString();
+                                //   dataNastere = date;
+                                //   dateChosen = true;
+                                //   hintDataNastere = controllerDataNastere.text;
+                                // });
+                              },
+                              controller: controllerNumeComplet,
+                              focusNode: focusNodePrenumeComplet,
+                              style: GoogleFonts.rubik(
+                                  color: const Color.fromRGBO(103, 114, 148, 1),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300),
+                              textAlign: TextAlign.right,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                //hintText: 'Număr ani și număr luni', //old IGV
+                                //hintText: 'Data naștere', //old IGV
+                                hintText: l.questionareDataNastereHint,
+                              ),
+                              // validator: (value) {
+                              //   value = controllerNumePrenumeComplet.text;
+                              //   if ((dataDeNastereVeche.isEmpty) && value.isEmpty) {
+                              //     //return "Enter a valid Email Address or Password"; //old Andrei Bădescu
+                              //
+                              //     //return "Introduceți o dată de naștere!"; //old IGV
+                              //     return l.questionareIntroducetiDataNastere;
+                              //   }
+                              //   return null;
+                              // }
+                              ),
+                        ),
+                      ],
+                    ),
+
+
+
+
+
+
+
+
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -774,6 +1031,51 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
               ),
             ),
             const SizedBox(height: 15),
+                   Padding(
+              padding: const EdgeInsets.only(left: 128.0, right: 128.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ValueListenableBuilder<int>(
+                      valueListenable: remainingTimeNotifier,
+                      builder: (context, remainingTime, _) {
+                        return Text(
+                          "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.timer,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+                 const SizedBox(height: 15),
             GestureDetector(
               onTap: () async {
                 final isValidForm = questionaireKey.currentState!.validate();
@@ -789,6 +1091,27 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
 
                   if (context.mounted) {
                     if (int.parse(resUpdateChestionarDinContClient!.body) == 200) {
+
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+        String patientId = prefs.getString(pref_keys.userId) ?? '';
+        String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+        String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+        String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+        String pCheie = keyAppPacienti;
+        int pIdMedic = widget.medicDetalii.id;
+
+        // Message to send to doctor
+        String pMesaj = "Pacientul a terminat întrebările";
+
+        await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+          pCheie: pCheie,
+          pIdMedic: pIdMedic,
+          pTip: widget.tipServiciu.toString(), 
+          pMesaj: pMesaj,
+          pObservatii: pObservatii,
+        );
+        
                     } else {
                       setState(() {
                         chestionarTrimis = false;
@@ -803,8 +1126,8 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
                     if (widget.tipServiciu == 1) {
                       Navigator.push(context, MaterialPageRoute(builder: (context) {
                         return  ApelVideoPacientScreen(
-                        medic: widget.medicDetalii,
-                            contClientMobile: widget.contClientMobile,
+                          medic: widget.medicDetalii,
+                          contClientMobile: widget.contClientMobile,
                         );
                       }));
                     } else if (widget.tipServiciu == 2) {
@@ -812,11 +1135,11 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
                           //return const PaymentScreen();
-                          return RaspundeIntrebareDoarChatScreen(
-                            textIntrebare: '?',
-                            textRaspuns: '?2',
+                          return ChatScreenPage(
                             medic: widget.medicDetalii,
                             contClientMobile: widget.contClientMobile,
+                            pret: widget.pret, chatOnly: widget.chatOnly,
+                            tipServiciu: widget.tipServiciu,
                           );
                         },
                       ));

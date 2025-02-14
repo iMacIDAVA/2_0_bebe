@@ -2,29 +2,26 @@ import 'dart:math';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 
-import 'package:path/path.dart' as p;
+// import 'package:path/path.dart' as p;
 
 import 'package:open_filex/open_filex.dart';
 
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:permission_handler/permission_handler.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:auto_size_text/auto_size_text.dart';
+// import 'package:auto_size_text/auto_size_text.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:sos_bebe_app/testimonial_chat/testimonial_chat.dart';
 
 import 'package:sos_bebe_app/testimonial_screen.dart';
-
-import 'package:sos_bebe_app/questionare_screen.dart';
+//
+// import 'package:sos_bebe_app/questionare_screen.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 import 'package:sos_bebe_app/utils_api/functions.dart';
 
@@ -92,21 +89,17 @@ class _FacturaScreenState extends State<FacturaScreen> {
       pParola: userPassMD5,
       pIdFactura: widget.facturaDetalii.id.toString(),
     );
-    print(data);
 
     if (data == null) {
       return null;
     }
     try {
-      print('getSirBitiFacturaContClient data $data');
-
       //base64Decode(widget.base64String.replaceAll('\n', ''));
       // Uint8List image = base64Decode(data);
       // print('getSirBitiFacturaContClient image $image');
 
       return data;
     } catch (e) {
-      print('Aici');
       return null;
     }
   }
@@ -129,8 +122,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
       String finalString = sirBitiFile!.replaceAll('"', '');
       Uint8List bytes = base64Decode(finalString);
 
-      filePdf = File(dir!.path +
-          "/sosbebeapp-pdf-file${min + random.nextInt(max - min)}.pdf");
+      filePdf = File("${dir!.path}/sosbebeapp-pdf-file${min + random.nextInt(max - min)}.pdf");
       await filePdf.writeAsBytes(bytes, flush: true);
       OpenFilex.open(filePdf.path);
       debugPrint(sirBitiFile.toString());
@@ -147,14 +139,12 @@ class _FacturaScreenState extends State<FacturaScreen> {
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
     //String dataEmitereRo = DateFormat("MMM dd. yyyy", "ro").format(widget.facturaDetalii.dataEmitere).capitalizeFirst();
-    String dataEmitereRo = DateFormat(l.facturaDateFormat, l.facturaLimba)
-        .format(widget.facturaDetalii.dataEmitere)
-        .capitalizeFirst();
+    String dataEmitereRo =
+        DateFormat(l.facturaDateFormat, l.facturaLimba).format(widget.facturaDetalii.dataEmitere).capitalizeFirst();
 
     //String dataPlataRo = DateFormat("MMM dd. yyyy", "ro").format(widget.facturaDetalii.dataPlata).capitalizeFirst();
-    String dataPlataRo = DateFormat(l.facturaDateFormat, l.facturaLimba)
-        .format(widget.facturaDetalii.dataPlata)
-        .capitalizeFirst();
+    String dataPlataRo =
+        DateFormat(l.facturaDateFormat, l.facturaLimba).format(widget.facturaDetalii.dataPlata).capitalizeFirst();
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
@@ -366,16 +356,14 @@ class _FacturaScreenState extends State<FacturaScreen> {
                                 //'Data plății', //old IGV
                                 l.facturaDataPlatiiNume,
                                 style: GoogleFonts.rubik(
-                                    color:
-                                        const Color.fromRGBO(103, 114, 148, 1),
+                                    color: const Color.fromRGBO(103, 114, 148, 1),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300),
                               ),
                               Text(
                                 dataPlataRo,
                                 style: GoogleFonts.rubik(
-                                    color:
-                                        const Color.fromRGBO(103, 114, 148, 1),
+                                    color: const Color.fromRGBO(103, 114, 148, 1),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300),
                               ),
@@ -390,16 +378,14 @@ class _FacturaScreenState extends State<FacturaScreen> {
                                 //'Procesată',  //old IGV
                                 l.facturaProcesata,
                                 style: GoogleFonts.rubik(
-                                    color:
-                                        const Color.fromRGBO(103, 114, 148, 1),
+                                    color: const Color.fromRGBO(103, 114, 148, 1),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300),
                               ),
                               Text(
                                 dataEmitereRo,
                                 style: GoogleFonts.rubik(
-                                    color:
-                                        const Color.fromRGBO(103, 114, 148, 1),
+                                    color: const Color.fromRGBO(103, 114, 148, 1),
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300),
                               ),
@@ -476,17 +462,13 @@ class _FacturaScreenState extends State<FacturaScreen> {
                           //'Număr: ${widget.facturaDetalii.numar}', //old IGV
                           '${l.facturaNumar} ${widget.facturaDetalii.numar}',
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(103, 114, 148, 1),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300),
+                              color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 14, fontWeight: FontWeight.w300),
                         ),
                         Text(
                           //'Serie: ${widget.facturaDetalii.serie}', //old IGV
                           '${l.facturaSerie} ${widget.facturaDetalii.serie}',
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(103, 114, 148, 1),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300),
+                              color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 14, fontWeight: FontWeight.w300),
                         ),
                       ],
                     ),
@@ -508,7 +490,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
                                   fontWeight: FontWeight.w300),
                             ),
                             /*
-                                Text(widget.dataPlatii, 
+                                Text(widget.dataPlatii,
                                   style: GoogleFonts.rubik(color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 14, fontWeight: FontWeight.w300),
                                 ),
                                 */
@@ -573,7 +555,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
                                   fontWeight: FontWeight.w300),
                             ),
                             /*
-                                Text(widget.dataPlatiiProcesata, 
+                                Text(widget.dataPlatiiProcesata,
                                     style: GoogleFonts.rubik(color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 14, fontWeight: FontWeight.w300),
                                 ),
                                 */
@@ -598,8 +580,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
                         await descarca();
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromRGBO(14, 190, 127, 1),
+                          backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
                           minimumSize: const Size.fromHeight(50), // NEW
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
@@ -611,16 +592,16 @@ class _FacturaScreenState extends State<FacturaScreen> {
                           const SizedBox(width: 10),
                           Text(
                               //'Download PDF',
-                              l.facturaButonDownloadPdf,
+                              'DESCARCĂ PDF',
                               style: GoogleFonts.rubik(
                                   color: const Color.fromRGBO(255, 255, 255, 1),
-                                  fontSize: 14,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w400)),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 35),
+                  const SizedBox(height: 15),
 
                   //IGV către ecran testimonial
                   SizedBox(
@@ -648,8 +629,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
                                 ));
                       },
                       style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromRGBO(14, 190, 127, 1),
+                          backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
                           minimumSize: const Size.fromHeight(50), // NEW
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
@@ -668,7 +648,7 @@ class _FacturaScreenState extends State<FacturaScreen> {
                               l.facturaTrimiteTestimonial,
                               style: GoogleFonts.rubik(
                                   color: const Color.fromRGBO(255, 255, 255, 1),
-                                  fontSize: 14,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w400)),
                         ],
                       ),

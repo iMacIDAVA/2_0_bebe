@@ -103,15 +103,15 @@ class _DateFacturareScreenState extends State<DateFacturareScreen> {
   }
 
   Future<void> updateDetaliiFacturare() async {
-    print("Serie Act: ${controllerSerieAct.text}");
-    print("Numar Act: ${controllerNumarAct.text}");
-    print("CNP: ${controllerCNP.text}");
-    print("Adresa: ${controllerAdresa.text}");
-    print("Cod Fiscal: ${controllercodFiscal.text}");
-    print("Denumire Firma: ${controllerDenumireFirma.text}");
-    print("Nr Reg Com: ${controllerNrRegCom.text}");
-    print("Judet: ${controllerJudet.text}");
-    print("Localitate: ${controllerLocalitate.text}");
+    // print("Serie Act: ${controllerSerieAct.text}");
+    // print("Numar Act: ${controllerNumarAct.text}");
+    // print("CNP: ${controllerCNP.text}");
+    // print("Adresa: ${controllerAdresa.text}");
+    // print("Cod Fiscal: ${controllercodFiscal.text}");
+    // print("Denumire Firma: ${controllerDenumireFirma.text}");
+    // print("Nr Reg Com: ${controllerNrRegCom.text}");
+    // print("Judet: ${controllerJudet.text}");
+    // print("Localitate: ${controllerLocalitate.text}");
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -200,15 +200,15 @@ class _DateFacturareScreenState extends State<DateFacturareScreen> {
       isLoading = false;
     });
 
-    print("Serie Act: ${controllerSerieAct.text}");
-    print("Numar Act: ${controllerNumarAct.text}");
-    print("CNP: ${controllerCNP.text}");
-    print("Adresa: ${controllerAdresa.text}");
-    print("Cod Fiscal: ${controllercodFiscal.text}");
-    print("Denumire Firma: ${controllerDenumireFirma.text}");
-    print("Nr Reg Com: ${controllerNrRegCom.text}");
-    print("Judet: ${controllerJudet.text}");
-    print("Localitate: ${controllerLocalitate.text}");
+    // print("Serie Act: ${controllerSerieAct.text}");
+    // print("Numar Act: ${controllerNumarAct.text}");
+    // print("CNP: ${controllerCNP.text}");
+    // print("Adresa: ${controllerAdresa.text}");
+    // print("Cod Fiscal: ${controllercodFiscal.text}");
+    // print("Denumire Firma: ${controllerDenumireFirma.text}");
+    // print("Nr Reg Com: ${controllerNrRegCom.text}");
+    // print("Judet: ${controllerJudet.text}");
+    // print("Localitate: ${controllerLocalitate.text}");
   }
 
   @override
@@ -737,22 +737,28 @@ class _DateFacturareScreenState extends State<DateFacturareScreen> {
                         },
                       ),
                       const SizedBox(
-                        height: 25,
+                        height: 35,
                       ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await updateDetaliiFacturare();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 14, 190, 127),
-                          minimumSize: const Size.fromHeight(50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 25.0, right: 25.0),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await updateDetaliiFacturare();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(255, 14, 190, 127),
+                            minimumSize: const Size.fromHeight(50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          "Actualizează date",
-                          style: GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 18),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 12.0, bottom: 12.0),
+                            child: Text(
+                              "ACTUALIZEAZĂ DATE",
+                              style: GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 16),
+                            ),
+                          ),
                         ),
                       )
                     ],

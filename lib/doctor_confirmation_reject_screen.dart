@@ -65,36 +65,39 @@ class _DoctorConfirmationRejectState extends State<DoctorConfirmationReject> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(l.universalInapoi),
-          backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-          foregroundColor: Colors.white,
-        ),
+        // appBar: AppBar(
+        //   title: Text(l.universalInapoi),
+        //   backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+        //   foregroundColor: Colors.white,
+        // ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                margin: const EdgeInsets.only(bottom: 16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8.0,
-                      offset: const Offset(0, 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 28.0 , right: 28.0),
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  margin: const EdgeInsets.only(bottom: 16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8.0,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    widget.body,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
                     ),
-                  ],
-                ),
-                child: Text(
-                  widget.body,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey,
                   ),
                 ),
               ),
@@ -126,7 +129,7 @@ class _DoctorConfirmationRejectState extends State<DoctorConfirmationReject> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
                   decoration: BoxDecoration(
-                    color: Colors.grey,
+                    color: const Color.fromRGBO(14, 190, 127, 1),
                     borderRadius: BorderRadius.circular(12.0),
                     boxShadow: [
                       BoxShadow(
@@ -140,7 +143,7 @@ class _DoctorConfirmationRejectState extends State<DoctorConfirmationReject> {
                     'SELECTAȚI ALT MEDIC ONLINE',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16.0,
+                      fontSize: 13.0,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
                     ),

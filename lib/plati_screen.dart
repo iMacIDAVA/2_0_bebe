@@ -85,26 +85,21 @@ class _PlatiScreenState extends State<PlatiScreen> {
     //var length = listaMedici.length;
     //print('Size lista: $length');
 
-    List<FacturaClientMobile> listaFiltrata;
+    // List<FacturaClientMobile> listaFiltrata;
 
     //print('Lungime lista recenzii: ${listaFiltrata.length}');
 
     initializeDateFormatting();
 
-    for (int index = 0; index < widget.listaFacturi!.length; index++) {
+    for (int index = 0; index < widget.listaFacturi.length; index++) {
       //print('Aici');
-      var item = widget.listaFacturi![index];
+      var item = widget.listaFacturi[index];
       //String dataRo = DateFormat("dd MMMM yyyy", "ro").format(item.dataPlata); //old IGV
-      String dataRo =
-          DateFormat(l.platiDateFormat, l.platiLimba).format(item.dataPlata);
+      String dataRo = DateFormat(l.platiDateFormat, l.platiLimba).format(item.dataPlata);
 
-      String dataRoLuna = dataRo.substring(0, 3) +
-          dataRo.substring(3, 4).toUpperCase() +
-          dataRo.substring(4);
+      String dataRoLuna = dataRo.substring(0, 3) + dataRo.substring(3, 4).toUpperCase() + dataRo.substring(4);
 
-
-
-      if (index < widget.listaFacturi!.length - 1)
+      if (index < widget.listaFacturi.length - 1)
       //if (index < 2)
       {
         mywidgets.add(
@@ -121,7 +116,7 @@ class _PlatiScreenState extends State<PlatiScreen> {
         mywidgets.add(
           customDivider(),
         );
-      } else if (index == widget.listaFacturi!.length - 1)
+      } else if (index == widget.listaFacturi.length - 1)
       //else if (index == 2)
       {
         mywidgets.add(
@@ -166,13 +161,12 @@ class _PlatiScreenState extends State<PlatiScreen> {
 
               Container(
                 padding: const EdgeInsets.only(left: 25, right: 25, bottom: 40),
-                child:
-                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(
                     //'Plăți', //old IGV
-                    l.platiTitlu,
+                    'Facturi',
                     style: GoogleFonts.rubik(
-                      color: const Color.fromRGBO(103, 114, 148, 1),
+                      color: Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
@@ -224,7 +218,7 @@ class HeaderPlatiWidget extends StatelessWidget {
               Text(
                 titluDataPlatii,
                 style: GoogleFonts.rubik(
-                  color: const Color.fromRGBO(103, 114, 148, 1),
+                  color: Colors.black,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -232,7 +226,7 @@ class HeaderPlatiWidget extends StatelessWidget {
               Text(
                 titluSumaPlatii,
                 style: GoogleFonts.rubik(
-                  color: const Color.fromRGBO(103, 114, 148, 1),
+                  color: Colors.black,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -278,8 +272,6 @@ class _PlatiWidgetState extends State<PlatiWidget> {
       pIdFactura: idFactura.toString(),
     );
 
-    print('getDetaliiFactura: $facturaSelectata');
-
     return facturaSelectata;
   }
 
@@ -301,7 +293,6 @@ class _PlatiWidgetState extends State<PlatiWidget> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        print('123123');
         facturaSelectata = await getDetaliiFactura(widget.factura.id);
 
         Navigator.push(
@@ -315,18 +306,16 @@ class _PlatiWidgetState extends State<PlatiWidget> {
             ));
       },
       child: Container(
-        padding:
-            const EdgeInsets.only(left: 25, top: 15, right: 20, bottom: 15),
+        padding: const EdgeInsets.only(left: 25, top: 15, right: 20, bottom: 15),
         margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8), color: Colors.grey[200]),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.grey[200]),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               widget.textData,
               style: GoogleFonts.rubik(
-                color: const Color.fromRGBO(103, 114, 148, 1),
+                color: Colors.black,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
@@ -334,7 +323,7 @@ class _PlatiWidgetState extends State<PlatiWidget> {
             Text(
               widget.suma.toString(),
               style: GoogleFonts.rubik(
-                color: const Color.fromRGBO(103, 114, 148, 1),
+                color: Colors.black,
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),

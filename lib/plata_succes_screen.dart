@@ -1,16 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/chat_screen.dart/chat_screen.dart';
-import 'package:sos_bebe_app/factura_screen.dart';
 import 'package:sos_bebe_app/questionare_screen.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
-import 'package:sos_bebe_app/raspunde_intrebare_doar_chat_screen.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 
@@ -30,12 +27,10 @@ class PlataRealizataCuSuccesScreen extends StatefulWidget {
       required this.pret});
 
   @override
-  State<PlataRealizataCuSuccesScreen> createState() =>
-      _PlataRealizataCuSuccesScreenState();
+  State<PlataRealizataCuSuccesScreen> createState() => _PlataRealizataCuSuccesScreenState();
 }
 
-class _PlataRealizataCuSuccesScreenState
-    extends State<PlataRealizataCuSuccesScreen> {
+class _PlataRealizataCuSuccesScreenState extends State<PlataRealizataCuSuccesScreen> {
   ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
   Future<void> notificaDoctor() async {
@@ -50,57 +45,60 @@ class _PlataRealizataCuSuccesScreenState
         tipPlata: widget.tipServiciu.toString());
   }
 
-@override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  // Log the doctor's name for debugging
-  print(widget.medicDetalii.numeleComplet);
+    print('aaaaaa : ${widget.tipServiciu}');
 
-  // Notify the doctor of the successful payment
-  notificaDoctor();
+    // Log the doctor's name for debugging
+    print(widget.medicDetalii.numeleComplet);
 
-  // Schedule navigation based on the type of service
-  Timer(const Duration(seconds: 5), () {
-    if (widget.tipServiciu == 1) {
-      // Navigate to the QuestionaireScreen for specific service type
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (BuildContext context) => QuestionaireScreen(
-            tipServiciu: widget.tipServiciu,
-            contClientMobile: widget.contClientMobile,
-            medicDetalii: widget.medicDetalii,
-          ),
-        ),
-      );
-    } else {
-      // Navigate to ChatScreenPage for chat or consultation services
-      if (widget.medicDetalii != null) {
+    // Notify the doctor of the successful payment
+    notificaDoctor();
+
+    // Schedule navigation based on the type of service
+    Timer(const Duration(seconds: 5), () {
+      if (widget.tipServiciu == 1 || widget.tipServiciu == 3) {
+        // Navigate to the QuestionaireScreen for specific service type
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatScreenPage(
-              medic: widget.medicDetalii,
-              contClientMobile: widget.contClientMobile,
-              pret: widget.pret,
+            builder: (BuildContext context) => QuestionaireScreen(
               tipServiciu: widget.tipServiciu,
-              chatOnly: widget.tipServiciu == 3 ? true : false,
+              contClientMobile: widget.contClientMobile,
+              medicDetalii: widget.medicDetalii, pret: widget.pret, chatOnly: widget.tipServiciu == 3 ? true : false,
             ),
           ),
         );
       } else {
-        // Show an error message if medicDetalii is null
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Error: Invalid doctor details. Please try again."),
-          ),
-        );
-      }
-    }
-  });
-}
+        // Navigate to ChatScreenPage for chat or consultation services
+        if (widget.medicDetalii != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ChatScreenPage(
+                medic: widget.medicDetalii,
+                contClientMobile: widget.contClientMobile,
+                pret: widget.pret,
+                tipServiciu: widget.tipServiciu,
+                chatOnly: widget.tipServiciu == 3 ? true : false,
+              ),
 
+            ),
+          );
+        } else {
+          // Show an error message if medicDetalii is null
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Error: Invalid doctor details. Please try again."),
+            ),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,22 +109,22 @@ void initState() {
       child: MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
         child: Scaffold(
-          appBar: AppBar(
-            // title: Text(
-            //   //'Înapoi' //old IGV
-            //   l.universalInapoi,
-            // ),
-            backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-            foregroundColor: Colors.white,
-            leading: const SizedBox(),
-          ),
+          // appBar: AppBar(
+          //   // title: Text(
+          //   //   //'Înapoi' //old IGV
+          //   //   l.universalInapoi,
+          //   // ),
+          //   backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+          //   foregroundColor: Colors.white,
+          //   leading: const SizedBox(),
+          // ),
           body: SafeArea(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  const SizedBox(height: 55),
+                  const SizedBox(height: 70),
                   Container(
-                    margin: const EdgeInsets.only(left: 25),
+                    margin: const EdgeInsets.only(left: 30),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -134,20 +132,18 @@ void initState() {
                           //'Plată realizată cu succes', //old IGV
                           l.plataSuccesTitlu,
                           style: GoogleFonts.rubik(
-                              color: const Color.fromRGBO(103, 114, 148, 1),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500),
+                              color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 18, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Flexible(
                         child: Container(
-                          margin: EdgeInsets.all(10),
+                          margin: const EdgeInsets.all(30),
                           child: AutoSizeText.rich(
                             // old value RichText(
                             TextSpan(
@@ -171,7 +167,7 @@ void initState() {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 90),
+                  const SizedBox(height: 210),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -179,23 +175,19 @@ void initState() {
                         //'Vă mulțumim! ', //old IGV
                         l.plataSuccesVaMultumimSimplu,
                         style: GoogleFonts.rubik(
-                            color: const Color.fromRGBO(14, 190, 127, 1),
-                            fontSize: 26,
-                            fontWeight: FontWeight.w400),
+                            color: const Color.fromRGBO(14, 190, 127, 1), fontSize: 26, fontWeight: FontWeight.w400),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 115),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         //'Vei fi redirectionat ...', //old IGV
-                        l.plataSuccesVeiFiRedirectionat,
+                        'Vei fi redirecționat ...',
                         style: GoogleFonts.rubik(
-                            color: const Color.fromRGBO(103, 114, 148, 1),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400),
+                            color: const Color.fromRGBO(103, 114, 148, 1), fontSize: 18, fontWeight: FontWeight.w400),
                       ),
                     ],
                   ),

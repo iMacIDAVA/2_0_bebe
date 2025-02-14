@@ -39,6 +39,8 @@ ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
 List<MedicMobile> listaMedici = [];
 
+  ContClientMobile? resGetCont;
+
 class ProfilulMeuPacientScreen extends StatefulWidget {
   final ContClientMobile? contInfo;
 
@@ -244,7 +246,6 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
         body: SingleChildScrollView(
           child: Column(
             children: [
-
               IconDateProfil(
                 iconPathPacient: widget.contInfo!.linkPozaProfil ?? '',
                 textNume: '${widget.contInfo!.prenume} ${widget.contInfo!.nume}',
@@ -331,7 +332,7 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
                               constraints: const BoxConstraints(minWidth: 150),
                               child: Text(
                                 //'Editare cont', //old IGV
-                                l.profilPacientDoctoriSalvati,
+                                'Doctori Salvați',
                                 style: GoogleFonts.rubik(
                                     color: const Color.fromRGBO(18, 25, 36, 1),
                                     fontSize: 14,
@@ -385,7 +386,7 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
                               constraints: const BoxConstraints(minWidth: 150),
                               child: Text(
                                 //'Editare cont', //old IGV
-                                l.profilPacientVeziPlati,
+                                'Vezi plțăi',
                                 style: GoogleFonts.rubik(
                                     color: const Color.fromRGBO(18, 25, 36, 1),
                                     fontSize: 14,
@@ -459,7 +460,7 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
                               constraints: const BoxConstraints(minWidth: 150),
                               child: Text(
                                 //'Editare cont', //old IGV
-                                'Datele de facturare',
+                                'Date de facturare',
                                 style: GoogleFonts.rubik(
                                     color: const Color.fromRGBO(18, 25, 36, 1),
                                     fontSize: 14,
@@ -567,7 +568,7 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
                               constraints: const BoxConstraints(minWidth: 150),
                               child: Text(
                                 //'Editare cont', //old IGV
-                                l.profilPacientTermeniSiConditii,
+                                'Termeni și condiții',
                                 style: GoogleFonts.rubik(
                                     color: const Color.fromRGBO(18, 25, 36, 1),
                                     fontSize: 14,
@@ -889,12 +890,12 @@ class _IconDateProfilState extends State<IconDateProfil> {
           IconButton(
               onPressed: () {},
               icon: _profileImage == null && widget.iconPathPacient.isEmpty
-                  ? Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)
+                  ? Image.asset('./assets/images/user_fara_poza.png', width: 75, height: 75)
                   : _profileImage != null
-                      ? Image.memory(_profileImage!, width: 60, height: 60)
+                      ? Image.memory(_profileImage!, width: 75, height: 75)
                       : widget.iconPathPacient.isNotEmpty
-                          ? Image.network(widget.iconPathPacient, width: 60, height: 60)
-                          : Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)),
+                          ? Image.network(widget.iconPathPacient, width: 75, height: 75)
+                          : Image.asset('./assets/images/user_fara_poza.png', width: 75, height: 75)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -904,7 +905,7 @@ class _IconDateProfilState extends State<IconDateProfil> {
                   widget.textNume,
                   style: const TextStyle(
                     color: Color.fromRGBO(255, 255, 255, 1),
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.w400,
                   ),
                   softWrap: true,

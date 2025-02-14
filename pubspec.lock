@@ -25,6 +25,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.3.2"
+  agora_rtm:
+    dependency: "direct main"
+    description:
+      name: agora_rtm
+      sha256: "6c65cf6c9658acc9024322798c546e9dc61c39605b67d0af069793d4ee81d199"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.5.9"
   agora_token_service:
     dependency: "direct main"
     description:
@@ -201,14 +209,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.1.1"
-  external_path:
-    dependency: "direct main"
-    description:
-      name: external_path
-      sha256: "2095c626fbbefe70d5a4afc9b1137172a68ee2c276e51c3c1283394485bea8f4"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.0.3"
   facebook_auth_desktop:
     dependency: transitive
     description:
@@ -901,6 +901,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.4.0"
+  pdf_render:
+    dependency: "direct main"
+    description:
+      name: pdf_render
+      sha256: b4a5b81af382a2270047d4191496e4efd60f19c2807f64dc9dc8f55c97b5c0d1
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.4.0"
   permission_handler:
     dependency: "direct main"
     description:

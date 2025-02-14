@@ -43,6 +43,41 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
 
   final controllerTestimonialText = TextEditingController();
 
+    Future<void> getListaMedici() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    listaMedici = await apiCallFunctions.getListaMedici(
+          pUser: user,
+          pParola: userPassMD5,
+        ) ??
+        [];
+  }
+
+  Future<void> getContUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    if (user.isEmpty || userPassMD5.isEmpty) {
+      throw Exception("Missing user credentials");
+    }
+
+    resGetCont = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    if (resGetCont == null) {
+      throw Exception("Failed to fetch account data");
+    }
+  }
+
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.

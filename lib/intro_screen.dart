@@ -57,7 +57,7 @@ class _IntroScreenState extends State<IntroScreen> {
     if (user.isNotEmpty && userPassMD5.isNotEmpty) {
       try {
         await getContUser();
-        await getListaMedici();
+        // await getListaMedici();
       } catch (e) {
         navigateToLoginScreen();
       }

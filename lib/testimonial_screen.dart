@@ -14,6 +14,7 @@ import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
+import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 //import 'package:sos_bebe_app/testimonial_screen.dart';
 
@@ -28,7 +29,8 @@ class TestimonialScreen extends StatefulWidget {
       {super.key,
       required this.idMedic,
       required this.idFactura,
-      required this.factura});
+      required this.factura
+      });
 
   @override
   State<TestimonialScreen> createState() => _TestimonialScreenState();
@@ -100,6 +102,16 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
         feedbackCorect = true;
         showButonTrimiteTestimonial = false;
       });
+
+          Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VeziTotiMediciiScreen(
+              listaMedici: listaMedici,
+              contClientMobile: resGetCont!,
+            ),
+          ),
+        );
 
       print('Feedback trimis cu succes!');
 
@@ -213,18 +225,32 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
       child: Scaffold(
+              appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              color: Colors.black,
+              onPressed: () {},
+            ),
+          ),
+        ],
+      ),
+
         body: SafeArea(
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_outlined),
-                    ),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     IconButton(
+                //       onPressed: () => Navigator.pop(context),
+                //       icon: const Icon(Icons.arrow_back_outlined),
+                //     ),
+                //   ],
+                // ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -379,7 +405,7 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
                       ],
                     ),
                   ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 35),
                 if (!sentWithSucces)
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 25),

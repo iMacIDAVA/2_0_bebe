@@ -1,27 +1,32 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:sos_bebe_app/plata_esuata_screen.dart';
 import 'package:sos_bebe_app/plata_succes_screen.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
 import 'package:http/http.dart' as http;
+import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:sos_bebe_app/utils_api/api_config.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 import 'datefacturare/date_facturare_completare_rapida.dart';
 
-class HomePage extends StatefulWidget {
+class PaymentScreen extends StatefulWidget {
   final int tipServiciu;
   final ContClientMobile contClientMobile;
   final MedicMobile medicDetalii;
   final String pret;
   final String currency;
 
-  const HomePage({
+  const PaymentScreen({
     super.key,
     required this.tipServiciu,
     required this.contClientMobile,
@@ -31,23 +36,180 @@ class HomePage extends StatefulWidget {
   });
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _PaymentScreenState extends State<PaymentScreen> {
+
+  bool _isCardFieldInitialized = false;
+
+  Key _cardFormKey = UniqueKey();
+
   CardFieldInputDetails? _cardDetails;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final cardKey = GlobalKey<FormState>();
 
+  int remainingTime = 180;
+  Timer? countdownTimer;
+
+  ApiCallFunctions apiCallFunctions = ApiCallFunctions();
+
+  List<MedicMobile> listaMedici = [];
+  ContClientMobile? resGetCont;
+
+  ValueNotifier<int> remainingTimeNotifier = ValueNotifier(180);
+
+  Future<void> getContUser() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    if (user.isEmpty || userPassMD5.isEmpty) {
+      throw Exception("Missing user credentials");
+    }
+
+    resGetCont = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    if (resGetCont == null) {
+      throw Exception("Failed to fetch account data");
+    }
+  }
+
+  Future<void> getListaMedici() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    listaMedici = await apiCallFunctions.getListaMedici(
+      pUser: user,
+      pParola: userPassMD5,
+    ) ??
+        [];
+  }
+
+  Future<void> fetchDataBeforeNavigation() async {
+    try {
+      // ✅ Fetch account details if not already loaded
+      if (resGetCont == null) {
+        await getContUser();
+      }
+
+      // ✅ Fetch list of doctors
+      await getListaMedici();
+
+      // ✅ Ensure at least 1 doctor is in the list
+      while (listaMedici.isEmpty) {
+        print("🔄 Waiting for doctors list...");
+        await Future.delayed(const Duration(seconds: 1));
+        await getListaMedici();
+      }
+
+    } catch (e) {
+      print("❌ Error loading data before navigation: $e");
+    }
+  }
+
+
+  void startTimer() {
+    print("⏳ Timer started...");
+
+    countdownTimer?.cancel(); // ✅ Ensure no duplicate timers
+
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        print("🛑 Timer stopped because the screen is no longer mounted.");
+        timer.cancel();
+        return;
+      }
+
+      if (remainingTimeNotifier.value > 0) {
+        remainingTimeNotifier.value--;
+      } else {
+        print("⌛ Timer finished, navigating away...");
+        timer.cancel();
+        await sendExitNotificationToDoctor();
+        await fetchDataBeforeNavigation();
+
+        if (mounted && resGetCont != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VeziTotiMediciiScreen(
+                listaMedici: listaMedici,
+                contClientMobile: resGetCont!,
+              ),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+
+
+
+
+  Future<void> sendExitNotificationToDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String pCheie = keyAppPacienti; // App key for patients
+    int pIdMedic = widget.medicDetalii.id; // Doctor ID
+    String pTip = widget.tipServiciu.toString();
+
+    String patientId = prefs.getString(pref_keys.userId) ?? '';
+    String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+    String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+    String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+
+    // Exit message
+    String pMesaj = "Pacientul a părăsit sesiunea după 3 minute de inactivitate.";
+
+    await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+      pCheie: pCheie,
+      pIdMedic: pIdMedic,
+      pTip: pTip,
+      pMesaj: pMesaj,
+      pObservatii: pObservatii,
+    );
+
+    print("📢 Exit notification sent to doctor!");
+  }
+
   String? savedPaymentMethodId;
   String? savedCustomerId;
+
+  bool _isCardFormVisible = false;
+
 
   @override
   void initState() {
     super.initState();
     Stripe.publishableKey = stripePublishableKey;
     Stripe.instance.applySettings();
+
+    print("🔄 initState called");
+
+    // 🛠 **Delay creation to avoid PlatformView errors**
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isCardFormVisible = true;
+          _cardFormKey = UniqueKey();
+          print("✅ CardFormField is being recreated with new key: $_cardFormKey");
+        });
+      }
+    });
+
+    startTimer();
 
     // double pretValue = double.tryParse(widget.pret) ?? 0.0;
     // print('InitState: pret value is $pretValue');
@@ -62,20 +224,48 @@ class _HomePageState extends State<HomePage> {
     // }
   }
 
+  @override
+  void dispose() {
+    print("🛑 dispose called - Cleaning up PaymentScreen");
+
+    countdownTimer?.cancel();
+    remainingTimeNotifier.dispose();
+
+    // **Destroy Stripe's CardFormField completely**
+    Stripe.instance.applySettings(); // Reset Stripe state
+    _isCardFormVisible = false;
+    _cardFormKey = UniqueKey(); // ❌ Remove this line, not needed
+
+    print("🗑️ CardFormField fully disposed. New key will be generated on re-entry.");
+
+    super.dispose();
+  }
+
+
+
+
   Future<void> _directSuccessNavigation() async {
+    print("🛑 Cleaning up before navigating to success screen...");
+
     Future.delayed(const Duration(milliseconds: 300), () {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) {
-          return PlataRealizataCuSuccesScreen(
-            tipServiciu: widget.tipServiciu,
-            contClientMobile: widget.contClientMobile,
-            medicDetalii: widget.medicDetalii,
-            pret: widget.pret,
-          );
-        },
-      ));
+      if (mounted) { // ✅ Always check if widget is still mounted before navigating
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              return PlataRealizataCuSuccesScreen(
+                tipServiciu: widget.tipServiciu,
+                contClientMobile: widget.contClientMobile,
+                medicDetalii: widget.medicDetalii,
+                pret: widget.pret,
+              );
+            },
+          ),
+        );
+      }
     });
   }
+
 
   Future<void> _checkForSavedPaymentDetails() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -159,7 +349,13 @@ class _HomePageState extends State<HomePage> {
 
       if (response.statusCode == 200) {
         processPayment(paymentMethodId, customerId);
-      } else {}
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => PlataEsuataScreen()), // Replace with your failure screen
+        );
+
+      }
     } catch (e) {
       showDialog(
         context: context,
@@ -257,35 +453,29 @@ class _HomePageState extends State<HomePage> {
         pObservatii: pObservatii,
       );
 
-      await Future.delayed(const Duration(seconds: 2));
+      print("🛑 Cleaning up before navigating to success screen...");
 
-      Future.delayed(const Duration(milliseconds: 300), () {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            return PlataRealizataCuSuccesScreen(
-              tipServiciu: widget.tipServiciu,
-              contClientMobile: widget.contClientMobile,
-              medicDetalii: widget.medicDetalii,
-              pret: widget.pret,
-            );
-          },
-        ));
-      });
+      _directSuccessNavigation();
     } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Plata a eșuat'),
-          content: const Text('A apărut o eroare la procesarea plății dvs.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     title: const Text('Plata a eșuat'),
+      //     content: const Text('A apărut o eroare la procesarea plății dvs.'),
+      //     actions: [
+      //       TextButton(
+      //         onPressed: () {
+      //           Navigator.pop(context);
+      //         },
+      //         child: const Text('OK'),
+      //       ),
+      //     ],
+      //   ),
+      // );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PlataEsuataScreen()),
       );
 
       await Future.delayed(const Duration(seconds: 2));
@@ -317,9 +507,44 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     double pretValue = double.tryParse(widget.pret) ?? 0.0;
 
+    print("🔄 build() called - Current _cardFormKey: $_cardFormKey");
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(),
+
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              color: Colors.black,
+              onPressed: () async {
+                await sendExitNotificationToDoctor();
+
+                // ✅ Load required data before navigating
+                await fetchDataBeforeNavigation();
+
+                // ✅ Optional: Add a delay to ensure UI loads properly
+                await Future.delayed(const Duration(seconds: 2));
+
+                if (mounted && resGetCont != null) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VeziTotiMediciiScreen(
+                        listaMedici: listaMedici,
+                        contClientMobile: resGetCont!,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.only(top: 46.0, bottom: 46.0, left: 23.0, right: 23.0),
@@ -366,28 +591,79 @@ class _HomePageState extends State<HomePage> {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.only(top: 18.0),
-                          child: CardFormField(
-                            onCardChanged: (cardDetails) {
-                              setState(() {
-                                _cardDetails = cardDetails;
-                              });
-                            },
-                            style: CardFormStyle(
-                              textColor: Colors.black87,
-                              placeholderColor: Colors.black45,
-                              backgroundColor: Colors.grey[100],
-                              fontSize: 16,
-                              textErrorColor: Colors.redAccent,
-                              cursorColor: Colors.black,
+                          child: Visibility(
+                            visible: _isCardFormVisible,
+                            child: CardFormField(
+                              key: _cardFormKey,
+                              onCardChanged: (cardDetails) {
+                                setState(() {
+                                  _cardDetails = cardDetails;
+                                });
+                              },
+                              style: CardFormStyle(
+                                textColor: Colors.black87,
+                                placeholderColor: Colors.black45,
+                                backgroundColor: Colors.grey[100],
+                                fontSize: 16,
+                                textErrorColor: Colors.redAccent,
+                                cursorColor: Colors.black,
+                              ),
+                              countryCode: 'RO',
+                              enablePostalCode: false,
+                              autofocus: true,
                             ),
-                            countryCode: 'RO',
-                            enablePostalCode: false,
-                            autofocus: true,
                           ),
+
+
                         ),
                       )
                     : const Center(child: Text('Folosind metoda de plată salvată')),
                 const SizedBox(height: 160),
+                Padding(
+                  padding: const EdgeInsets.only(left: 128.0, right: 128.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 500),
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ValueListenableBuilder<int>(
+                          valueListenable: remainingTimeNotifier,
+                          builder: (context, remainingTime, _) {
+                            return Text(
+                              "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.timer,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 savedPaymentMethodId != null || pretValue != 0.0
                     ? Padding(
                         padding: const EdgeInsets.only(left: 28.0, right: 28.0),
