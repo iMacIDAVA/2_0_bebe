@@ -21,7 +21,14 @@ class RecomandareScreen extends StatefulWidget {
   final String pret;
   final VoidCallback onProceed;
 
-  const RecomandareScreen({Key? key, required this.medic, required this.contClientMobile, required this.tipServiciu, required this.pret, required this.onProceed}) : super(key: key);
+  const RecomandareScreen(
+      {Key? key,
+      required this.medic,
+      required this.contClientMobile,
+      required this.tipServiciu,
+      required this.pret,
+      required this.onProceed})
+      : super(key: key);
 
   @override
   State<RecomandareScreen> createState() => _RecomandareScreenState();
@@ -53,17 +60,15 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
       return;
     }
 
-    // ✅ Convert selected files to file paths
     List<String> filePaths = _selectedFiles.map((file) => file.path).toList();
-    print("📂 Files passed: $filePaths");
 
-    // ✅ Close RecomandareScreen First
+    print("📂 Sending files to ChatScreen: $filePaths");
+
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
     }
 
-    // ✅ Navigate **AFTER** RecomandareScreen is removed
-    Future.delayed(Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -74,7 +79,7 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
               pret: widget.pret,
               tipServiciu: widget.tipServiciu,
               chatOnly: false,
-              initialFiles: filePaths, // ✅ Pass file paths
+              initialFiles: filePaths,
             ),
           ),
         );
@@ -83,10 +88,6 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
       }
     });
   }
-
-
-
-
 
   Future<String?> _uploadFile(File file) async {
     String fileName = path.basename(file.path);
@@ -106,7 +107,6 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
     );
   }
 
-
   void _chooseFromPhone() async {
     if (_selectedFiles.length >= _maxFiles) return;
 
@@ -121,6 +121,8 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
         _selectedFiles.addAll(result.paths.map((path) => File(path!)).toList());
       });
     }
+
+    print("📂 Files selected in RecomandareScreen: ${_selectedFiles.map((f) => f.path).toList()}");
   }
 
   Future<Uint8List> _generatePdfThumbnail(File file) async {
@@ -153,9 +155,9 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
           height: MediaQuery.of(context).size.height * 0.5,
           child: Column(
             children: [
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft, // Move BackButton to the left
-                child: const BackButton(
+                child: BackButton(
                   color: Colors.white,
                 ),
               ),
@@ -187,16 +189,16 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
                           child: isImage
                               ? Image.file(file, fit: BoxFit.cover)
                               : isPdf
-                              ? FutureBuilder<Uint8List>(
-                            future: _generatePdfThumbnail(file),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                return Image.memory(snapshot.data!, fit: BoxFit.cover);
-                              }
-                              return const Icon(Icons.picture_as_pdf, size: 40, color: Colors.red);
-                            },
-                          )
-                              : const Icon(Icons.file_present, size: 40, color: Colors.grey),
+                                  ? FutureBuilder<Uint8List>(
+                                      future: _generatePdfThumbnail(file),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                                          return Image.memory(snapshot.data!, fit: BoxFit.cover);
+                                        }
+                                        return const Icon(Icons.picture_as_pdf, size: 40, color: Colors.red);
+                                      },
+                                    )
+                                  : const Icon(Icons.file_present, size: 40, color: Colors.grey),
                         ),
                       ),
                     );
@@ -210,12 +212,11 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.opaque, // Ensures taps are detected anywhere
-      onTap: _showBottomSheet, // Opens the bottom sheet when the screen is tapped
+      behavior: HitTestBehavior.opaque,
+      onTap: _showBottomSheet,
       child: Scaffold(
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
@@ -259,21 +260,17 @@ class _RecomandareScreenState extends State<RecomandareScreen> {
                       ),
                     ],
                   )
-
-
-
                 ],
               ),
               const SizedBox(height: 120),
               ElevatedButton(
-                onPressed: _sendAttachmentsAndNavigate,  // ✅ Correct: Calls function when clicked
+                onPressed: _sendAttachmentsAndNavigate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 ),
-                child: Text("TRIMITE ÎNTREBAREA", style: TextStyle(color: Colors.white)),
+                child: const Text("TRIMITE ÎNTREBAREA", style: TextStyle(color: Colors.white)),
               )
-
             ],
           ),
         ),
@@ -297,37 +294,39 @@ class FileViewerScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           leading: Padding(
-            padding: const EdgeInsets.all(8.0), // Adds some spacing
+            padding: const EdgeInsets.all(8.0),
             child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey, // Grey background
-                shape: BoxShape.circle, // Makes it rounded
+              decoration: const BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white), // White close icon
+                icon: const Icon(Icons.close, color: Colors.white),
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close the screen
+                  Navigator.of(context).pop();
                 },
               ),
             ),
           ),
         ),
-
         body: Padding(
-          padding: const EdgeInsets.all(38.0),
-          child: Column(
-            children: [
-              Center(
-                child: isImage
-                    ? Image.file(file)
-                    : isPdf
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
+            child: isImage
+                ? InteractiveViewer(
+                    child: Image.file(
+                      file,
+                      fit: BoxFit.contain,
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      height: MediaQuery.of(context).size.height * 0.8,
+                    ),
+                  )
+                : isPdf
                     ? PdfViewer.openFile(file.path)
                     : const Text(
-                  "Eroare",
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
+                        "Eroare",
+                        style: TextStyle(fontSize: 16),
+                      ),
           ),
         ),
       ),

@@ -105,6 +105,19 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
     }
   }
 
+  Future<void> notificaDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    apiCallFunctions.anuntaMedicDeServiciuTerminat(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medicDetalii.id.toString(),
+        tipPlata: widget.tipServiciu.toString());
+  }
+
+
 
   void startTimer() {
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
@@ -125,6 +138,8 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
 
         // ✅ Optional: Add a delay to ensure UI loads properly
         await Future.delayed(const Duration(seconds: 2));
+
+        await notificaDoctor();
 
         if (mounted && resGetCont != null) {
           Navigator.pushReplacement(
@@ -213,367 +228,372 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
   Widget build(BuildContext context) {
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                color: Colors.black,
-                onPressed: () async {
-                  await sendExitNotificationToDoctor();
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  color: Colors.black,
+                  onPressed: () async {
+                    await sendExitNotificationToDoctor();
 
-                  // ✅ Load required data before navigating
-                  await fetchDataBeforeNavigation();
+                    // ✅ Load required data before navigating
+                    await fetchDataBeforeNavigation();
 
-                  // ✅ Optional: Add a delay to ensure UI loads properly
-                  await Future.delayed(const Duration(seconds: 2));
+                    // ✅ Optional: Add a delay to ensure UI loads properly
+                    await Future.delayed(const Duration(seconds: 2));
 
-                  if (mounted && resGetCont != null) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VeziTotiMediciiScreen(
-                          listaMedici: listaMedici,
-                          contClientMobile: resGetCont!,
+                    await notificaDoctor();
+
+                    if (mounted && resGetCont != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VeziTotiMediciiScreen(
+                            listaMedici: listaMedici,
+                            contClientMobile: resGetCont!,
+                          ),
                         ),
-                      ),
-                    );
-                  }
-                },
+                      );
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-        // appBar: AppBar(
-        //   backgroundColor: Colors.transparent,
-        //   foregroundColor: Colors.black,
-        //   leading: GestureDetector(
-        //     onTap: () {
-        //       Navigator.push(context, MaterialPageRoute(builder: (context) {
-        //         return ProfilDoctorDisponibilitateServiciiScreen(
-        //           medicDetalii: widget.medicDetalii,
-        //           contClientMobileInfo: widget.contClientMobile,
-        //           ecranTotiMedicii: true,
-        //           statusMedic: widget.medicDetalii.status,
-        //         );
-        //       }));
-        //     },
-        //     child: const Icon(Icons.arrow_back),
-        //   ),
-        // ),
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 55),
-                Text(
-                  l.confirmareServiciiTitlu,
-                  style: GoogleFonts.rubik(
-                    color: const Color.fromRGBO(103, 114, 148, 1),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: Stack(
-                    children: [
-                      Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            './assets/images/servicii_pediatrie_dreptunghi.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            './assets/images/servicii_pediatrie_adauga_efect_1.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            './assets/images/servicii_pediatrie_adauga_efect_2.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l.confirmareServiciiServiciiPediatrie,
-                                    style: GoogleFonts.rubik(
-                                      color: const Color.fromRGBO(255, 255, 255, 1),
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    child: Text(
-                                      widget.tipServiciu == 1
-                                          ? "Consultație video"
-                                          : widget.tipServiciu == 2
-                                              ? "Interpretare analize"
-                                              : widget.tipServiciu == 3
-                                                  ? "Consultație chat"
-                                                  : "",
-                                      maxLines: 2,
-                                      style: GoogleFonts.rubik(
-                                        color: const Color.fromRGBO(255, 255, 255, 1),
-                                        fontWeight: FontWeight.w300,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    widget.pret,
-                                    style: GoogleFonts.rubik(
-                                      color: const Color.fromRGBO(255, 255, 255, 1),
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 32,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 18.0),
-                                    child: Text(
-                                      l.confirmareServiciiRON,
-                                      style: GoogleFonts.rubik(
-                                        color: const Color.fromRGBO(255, 255, 255, 1),
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 35),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 13),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        l.confirmareServiciiSubtotal,
-                        style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(103, 114, 148, 1),
-                          fontWeight: FontWeight.w400,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        '${widget.pret} ${l.confirmareServiciiRON}',
-                        style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(103, 114, 148, 1),
-                          fontWeight: FontWeight.w300,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                customDividerConfirmareServicii(),
-
-
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 13),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        l.confirmareServiciiTotal,
-                        style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(103, 114, 148, 1),
-                          fontWeight: FontWeight.w400,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        '${widget.pret} ${l.confirmareServiciiRON}',
-                        style: GoogleFonts.rubik(
-                          color: const Color.fromRGBO(103, 114, 148, 1),
-                          fontWeight: FontWeight.w400,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 60,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 128.0, right: 128.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(15),
+            ],
+          ),
+          // appBar: AppBar(
+          //   backgroundColor: Colors.transparent,
+          //   foregroundColor: Colors.black,
+          //   leading: GestureDetector(
+          //     onTap: () {
+          //       Navigator.push(context, MaterialPageRoute(builder: (context) {
+          //         return ProfilDoctorDisponibilitateServiciiScreen(
+          //           medicDetalii: widget.medicDetalii,
+          //           contClientMobileInfo: widget.contClientMobile,
+          //           ecranTotiMedicii: true,
+          //           statusMedic: widget.medicDetalii.status,
+          //         );
+          //       }));
+          //     },
+          //     child: const Icon(Icons.arrow_back),
+          //   ),
+          // ),
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 55),
+                  Text(
+                    l.confirmareServiciiTitlu,
+                    style: GoogleFonts.rubik(
+                      color: const Color.fromRGBO(103, 114, 148, 1),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 18,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: Stack(
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              './assets/images/servicii_pediatrie_dreptunghi.png',
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ValueListenableBuilder<int>(
-                          valueListenable: remainingTimeNotifier,
-                          builder: (context, remainingTime, _) {
-                            return Text(
-                              "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
-                          },
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              './assets/images/servicii_pediatrie_adauga_efect_1.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.timer,
-                          color: Colors.red,
-                          size: 20,
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              './assets/images/servicii_pediatrie_adauga_efect_2.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l.confirmareServiciiServiciiPediatrie,
+                                      style: GoogleFonts.rubik(
+                                        color: const Color.fromRGBO(255, 255, 255, 1),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      child: Text(
+                                        widget.tipServiciu == 1
+                                            ? "Consultație video"
+                                            : widget.tipServiciu == 2
+                                                ? "Interpretare analize"
+                                                : widget.tipServiciu == 3
+                                                    ? "Consultație chat"
+                                                    : "",
+                                        maxLines: 2,
+                                        style: GoogleFonts.rubik(
+                                          color: const Color.fromRGBO(255, 255, 255, 1),
+                                          fontWeight: FontWeight.w300,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 18.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      widget.pret,
+                                      style: GoogleFonts.rubik(
+                                        color: const Color.fromRGBO(255, 255, 255, 1),
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 32,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 18.0),
+                                      child: Text(
+                                        l.confirmareServiciiRON,
+                                        style: GoogleFonts.rubik(
+                                          color: const Color.fromRGBO(255, 255, 255, 1),
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 35),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          l.confirmareServiciiSubtotal,
+                          style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(103, 114, 148, 1),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          '${widget.pret} ${l.confirmareServiciiRON}',
+                          style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(103, 114, 148, 1),
+                            fontWeight: FontWeight.w300,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const Spacer(),
-                if (!isDateFacturareComplete)
-                  const Text(
-                    "Va rugăm să completați datele de facturare înainte de continua",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.red),
-                  ),
-                isDateFacturareComplete
-                    ? Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PaymentScreen(
-                                  tipServiciu: widget.tipServiciu,
-                                  contClientMobile: widget.contClientMobile,
-                                  medicDetalii: widget.medicDetalii,
-                                  pret: widget.pret,
-                                  currency: 'RON',
-                                ),
-                              ),
-                            );
+                  const SizedBox(height: 30),
+                  customDividerConfirmareServicii(),
 
-                            Future.delayed(Duration(milliseconds: 500), () {
-                              _isNavigating = false;
-                            });
 
-                          },
-
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-                              minimumSize: const Size.fromHeight(50), // NEW
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              )),
-                          child: Text(l.confirmareServiciiConfirmaPlataButon,
-                              style: GoogleFonts.rubik(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16,
-                              )),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          l.confirmareServiciiTotal,
+                          style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(103, 114, 148, 1),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
+                          ),
                         ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) {
-                              return DateFacturareCompletareRapida(
-                                contClientMobile: widget.contClientMobile,
-                                pret: widget.pret,
-                                tipServiciu: widget.tipServiciu,
-                                medicDetalii: widget.medicDetalii,
+                        Text(
+                          '${widget.pret} ${l.confirmareServiciiRON}',
+                          style: GoogleFonts.rubik(
+                            color: const Color.fromRGBO(103, 114, 148, 1),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 60,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 128.0, right: 128.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 500),
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ValueListenableBuilder<int>(
+                            valueListenable: remainingTimeNotifier,
+                            builder: (context, remainingTime, _) {
+                              return Text(
+                                "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               );
-                            }));
-                          },
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
-                              minimumSize: const Size.fromHeight(50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              )),
-                          child: Text("Completeaza date facturare",
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.rubik(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16,
-                              )),
-                        ))
-              ],
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.timer,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (!isDateFacturareComplete)
+                    const Text(
+                      "Va rugăm să completați datele de facturare înainte de continua",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.red),
+                    ),
+                  isDateFacturareComplete
+                      ? Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PaymentScreen(
+                                    tipServiciu: widget.tipServiciu,
+                                    contClientMobile: widget.contClientMobile,
+                                    medicDetalii: widget.medicDetalii,
+                                    pret: widget.pret,
+                                    currency: 'RON',
+                                  ),
+                                ),
+                              );
+
+                              Future.delayed(Duration(milliseconds: 500), () {
+                                _isNavigating = false;
+                              });
+
+                            },
+
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+                                minimumSize: const Size.fromHeight(50), // NEW
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                )),
+                            child: Text(l.confirmareServiciiConfirmaPlataButon,
+                                style: GoogleFonts.rubik(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                )),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                                return DateFacturareCompletareRapida(
+                                  contClientMobile: widget.contClientMobile,
+                                  pret: widget.pret,
+                                  tipServiciu: widget.tipServiciu,
+                                  medicDetalii: widget.medicDetalii,
+                                );
+                              }));
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+                                minimumSize: const Size.fromHeight(50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                )),
+                            child: Text("Completeaza date facturare",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.rubik(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                )),
+                          ))
+                ],
+              ),
             ),
           ),
         ),

@@ -134,10 +134,10 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
 
   Future<void> getContDetalii() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-    contInfo = await apiCallFunctions.getContClient(
+
+    final fetchedContInfo = await apiCallFunctions.getContClient(
       pUser: user,
       pParola: userPassMD5,
       pDeviceToken: prefs.getString('oneSignalId') ?? "",
@@ -145,14 +145,37 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
       pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
       pTokenVoip: '',
     );
-    setState(() {
-      isDoneLoading = true;
-    });
+
+    if (fetchedContInfo != null && mounted) {
+      setState(() {
+        contInfo = fetchedContInfo;
+        isDoneLoading = true;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+
     LocalizationsApp l = LocalizationsApp.of(context)!;
+
+    if (widget.listaMedici.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 15),
+              ElevatedButton(
+                onPressed: getListaMedici,
+                child: const Text("reîncercați"),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
@@ -177,17 +200,24 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                               GestureDetector(
                                 onTap: () {
                                   if (isDoneLoading) {}
-                                  Navigator.push(
+                                  if (contInfo != null) {
+                                    Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ProfilulMeuPacientScreen(contInfo: contInfo),
-                                      ));
+                                        builder: (context) => ProfilulMeuPacientScreen(contInfo: contInfo!),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("User data not loaded yet. Try again.")),
+                                    );
+                                  }
                                 },
-                                child: _profileImage == null
-                                    ? Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60)
-                                    : isDoneLoading && contInfo!.linkPozaProfil != null
-                                        ? Image.network(width: 60, height: 60, contInfo!.linkPozaProfil!)
-                                        : Image.memory(_profileImage!, width: 60, height: 60),
+                                child: (isDoneLoading && contInfo?.linkPozaProfil != null)
+                                    ? Image.network(contInfo!.linkPozaProfil!, width: 60, height: 60)
+                                    : (_profileImage != null)
+                                        ? Image.memory(_profileImage!, width: 60, height: 60)
+                                        : Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60),
                               ),
                               TextButton(
                                 onPressed: () {
@@ -643,8 +673,8 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
     return GestureDetector(
-      onTap: doctorStatusService.doctorBusyStatus[widget.medicItem.id] == true
-          ? null // Disable navigation when the doctor is busy
+      onTap: widget.medicItem.status == inConsultatie.value
+          ? null
           : () async {
               medicSelectat = await getDetaliiMedic(widget.medicItem.id);
               listaRecenziiMedicSelectat = await getListaRecenziiByIdMedic(widget.medicItem.id);

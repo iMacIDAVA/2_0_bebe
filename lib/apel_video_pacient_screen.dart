@@ -88,6 +88,9 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
   final Stopwatch _stopwatch = Stopwatch();
 
+  ContClientMobile? contInfo;
+  List<FacturaClientMobile> listaFacturi = [];
+
   final ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
   bool isVideoEnabled = true;
@@ -100,6 +103,42 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
   Timer? countdownTimer;
 
   ValueNotifier<int> remainingTimeNotifier = ValueNotifier(900);
+
+  Future<void> fetchData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    // Debugging print statements
+    print("Fetching data for user: $user");
+    print("User password hash: $userPassMD5");
+
+    // **Fetch account details**
+    contInfo = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    // **Fetch invoices**
+    listaFacturi = await apiCallFunctions.getListaFacturi(
+      pUser: user,
+      pParola: userPassMD5,
+    ) ?? [];
+
+    // Print the list of invoices for debugging
+    print("Invoices fetched: ${listaFacturi.length}");
+
+    if (mounted) {
+      setState(() {
+        // isLoading = false;
+      });
+    }
+  }
+
 
   void startTimer() {
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
@@ -128,14 +167,15 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
         //     ),
         //   ),
         // );
+        FacturaClientMobile factura = listaFacturi.first;
 
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TestimonialScreen(
-              factura: facturaSelectata!,
-              idFactura: facturaSelectata?.id ?? 0,
-              idMedic: facturaSelectata?.idMedic ?? 0,
+              idMedic: widget.medic.id,
+              idFactura: factura.id,
+              factura: factura,
             ),
           ),
         );
@@ -210,6 +250,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
   void initState() {
     super.initState();
     getUser();
+    fetchData();
 
     startTimer();
 
@@ -281,41 +322,26 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
             _remoteUid = remoteUid;
           });
         },
-        onUserOffline: (RtcConnection connection, int remoteUid,
-            UserOfflineReasonType reason) async {
-          debugPrint("remote user $remoteUid left channel");
+        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) async {
+          debugPrint("Doctor (UID: $remoteUid) left the call ❌");
+
           setState(() {
-            _remoteUid = null;
+            _remoteUid = null;  // Remove remote video
           });
 
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          String user = prefs.getString('user') ?? '';
-          String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
-
-          // Call the `notificaDoctor` method
           await notificaDoctor();
 
-          // Navigate to the `VeziTotiMediciiScreen`
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => VeziTotiMediciiScreen(
-          //       listaMedici: listaMedici,
-          //       contClientMobile: resGetCont!,
-          //     ),
-          //   ),
-          // );
+          // Make sure patient also leaves
+          await _engine?.leaveChannel();
+          await _engine?.release();
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TestimonialScreen(
-                factura: facturaSelectata!,
-                idFactura: facturaSelectata?.id ?? 0,
-                idMedic: facturaSelectata?.idMedic ?? 0,
-              ),
-            ),
-          );
+          // Navigate back to a safe screen
+          if (mounted) {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => TestimonialScreen(idMedic: widget.medic.id, idFactura: listaFacturi.first.id, factura: listaFacturi.first))
+            );
+          }
         },
         onTokenPrivilegeWillExpire:
             (RtcConnection connection, String token) async {
@@ -351,13 +377,15 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
             //   ),
             // );
 
-            Navigator.pushReplacement(
+            FacturaClientMobile factura = listaFacturi.first;
+
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => TestimonialScreen(
-                  factura: facturaSelectata!,
-                  idFactura: facturaSelectata?.id ?? 0,
-                  idMedic: facturaSelectata?.idMedic ?? 0,
+                  idMedic: widget.medic.id,
+                  idFactura: factura.id,
+                  factura: factura,
                 ),
               ),
             );
@@ -477,15 +505,15 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
     try {
       final newMessages = await apiCallFunctions.getListaMesajePeConversatie(
-            pUser: user,
-            pParola: userPassMD5,
-            pIdConversatie: widget.medic.id.toString(),
-          ) ??
-          [];
+        pUser: user,
+        pParola: userPassMD5,
+        pIdConversatie: widget.medic.id.toString(),
+      ) ?? [];
 
       List<String> newFiles = [];
 
-      for (var message in newMessages) {
+
+      for (var message in newMessages.reversed) {
         String text = message.comentariu.trim();
         if (text.startsWith("http") && !receivedFiles.contains(text)) {
           newFiles.add(text);
@@ -494,7 +522,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
       if (mounted && newFiles.isNotEmpty) {
         setState(() {
-          receivedFiles.addAll(newFiles);
+          receivedFiles.insertAll(0, newFiles);
           receivedFilesCount = receivedFiles.length;
         });
       }
@@ -502,6 +530,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
       print("Error fetching messages: $error");
     }
   }
+
 
   FacturaClientMobile? facturaSelectata;
 
@@ -575,13 +604,13 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        width: 25,
-                        height: 17,
-                        "./assets/images/cerc_apel_video.png",
-                      ),
+                      // Image.asset(
+                      //   width: 25,
+                      //   height: 17,
+                      //   "./assets/images/cerc_apel_video.png",
+                      // ),
                       Padding(
-                        padding: const EdgeInsets.all(0),
+                        padding: const EdgeInsets.all(5),
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.3),
@@ -713,13 +742,15 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
                         //   ),
                         // );
 
-                        Navigator.pushReplacement(
+                        FacturaClientMobile factura = listaFacturi.first;
+
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => TestimonialScreen(
-                              factura: facturaSelectata!,
-                              idFactura: facturaSelectata?.id ?? 0,
-                              idMedic: facturaSelectata?.idMedic ?? 0,
+                              idMedic: widget.medic.id,
+                              idFactura: factura.id,
+                              factura: factura,
                             ),
                           ),
                         );

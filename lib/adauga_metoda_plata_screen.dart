@@ -83,6 +83,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
+  Future<void> notificaDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    apiCallFunctions.anuntaMedicDeServiciuTerminat(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medicDetalii.id.toString(),
+        tipPlata: widget.tipServiciu.toString());
+  }
+
   Future<void> getListaMedici() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
@@ -137,6 +149,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         timer.cancel();
         await sendExitNotificationToDoctor();
         await fetchDataBeforeNavigation();
+
+        await notificaDoctor();
 
         if (mounted && resGetCont != null) {
           Navigator.pushReplacement(
@@ -509,199 +523,204 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     print("🔄 build() called - Current _cardFormKey: $_cardFormKey");
 
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        backgroundColor: Colors.white,
 
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              color: Colors.black,
-              onPressed: () async {
-                await sendExitNotificationToDoctor();
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                color: Colors.black,
+                onPressed: () async {
+                  await sendExitNotificationToDoctor();
 
-                // ✅ Load required data before navigating
-                await fetchDataBeforeNavigation();
+                  // ✅ Load required data before navigating
+                  await fetchDataBeforeNavigation();
 
-                // ✅ Optional: Add a delay to ensure UI loads properly
-                await Future.delayed(const Duration(seconds: 2));
+                  // ✅ Optional: Add a delay to ensure UI loads properly
+                  await Future.delayed(const Duration(seconds: 2));
 
-                if (mounted && resGetCont != null) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VeziTotiMediciiScreen(
-                        listaMedici: listaMedici,
-                        contClientMobile: resGetCont!,
+                  await notificaDoctor();
+
+                  if (mounted && resGetCont != null) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VeziTotiMediciiScreen(
+                          listaMedici: listaMedici,
+                          contClientMobile: resGetCont!,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 46.0, bottom: 46.0, left: 23.0, right: 23.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  savedPaymentMethodId != null || pretValue != 0.0
+                      ? const Text(
+                          'Introduceti detele cardului',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        )
+                      : const SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                  // Container(
+                  //   child: TextFormField(
+                  //     controller: _nameController,
+                  //     decoration: InputDecoration(
+                  //       labelText: 'Nume pe card',
+                  //       border: OutlineInputBorder(
+                  //         borderRadius: BorderRadius.circular(8),
+                  //         borderSide:
+                  //         const BorderSide(color: Colors.red, width: 1),
+                  //       ),
+                  //     ),
+                  //     validator: (value) {
+                  //       if (value == null || value.isEmpty) {
+                  //         return 'Introduceți numele de pe card';
+                  //       }
+                  //       return null;
+                  //     },
+                  //   ),
+                  // ),
+                  const SizedBox(height: 20),
+                  savedPaymentMethodId != null || pretValue != 0.0
+                      ? Container(
+                          height: 280,
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.green, width: 1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 18.0),
+                            child: Visibility(
+                              visible: _isCardFormVisible,
+                              child: CardFormField(
+                                key: _cardFormKey,
+                                onCardChanged: (cardDetails) {
+                                  setState(() {
+                                    _cardDetails = cardDetails;
+                                  });
+                                },
+                                style: CardFormStyle(
+                                  textColor: Colors.black87,
+                                  placeholderColor: Colors.black45,
+                                  backgroundColor: Colors.grey[100],
+                                  fontSize: 16,
+                                  textErrorColor: Colors.redAccent,
+                                  cursorColor: Colors.black,
+                                ),
+                                countryCode: 'RO',
+                                enablePostalCode: false,
+                                autofocus: true,
+                              ),
+                            ),
+
+
+                          ),
+                        )
+                      : const Center(child: Text('Folosind metoda de plată salvată')),
+                  const SizedBox(height: 160),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 128.0, right: 128.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 500),
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ValueListenableBuilder<int>(
+                            valueListenable: remainingTimeNotifier,
+                            builder: (context, remainingTime, _) {
+                              return Text(
+                                "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.timer,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 46.0, bottom: 46.0, left: 23.0, right: 23.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                savedPaymentMethodId != null || pretValue != 0.0
-                    ? const Text(
-                        'Introduceti detele cardului',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      )
-                    : const SizedBox(height: 20),
-                const SizedBox(height: 20),
-                // Container(
-                //   child: TextFormField(
-                //     controller: _nameController,
-                //     decoration: InputDecoration(
-                //       labelText: 'Nume pe card',
-                //       border: OutlineInputBorder(
-                //         borderRadius: BorderRadius.circular(8),
-                //         borderSide:
-                //         const BorderSide(color: Colors.red, width: 1),
-                //       ),
-                //     ),
-                //     validator: (value) {
-                //       if (value == null || value.isEmpty) {
-                //         return 'Introduceți numele de pe card';
-                //       }
-                //       return null;
-                //     },
-                //   ),
-                // ),
-                const SizedBox(height: 20),
-                savedPaymentMethodId != null || pretValue != 0.0
-                    ? Container(
-                        height: 280,
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black, width: 1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 18.0),
-                          child: Visibility(
-                            visible: _isCardFormVisible,
-                            child: CardFormField(
-                              key: _cardFormKey,
-                              onCardChanged: (cardDetails) {
-                                setState(() {
-                                  _cardDetails = cardDetails;
-                                });
-                              },
-                              style: CardFormStyle(
-                                textColor: Colors.black87,
-                                placeholderColor: Colors.black45,
-                                backgroundColor: Colors.grey[100],
-                                fontSize: 16,
-                                textErrorColor: Colors.redAccent,
-                                cursorColor: Colors.black,
-                              ),
-                              countryCode: 'RO',
-                              enablePostalCode: false,
-                              autofocus: true,
-                            ),
-                          ),
-
-
-                        ),
-                      )
-                    : const Center(child: Text('Folosind metoda de plată salvată')),
-                const SizedBox(height: 160),
-                Padding(
-                  padding: const EdgeInsets.only(left: 128.0, right: 128.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ValueListenableBuilder<int>(
-                          valueListenable: remainingTimeNotifier,
-                          builder: (context, remainingTime, _) {
-                            return Text(
-                              "${remainingTime ~/ 60}:${(remainingTime % 60).toString().padLeft(2, '0')}", // Format as MM:SS
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.timer,
-                          color: Colors.red,
-                          size: 20,
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                savedPaymentMethodId != null || pretValue != 0.0
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 28.0, right: 28.0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: MaterialButton(
-                            onPressed: () async {
-                              if (_formKey.currentState!.validate()) {
-                                if (_cardDetails == null || !_cardDetails!.complete) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Completați detaliile cardului'),
-                                    ),
-                                  );
-                                  return;
-                                }
+                  const SizedBox(height: 20),
+                  savedPaymentMethodId != null || pretValue != 0.0
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 28.0, right: 28.0),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: MaterialButton(
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  if (_cardDetails == null || !_cardDetails!.complete) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Completați detaliile cardului'),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                                createPaymentIntent();
-                              }
-                            },
-                            color: Colors.green,
-                            height: 50,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              "CONFIRMĂ PLATA",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                  createPaymentIntent();
+                                }
+                              },
+                              color: Colors.green,
+                              height: 50,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                "CONFIRMĂ PLATA",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                    : const SizedBox(height: 20),
-              ],
+                        )
+                      : const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),

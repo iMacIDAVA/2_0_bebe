@@ -58,12 +58,51 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
 
   bool _isChatStarted = false;
 
+  ContClientMobile? contInfo;
+  List<FacturaClientMobile> listaFacturi = [];
+
   int remainingTime = 180;
   Timer? countdownTimer;
 
   bool _showUploadScreen = false;
 
   ValueNotifier<int> remainingTimeNotifier = ValueNotifier(600);
+
+
+  Future<void> fetchData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+    // Debugging print statements
+    print("Fetching data for user: $user");
+    print("User password hash: $userPassMD5");
+
+    // **Fetch account details**
+    contInfo = await apiCallFunctions.getContClient(
+      pUser: user,
+      pParola: userPassMD5,
+      pDeviceToken: prefs.getString('oneSignalId') ?? "",
+      pTipDispozitiv: Platform.isAndroid ? '1' : '2',
+      pModelDispozitiv: await apiCallFunctions.getDeviceInfo(),
+      pTokenVoip: '',
+    );
+
+    // **Fetch invoices**
+    listaFacturi = await apiCallFunctions.getListaFacturi(
+      pUser: user,
+      pParola: userPassMD5,
+    ) ?? [];
+
+    // Print the list of invoices for debugging
+    print("Invoices fetched: ${listaFacturi.length}");
+
+    if (mounted) {
+      setState(() {
+        // isLoading = false;
+      });
+    }
+  }
 
   void _onSecondButtonPressed() async {
     await sendWaitingForPayentNotificationToDoctor();
@@ -192,7 +231,6 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
           [];
 
       if (mounted && newMessages.isNotEmpty) {
-        // Filter out system messages
         newMessages.removeWhere((msg) =>
             msg.comentariu.trim() == "Pacientul a părăsit consultația" ||
             msg.comentariu.trim() == "medicul a părăsit consultația" ||
@@ -296,6 +334,14 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     startTimer();
     _fetchData();
     getUser();
+    fetchData();
+
+
+    print("📂 Received files in ChatScreen: ${widget.initialFiles}");
+
+    if (widget.initialFiles != null && widget.initialFiles!.isNotEmpty) {
+      _sendFilesAsMessage(widget.initialFiles!);
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_controller.hasClients) {
@@ -318,17 +364,12 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
 
     OneSignal.Notifications.addForegroundWillDisplayListener(_onNotificationDisplayed);
     _fetchMessages().then((_) {
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_controller.hasClients) {
-            _controller.animateTo(
-              _controller.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_controller.hasClients) {
+          _controller.jumpTo(_controller.position.maxScrollExtent);
+        }
+      });
+
     });
 
     _messageUpdateTimer = Timer.periodic(
@@ -342,6 +383,8 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
+    print("🚀 Sending Attachments... ${files.length} files");
+
     List<String> uploadedUrls = [];
 
     for (String filePath in files) {
@@ -353,6 +396,8 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       String pCheie = keyAppPacienti;
 
       try {
+
+        print("📤 Uploading: $fileName$extension");
         // Upload the file
         String? fileUrl = await apiCallFunctions.adaugaMesajCuAtasamentDinContMedic(
           pCheie: pCheie,
@@ -384,11 +429,13 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
           pIdMedic: widget.medic.id.toString(),
           pMesaj: fileUrl,
         );
+        print("✅ Sent file as message: $fileUrl");
       }
 
       print("✅ Sent files as actual images.");
       _fetchMessages(); // Refresh chat
     }
+
   }
 
   void _proceedToChat() {
@@ -554,7 +601,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     user = prefs.getString('user') ?? '';
   }
 
-  void _onNotificationDisplayed(OSNotificationWillDisplayEvent event) {
+  Future<void> _onNotificationDisplayed(OSNotificationWillDisplayEvent event) async {
     final notification = event.notification;
     final String? notificationBody = notification.body?.trim();
 
@@ -581,13 +628,17 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
           //   ),
           // );
 
-          Navigator.pushReplacement(
+           await notificaDoctor();
+
+          FacturaClientMobile factura = listaFacturi.first;
+
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => TestimonialScreen(
-                factura: facturaSelectata!,
-                idFactura: facturaSelectata?.id ?? 0,
-                idMedic: facturaSelectata?.idMedic ?? 0,
+                idMedic: widget.medic.id,
+                idFactura: factura.id,
+                factura: factura,
               ),
             ),
           );
@@ -683,13 +734,18 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       //     ),
       //   ),
       // );
-      Navigator.pushReplacement(
+
+      await notificaDoctor();
+
+      FacturaClientMobile factura = listaFacturi.first;
+
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => TestimonialScreen(
-            factura: facturaSelectata!,
-            idFactura: facturaSelectata?.id ?? 0,
-            idMedic: facturaSelectata?.idMedic ?? 0,
+            idMedic: widget.medic.id,
+            idFactura: factura.id,
+            factura: factura,
           ),
         ),
       );
@@ -943,9 +999,10 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
         final bool isUrl = text.startsWith('http://') || text.startsWith('https://');
 
         // Skip messages containing "File Attachment"
-        if (text.contains("File Attachment")) {
-          return const SizedBox.shrink(); // Return an empty widget for such messages
-        }
+     if (RegExp(r"^(File|Photo)\s*Attachment", caseSensitive: false).hasMatch(text)) {
+  return const SizedBox.shrink(); // Return an empty widget for such messages
+}
+
 
         // Skip rendering files if chatOnly is true
         if (widget.chatOnly && isUrl) {
@@ -1304,29 +1361,32 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
       return _buildChatOnlyIntroScreen(); // ✅ Show intro only if chat hasn’t started
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(30, 214, 158, 1),
-        toolbarHeight: 75,
-        leading: const SizedBox(),
-        title: Text(
-          widget.medic.numeleComplet,
-          style: GoogleFonts.rubik(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white),
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color.fromRGBO(30, 214, 158, 1),
+          toolbarHeight: 75,
+          leading: const SizedBox(),
+          title: Text(
+            widget.medic.numeleComplet,
+            style: GoogleFonts.rubik(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white),
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
+        body: (_isChatStarted || !widget.chatOnly)
+            ? // Show the new intro screen
+            WillPopScope(
+                onWillPop: () async => false,
+                child: Column(
+                  children: [
+                    Expanded(child: _buildMessageList()),
+                    _buildMessageInput(),
+                  ],
+                ),
+              )
+            : _buildChatOnlyIntroScreen(),
       ),
-      body: (_isChatStarted || !widget.chatOnly)
-          ? // Show the new intro screen
-          WillPopScope(
-              onWillPop: () async => false,
-              child: Column(
-                children: [
-                  Expanded(child: _buildMessageList()),
-                  _buildMessageInput(),
-                ],
-              ),
-            )
-          : _buildChatOnlyIntroScreen(),
     );
   }
 }

@@ -57,12 +57,12 @@ class _IntroScreenState extends State<IntroScreen> {
     if (user.isNotEmpty && userPassMD5.isNotEmpty) {
       try {
         await getContUser();
-        // await getListaMedici();
+        if (resGetCont != null) {
+          await getListaMedici();
+        }
       } catch (e) {
         navigateToLoginScreen();
       }
-    } else {
-      navigateToLoginScreen();
     }
   }
 
@@ -183,7 +183,7 @@ class _IntroScreenState extends State<IntroScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               await getPlayerId();
-                              if (resGetCont != null) {
+                              if (resGetCont != null && listaMedici.isNotEmpty) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

@@ -7,6 +7,8 @@ import 'package:sos_bebe_app/doctor_confirmation_reject_screen.dart';
 import 'package:sos_bebe_app/utils_api/classes.dart';
 
 import 'doctor_confirmation_accepted_screen.dart';
+import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
+import 'package:sos_bebe_app/utils_api/api_config.dart';
 
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 
@@ -31,6 +33,7 @@ class NotificationDisplayScreen extends StatefulWidget {
 class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
   int remainingTime = 180;
   Timer? countdownTimer;
+  final ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
   ValueNotifier<int> remainingTimeNotifier = ValueNotifier(180);
 
@@ -91,6 +94,18 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
     } else {}
   }
 
+  Future<void> notificaDoctor() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    String user = prefs.getString('user') ?? '';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    apiCallFunctions.anuntaMedicDeServiciuTerminat(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medicDetalii.id.toString(),
+        tipPlata: widget.tipServiciu.toString());
+  }
+
   void navigateToConfirmScreen(String? body) {
     Navigator.pushReplacement(
       context,
@@ -106,7 +121,10 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
     );
   }
 
-  void navigateToRejectScreen(String? body) {
+  Future<void> navigateToRejectScreen(String? body) async {
+
+    await notificaDoctor();
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
