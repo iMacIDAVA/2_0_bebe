@@ -118,6 +118,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
               tipServiciu: widget.tipServiciu,
               contClientMobile: widget.contClientMobile,
               medicDetalii: widget.medic,
+              fromChatScreen: true,
             ),
           ),
         );

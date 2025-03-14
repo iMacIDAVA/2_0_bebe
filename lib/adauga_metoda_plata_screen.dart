@@ -25,6 +25,7 @@ class PaymentScreen extends StatefulWidget {
   final MedicMobile medicDetalii;
   final String pret;
   final String currency;
+  final bool fromChatScreen;
 
   const PaymentScreen({
     super.key,
@@ -33,6 +34,7 @@ class PaymentScreen extends StatefulWidget {
     required this.medicDetalii,
     required this.pret,
     required this.currency,
+    required this.fromChatScreen,
   });
 
   @override
@@ -44,6 +46,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _isCardFieldInitialized = false;
 
   Key _cardFormKey = UniqueKey();
+
+  bool _isProcessingPayment = false;
 
   CardFieldInputDetails? _cardDetails;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -272,6 +276,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 contClientMobile: widget.contClientMobile,
                 medicDetalii: widget.medicDetalii,
                 pret: widget.pret,
+                skipQuestionnaire: widget.fromChatScreen,
               );
             },
           ),
@@ -421,6 +426,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               contClientMobile: widget.contClientMobile,
               medicDetalii: widget.medicDetalii,
               pret: widget.pret,
+              skipQuestionnaire: widget.fromChatScreen,
             );
           },
         ));
@@ -684,40 +690,67 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const SizedBox(height: 20),
                   savedPaymentMethodId != null || pretValue != 0.0
                       ? Padding(
-                          padding: const EdgeInsets.only(left: 28.0, right: 28.0),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: MaterialButton(
-                              onPressed: () async {
-                                if (_formKey.currentState!.validate()) {
-                                  if (_cardDetails == null || !_cardDetails!.complete) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Completați detaliile cardului'),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  createPaymentIntent();
-                                }
-                              },
-                              color: Colors.green,
-                              height: 50,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                "CONFIRMĂ PLATA",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                    padding: const EdgeInsets.only(left: 28.0, right: 28.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: MaterialButton(
+                        onPressed: _isProcessingPayment ? null : () async {
+                          if (_formKey.currentState!.validate()) {
+                            if (_cardDetails == null || !_cardDetails!.complete) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Completați detaliile cardului'),
                                 ),
-                              ),
-                            ),
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              _isProcessingPayment = true; // Disable button and show loader
+                            });
+
+                            try {
+                              await createPaymentIntent(); // Process payment
+
+                              // If successful, navigate to the success screen
+                              _directSuccessNavigation();
+                            } catch (e) {
+                              // If payment fails, re-enable button
+                              setState(() {
+                                _isProcessingPayment = false;
+                              });
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Plata a eșuat: ${e.toString()}')),
+                              );
+                            }
+                          }
+                        },
+                        color: Colors.green,
+                        height: 50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: _isProcessingPayment
+                            ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                            strokeWidth: 2,
                           ),
                         )
+                            : const Text(
+                          "CONFIRMĂ PLATA",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
                       : const SizedBox(height: 20),
                 ],
               ),

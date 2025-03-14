@@ -18,6 +18,8 @@ class NotificationContentScreen extends StatefulWidget {
   final int tipServiciu;
   final ContClientMobile contClientMobile;
   final MedicMobile medicDetalii;
+  final bool fromChatScreen;
+
 
   const NotificationContentScreen({
     Key? key,
@@ -26,6 +28,7 @@ class NotificationContentScreen extends StatefulWidget {
     required this.tipServiciu,
     required this.contClientMobile,
     required this.medicDetalii,
+    required this.fromChatScreen,
   }) : super(key: key);
 
   @override
@@ -287,6 +290,7 @@ class _NotificationContentScreenState extends State<NotificationContentScreen> {
                                 tipServiciu: widget.tipServiciu,
                                 contClientMobile: widget.contClientMobile,
                                 medicDetalii: widget.medicDetalii,
+                                fromChatScreen: widget.fromChatScreen,
                               );
                             },
                           ),

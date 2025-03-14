@@ -116,6 +116,7 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
           tipServiciu: widget.tipServiciu,
           contClientMobile: widget.contClientMobile,
           medicDetalii: widget.medicDetalii,
+          fromChatScreen: false,
         ),
       ),
     );

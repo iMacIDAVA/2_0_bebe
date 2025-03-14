@@ -24,11 +24,7 @@ class TestimonialPentruChat extends StatefulWidget {
   final int idFactura;
   final FacturaClientMobile factura;
 
-  const TestimonialPentruChat(
-      {super.key,
-      required this.idMedic,
-      required this.idFactura,
-      required this.factura});
+  const TestimonialPentruChat({super.key, required this.idMedic, required this.idFactura, required this.factura});
 
   @override
   State<TestimonialPentruChat> createState() => _TestimonialPentruChatState();
@@ -43,7 +39,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
 
   final controllerTestimonialText = TextEditingController();
 
-    Future<void> getListaMedici() async {
+  Future<void> getListaMedici() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
@@ -101,18 +97,16 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
     print("mesaj");
     print(controllerTestimonialText.text);
 
-    http.Response? resAdaugaFeedback =
-        await apiCallFunctions.adaugaFeedbackDinContClient(
+    http.Response? resAdaugaFeedback = await apiCallFunctions.adaugaFeedbackDinContClient(
       pUser: user,
       pParola: userPassMD5,
       pIdMedic: widget.idMedic.toString(),
       pIdFactura: widget.idFactura.toString(),
-      pNota: _ratingValue.toString(),
-      pComentariu: controllerTestimonialText.toString(),
+      pNota: _ratingValue!.round().toString(),
+      pComentariu: controllerTestimonialText.text,
     );
 
-    print(
-        'adaugaFeedbackDinContClient resAdaugaCont.body ${resAdaugaFeedback!.body}');
+    print('adaugaFeedbackDinContClient resAdaugaCont.body ${resAdaugaFeedback!.body}');
 
     if (int.parse(resAdaugaFeedback!.body) == 200) {
       setState(() {
@@ -210,8 +204,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
     );
   }
 
-
-   Future<void> fetchDataBeforeNavigation() async {
+  Future<void> fetchDataBeforeNavigation() async {
     try {
       // ✅ Fetch account details if not already loaded
       if (resGetCont == null) {
@@ -227,19 +220,17 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
         await Future.delayed(const Duration(seconds: 1));
         await getListaMedici();
       }
-
     } catch (e) {
       print("❌ Error loading data before navigation: $e");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     LocalizationsApp l = LocalizationsApp.of(context)!;
 
     return WillPopScope(
-         onWillPop: () async => false,
+      onWillPop: () async => false,
       child: MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
         child: Scaffold(
@@ -288,19 +279,19 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                   if (sentWithSucces)
                     GestureDetector(
                       onTap: () async {
-                                await fetchDataBeforeNavigation();
+                        await fetchDataBeforeNavigation();
 
-        if (mounted && resGetCont != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VeziTotiMediciiScreen(
-                listaMedici: listaMedici,
-                contClientMobile: resGetCont!,
-              ),
-            ),
-          );
-        }
+                        if (mounted && resGetCont != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VeziTotiMediciiScreen(
+                                listaMedici: listaMedici,
+                                contClientMobile: resGetCont!,
+                              ),
+                            ),
+                          );
+                        }
                       },
                       child: Container(
                         margin: const EdgeInsets.fromLTRB(25, 0, 25, 5),
@@ -317,10 +308,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                               // style: GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 18), old
                               //'TRIMITE TESTIMONIALUL', //old IGV
                               "Întoarce-te la ecranul principal",
-                              style: GoogleFonts.rubik(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16),
+                              style: GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 16),
                             ),
                           ],
                         ),
@@ -355,12 +343,9 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                                   allowHalfRating: true,
                                   itemCount: 5,
                                   itemSize: 40,
-                                  itemPadding: const EdgeInsets.symmetric(
-                                      horizontal: 0.5, vertical: 5.0),
+                                  itemPadding: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 5.0),
                                   ratingWidget: RatingWidget(
-                                      full: const Icon(Icons.star,
-                                          color:
-                                              Color.fromRGBO(195, 161, 110, 1)),
+                                      full: const Icon(Icons.star, color: Color.fromRGBO(195, 161, 110, 1)),
                                       half: const Icon(
                                         Icons.star_half,
                                         color: Color.fromRGBO(252, 220, 85, 1),
@@ -411,8 +396,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                         textCapitalization: TextCapitalization.words,
                         controller: controllerTestimonialText,
                         style: const TextStyle(
-                            color: Color.fromRGBO(103, 114, 148,
-                                1)), //added by George Valentin Iordache
+                            color: Color.fromRGBO(103, 114, 148, 1)), //added by George Valentin Iordache
                         //decoration: InputDecoration(border: InputBorder.none, hintText: 'Doctorul a raspuns rapid...'),
                         decoration: InputDecoration(
                           border: InputBorder.none,
@@ -421,8 +405,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                           hintStyle: const TextStyle(
                               color: Color.fromRGBO(103, 114, 148, 1),
                               fontSize: 14,
-                              fontWeight: FontWeight
-                                  .w300), //added by George Valentin Iordache
+                              fontWeight: FontWeight.w300), //added by George Valentin Iordache
                         ),
                         maxLines: 4,
                       ),
@@ -448,15 +431,13 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                                       feedbackCorect = false;
                                       showButonTrimiteTestimonial = false;
                                     });
-    
+
                                     http.Response? resAdaugaFeedback;
-    
-                                    resAdaugaFeedback =
-                                        await adaugaFeedbackDinContClient();
-    
+
+                                    resAdaugaFeedback = await adaugaFeedbackDinContClient();
+
                                     if (context.mounted) {
-                                      if (int.parse(resAdaugaFeedback!.body) ==
-                                          200) {
+                                      if (int.parse(resAdaugaFeedback!.body) == 200) {
                                         await getContDetalii();
                                         isSending = false;
                                         sentWithSucces = true;
@@ -470,8 +451,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                                       }
                                     }
                                   } else {
-                                    Fluttertoast.showToast(
-                                        msg: "Va rugam lasati un mesaj");
+                                    Fluttertoast.showToast(msg: "Va rugam lasati un mesaj");
                                   }
                                 },
                                 child: Container(
@@ -479,8 +459,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
                                       //color: Colors.green, old
-                                      color:
-                                          const Color.fromRGBO(14, 190, 127, 1)),
+                                      color: const Color.fromRGBO(14, 190, 127, 1)),
                                   height: 60,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -491,9 +470,7 @@ class _TestimonialPentruChatState extends State<TestimonialPentruChat> {
                                         //'TRIMITE TESTIMONIALUL', //old IGV
                                         l.testimonialTrimiteTestimonialul,
                                         style: GoogleFonts.rubik(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 16),
+                                            color: Colors.white, fontWeight: FontWeight.w500, fontSize: 16),
                                       ),
                                     ],
                                   ),

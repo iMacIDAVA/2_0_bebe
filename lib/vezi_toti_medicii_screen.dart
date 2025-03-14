@@ -221,12 +221,30 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  totiMediciiList = false;
-                                  scrieOintrebareLista = false;
-                                  consultatieVideoLista = false;
-                                  interpretareAnalizeLista = false;
-                                  mediciOnlineList = true;
-                                  setState(() {});
+                                  setState(() {
+                                    totiMediciiList = false;
+                                    scrieOintrebareLista = false;
+                                    consultatieVideoLista = false;
+                                    interpretareAnalizeLista = false;
+                                    mediciOnlineList = true;
+
+                                    // Properly update mediciOnline list, which is used in the UI
+                                    mediciOnline.clear();
+                                    for (var doctor in listaMediciInitiala) {
+                                      bool isOnline = doctor.status == 1 || doctor.status == 3;
+                                      print("Checking Doctor: ${doctor.numeleComplet} - Status: ${doctor.status} - Is Online: $isOnline");
+
+                                      if (isOnline) {
+                                        mediciOnline.add(
+                                          IconStatusNumeRatingSpitalLikesMedic(
+                                            medicItem: doctor,
+                                            contClientMobile: widget.contClientMobile,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  });
+
                                 },
                                 style: const ButtonStyle(
                                   backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(236, 251, 247, 1)),
@@ -305,17 +323,23 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                totiMediciiList = false;
-                                scrieOintrebareLista = true;
-                                consultatieVideoLista = false;
-                                interpretareAnalizeLista = false;
-                                mediciOnlineList = false;
+                                setState(() {
+                                  totiMediciiList = false;
+                                  scrieOintrebareLista = true;
+                                  consultatieVideoLista = false;
+                                  interpretareAnalizeLista = false;
+                                  mediciOnlineList = false;
 
-                                if (scrieOintrebareLista) {
-                                  scrieOintrebareLista = false;
-                                  totiMediciiList = true;
-                                }
-                                setState(() {});
+                                  // Filter doctors who accept questions
+                                  listaFiltrata = listaMediciInitiala.where((doctor) {
+                                    bool acceptsQuestions = doctor.primesteIntrebari;
+                                    print("Checking Doctor: ${doctor.numeleComplet} - Accepts Questions: $acceptsQuestions");
+                                    return acceptsQuestions;
+                                  }).toList();
+
+                                  // Debugging output
+                                  print("Filtered Chat Doctors (${listaFiltrata.length}): ${listaFiltrata.map((d) => d.numeleComplet).toList()}");
+                                });
                               },
                               child: ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(241, 248, 251, 1),
@@ -327,18 +351,25 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                totiMediciiList = false;
-                                scrieOintrebareLista = false;
-                                consultatieVideoLista = true;
-                                interpretareAnalizeLista = false;
-                                mediciOnlineList = false;
+                                setState(() {
+                                  totiMediciiList = false;
+                                  scrieOintrebareLista = false;
+                                  consultatieVideoLista = true;
+                                  interpretareAnalizeLista = false;
+                                  mediciOnlineList = false;
 
-                                if (scrieOintrebareLista) {
-                                  consultatieVideoLista = false;
-                                  totiMediciiList = true;
-                                }
-                                setState(() {});
+                                  // Filter doctors who offer video consultations
+                                  listaFiltrata = listaMediciInitiala.where((doctor) {
+                                    bool offersVideo = doctor.consultatieVideo;
+                                    print("Checking Doctor: ${doctor.numeleComplet} - Offers Video: $offersVideo");
+                                    return offersVideo;
+                                  }).toList();
+
+                                  // Debugging output
+                                  print("Filtered Video Consultation Doctors (${listaFiltrata.length}): ${listaFiltrata.map((d) => d.numeleComplet).toList()}");
+                                });
                               },
+
                               child: ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(236, 251, 247, 1),
                                 colorScris: const Color.fromRGBO(30, 214, 158, 1),
@@ -349,18 +380,25 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                             ),
                             GestureDetector(
                               onTap: () {
-                                totiMediciiList = false;
-                                scrieOintrebareLista = false;
-                                consultatieVideoLista = false;
-                                interpretareAnalizeLista = true;
-                                mediciOnlineList = false;
+                                setState(() {
+                                  totiMediciiList = false;
+                                  scrieOintrebareLista = false;
+                                  consultatieVideoLista = false;
+                                  interpretareAnalizeLista = true;
+                                  mediciOnlineList = false;
 
-                                if (scrieOintrebareLista) {
-                                  interpretareAnalizeLista = false;
-                                  totiMediciiList = true;
-                                }
-                                setState(() {});
+                                  // Filter doctors who interpret analyses
+                                  listaFiltrata = listaMediciInitiala.where((doctor) {
+                                    bool interpretsAnalyses = doctor.interpreteazaAnalize;
+                                    print("Checking Doctor: ${doctor.numeleComplet} - Interprets Analyses: $interpretsAnalyses");
+                                    return interpretsAnalyses;
+                                  }).toList();
+
+                                  // Debugging output
+                                  print("Filtered Analysis Interpretation Doctors (${listaFiltrata.length}): ${listaFiltrata.map((d) => d.numeleComplet).toList()}");
+                                });
                               },
+
                               child: ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(253, 250, 234, 1),
                                 colorScris: const Color.fromRGBO(241, 201, 0, 1),
@@ -377,16 +415,17 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                             children: totiMediciiList
                                 ? allMedics
                                 : mediciOnlineList
-                                    ? mediciOnline
-                                    : scrieOintrebareLista
-                                        ? intrebariMedics
-                                        : consultatieVideoLista
-                                            ? consultatieMedics
-                                            : interpretareAnalizeLista
-                                                ? interpretareMedics
-                                                : allMedics,
+                                ? mediciOnline
+                                : (scrieOintrebareLista || consultatieVideoLista || interpretareAnalizeLista)
+                                ? listaFiltrata.map((doctor) => IconStatusNumeRatingSpitalLikesMedic(
+                              medicItem: doctor,
+                              contClientMobile: widget.contClientMobile,
+                            )).toList()
+                                : allMedics,
                           ),
                         ),
+
+
                       ],
                     ),
                   )
@@ -772,59 +811,55 @@ class _IconStatusNumeRatingSpitalLikesMedic extends State<IconStatusNumeRatingSp
                           const SizedBox(
                             width: 2,
                           ),
+                          widget.medicItem.medieReviewuri != 0.0 ?
                           RatingBar(
-                              ignoreGestures: true,
-                              initialRating: 4.9,
-                              direction: Axis.horizontal,
-                              itemCount: 5,
-                              itemSize: 13,
-                              itemPadding: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 5.0),
-                              ratingWidget: RatingWidget(
-                                full: widget.medicItem.status == inConsultatie.value
-                                    ? const Icon(Icons.star, color: Color.fromRGBO(252, 220, 85, 1))
-                                    : widget.medicItem.status == activ.value
-                                        ? const Icon(Icons.star, color: Color.fromRGBO(252, 220, 85, 1))
-                                        : const Icon(Icons.star, color: Color.fromRGBO(103, 114, 148, 1)),
-
-                                half: widget.medicItem.status == inConsultatie.value
-                                    ? const Icon(Icons.star_half, color: Color.fromRGBO(252, 220, 85, 1))
-                                    : // old IGV
-                                    widget.medicItem.status == activ.value
-                                        ? const Icon(Icons.star_half, color: Color.fromRGBO(252, 220, 85, 1))
-                                        : const Icon(Icons.star_half,
-                                            color: Color.fromRGBO(103, 114, 148, 1)), // old IGV
-
-                                empty: widget.medicItem.status == inConsultatie.value
-                                    ? const Icon(Icons.star_outline, color: Color.fromRGBO(252, 220, 85, 1))
-                                    : widget.medicItem.status == activ.value
-                                        ? const Icon(Icons.star_outline, color: Color.fromRGBO(252, 220, 85, 1))
-                                        : const Icon(Icons.star_outline,
-                                            color: Color.fromRGBO(103, 114, 148, 1)), //old IGV
-                              ),
-                              onRatingUpdate: (value) {
-                                setState(() {
-                                  //_ratingValue = value;
-                                });
-                              }),
-                          SizedBox(
-                              width: 50,
-                              child: widget.medicItem.status == inConsultatie.value
-                                  ? Text(_ratingValue.toString(),
-                                      style: GoogleFonts.rubik(
-                                          color: const Color.fromRGBO(252, 220, 85, 1),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500))
+                            ignoreGestures: true,
+                            initialRating: widget.medicItem.medieReviewuri ?? 0.0, // Use actual rating
+                            direction: Axis.horizontal,
+                            itemCount: 5,
+                            itemSize: 13,
+                            itemPadding: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 5.0),
+                            ratingWidget: RatingWidget(
+                              full: widget.medicItem.status == inConsultatie.value
+                                  ? const Icon(Icons.star, color: Color.fromRGBO(252, 220, 85, 1))
                                   : widget.medicItem.status == activ.value
-                                      ? Text(_ratingValue.toString(),
-                                          style: GoogleFonts.rubik(
-                                              color: const Color.fromRGBO(252, 220, 85, 1),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500))
-                                      : Text(_ratingValue.toString(),
-                                          style: GoogleFonts.rubik(
-                                              color: const Color.fromRGBO(103, 114, 148, 1),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500))),
+                                  ? const Icon(Icons.star, color: Color.fromRGBO(252, 220, 85, 1))
+                                  : const Icon(Icons.star, color: Color.fromRGBO(103, 114, 148, 1)),
+
+                              half: widget.medicItem.status == inConsultatie.value
+                                  ? const Icon(Icons.star_half, color: Color.fromRGBO(252, 220, 85, 1))
+                                  : widget.medicItem.status == activ.value
+                                  ? const Icon(Icons.star_half, color: Color.fromRGBO(252, 220, 85, 1))
+                                  : const Icon(Icons.star_half, color: Color.fromRGBO(103, 114, 148, 1)),
+
+                              empty: widget.medicItem.status == inConsultatie.value
+                                  ? const Icon(Icons.star_outline, color: Color.fromRGBO(252, 220, 85, 1))
+                                  : widget.medicItem.status == activ.value
+                                  ? const Icon(Icons.star_outline, color: Color.fromRGBO(252, 220, 85, 1))
+                                  : const Icon(Icons.star_outline, color: Color.fromRGBO(103, 114, 148, 1)),
+                            ),
+                            onRatingUpdate: (value) {
+                              setState(() {
+                                //_ratingValue = value;
+                              });
+                            },
+                          ) : const SizedBox(),
+                          widget.medicItem.medieReviewuri != 0.0 ?
+                          SizedBox(
+                            width: 50,
+                            child: Text(
+                              widget.medicItem.medieReviewuri.toStringAsFixed(1),
+                              style: GoogleFonts.rubik(
+                                color: widget.medicItem.status == inConsultatie.value
+                                    ? const Color.fromRGBO(252, 220, 85, 1)
+                                    : widget.medicItem.status == activ.value
+                                    ? const Color.fromRGBO(252, 220, 85, 1)
+                                    : const Color.fromRGBO(103, 114, 148, 1),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ) : const SizedBox()
                         ],
                       ),
                       GestureDetector(

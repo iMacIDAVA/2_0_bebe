@@ -22,6 +22,7 @@ class ConfirmareServiciiScreen extends StatefulWidget {
   final int tipServiciu;
   final ContClientMobile contClientMobile;
   final MedicMobile medicDetalii;
+  final bool fromChatScreen;
 
   const ConfirmareServiciiScreen({
     super.key,
@@ -29,6 +30,7 @@ class ConfirmareServiciiScreen extends StatefulWidget {
     required this.tipServiciu,
     required this.contClientMobile,
     required this.medicDetalii,
+    required this.fromChatScreen,
   });
 
   @override
@@ -541,6 +543,7 @@ class _ConfirmareServiciiScreenState extends State<ConfirmareServiciiScreen> {
                                     medicDetalii: widget.medicDetalii,
                                     pret: widget.pret,
                                     currency: 'RON',
+                                    fromChatScreen: widget.fromChatScreen,
                                   ),
                                 ),
                               );

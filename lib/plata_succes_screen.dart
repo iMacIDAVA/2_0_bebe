@@ -18,13 +18,15 @@ class PlataRealizataCuSuccesScreen extends StatefulWidget {
 
   final MedicMobile medicDetalii;
   final String pret;
+  final bool skipQuestionnaire;
 
   const PlataRealizataCuSuccesScreen(
       {super.key,
       required this.tipServiciu,
       required this.contClientMobile,
       required this.medicDetalii,
-      required this.pret});
+      required this.pret,
+        required this.skipQuestionnaire});
 
   @override
   State<PlataRealizataCuSuccesScreen> createState() => _PlataRealizataCuSuccesScreenState();
@@ -50,46 +52,41 @@ class _PlataRealizataCuSuccesScreenState extends State<PlataRealizataCuSuccesScr
     super.initState();
 
     print('aaaaaa : ${widget.tipServiciu}');
+    print(widget.medicDetalii.numeleComplet); // Log doctor’s name
 
-    // Log the doctor's name for debugging
-    print(widget.medicDetalii.numeleComplet);
-
-    // Notify the doctor of the successful payment
     notificaDoctor();
 
-    // Schedule navigation based on the type of service
     Timer(const Duration(seconds: 5), () {
-      if (widget.tipServiciu == 1 || widget.tipServiciu == 3) {
-        // Navigate to the QuestionaireScreen for specific service type
+      if ((widget.tipServiciu == 1 || widget.tipServiciu == 3) && !widget.skipQuestionnaire) {
+        // ✅ Show questionnaire (default behavior)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (BuildContext context) => QuestionaireScreen(
               tipServiciu: widget.tipServiciu,
               contClientMobile: widget.contClientMobile,
-              medicDetalii: widget.medicDetalii, pret: widget.pret, chatOnly: widget.tipServiciu == 3 ? true : false,
+              medicDetalii: widget.medicDetalii,
+              pret: widget.pret,
+              chatOnly: widget.tipServiciu == 3 ? true : false,
             ),
           ),
         );
       } else {
-        // Navigate to ChatScreenPage for chat or consultation services
+        // ✅ Skip questionnaire and go directly to ChatScreenPage
         if (widget.medicDetalii != null) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ChatScreenPage(
+              builder: (context) => ChatScreenPage(
                 medic: widget.medicDetalii,
                 contClientMobile: widget.contClientMobile,
                 pret: widget.pret,
                 tipServiciu: widget.tipServiciu,
                 chatOnly: widget.tipServiciu == 3 ? true : false,
               ),
-
             ),
           );
         } else {
-          // Show an error message if medicDetalii is null
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text("Error: Invalid doctor details. Please try again."),
