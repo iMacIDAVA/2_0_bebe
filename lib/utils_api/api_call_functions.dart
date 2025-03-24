@@ -180,46 +180,62 @@ Future<String?> adaugaMesajCuAtasamentDinContMedic({
     return res;
   }
 
-  Future<ContClientMobile?> getContClient({
-    //required String pNumeComplet,
-    required String pUser,
-    required String pParola,
-    required String pDeviceToken,
-    required String pTipDispozitiv,
-    required String pModelDispozitiv,
-    required String pTokenVoip,
-  }) async {
-    //final String pParolaMD5 = generateMd5(pParola);
-    final Map<String, String> parametriiApiCall = {
-      //'pNumeComplet': pNumeComplet,
-      'pUser': pUser, //IGV
+Future<ContClientMobile?> getContClient({
+  //required String pNumeComplet,
+  required String pUser,
+  required String pParola,
+  required String pDeviceToken,
+  required String pTipDispozitiv,
+  required String pModelDispozitiv,
+  required String pTokenVoip,
+}) async {
+  // Print the passed parameters
+  print('getContClient called with:');
+  print('pUser: $pUser');
+  print('pParola: $pParola');
+  print('pDeviceToken: $pDeviceToken');
+  print('pTipDispozitiv: $pTipDispozitiv');
+  print('pModelDispozitiv: $pModelDispozitiv');
+  print('pTokenVoip: $pTokenVoip');
+  
+  //final String pParolaMD5 = generateMd5(pParola);
+  final Map<String, String> parametriiApiCall = {
+    //'pNumeComplet': pNumeComplet,
+    'pUser': pUser, //IGV
+    'pParolaMD5': pParola,
+    'pDeviceToken': pDeviceToken,
+    'pTipDispozitiv': pTipDispozitiv,
+    'pModelDispozitiv': pModelDispozitiv,
+    'pTokenVoip': pTokenVoip,
+  };
 
-      'pParolaMD5': pParola,
-      'pDeviceToken': pDeviceToken,
-      'pTipDispozitiv': pTipDispozitiv,
-      'pModelDispozitiv': pModelDispozitiv,
-      'pTokenVoip': pTokenVoip,
-    };
+  // Print the API call parameters
+  print('API call parameters: $parametriiApiCall');
+  
+  // Print the URL or endpoint being called (if applicable)
+  // Here we assume 'GetContClient' is used as the endpoint name
+  print('Calling URL/endpoint: GetContClient');
 
-    http.Response? resGetContClient;
+  http.Response? resGetContClient;
 
-    resGetContClient = await getApelFunctie(parametriiApiCall, 'GetContClient');
+  resGetContClient = await getApelFunctie(parametriiApiCall, 'GetContClient');
 
-    print('getContClient rezultat: ${resGetContClient!.statusCode}');
+  // Print the HTTP status code and the response body for debugging
+  print('getContClient rezultat: ${resGetContClient!.statusCode}');
+  print('Response body: ${resGetContClient.body}');
 
-    if (resGetContClient.statusCode == 200) {
-      // If the server did return a 201 CREATED response,
-      // then parse the JSON.
-      return ContClientMobile.fromJson(jsonDecode(resGetContClient.body) as Map<String, dynamic>);
-    } else {
-      // If the server did not return a 201 CREATED response,
-      // then throw an exception.
-      //throw Exception('Nu s-a putut crea corect contul de client mobile din Json-ul rezultat.'); //old IGV
-      return null;
-    }
-
-    //return resGetContClient;
+  if (resGetContClient.statusCode == 200) {
+    // If the server did return a 200 OK response,
+    // then parse the JSON.
+    return ContClientMobile.fromJson(jsonDecode(resGetContClient.body) as Map<String, dynamic>);
+  } else {
+    // If the server did not return a 200 OK response,
+    // then return null.
+    return null;
   }
+
+  //return resGetContClient;
+}
 
   Future<List<MedicMobile>?> getListaMedicFavorit({required String pUser, required String pParola}) async {
     final Map<String, String> parametriiApiCall = {

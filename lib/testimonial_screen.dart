@@ -109,7 +109,7 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
       pUser: user,
       pParola: userPassMD5,
       pIdFeedback: widget.factura.idFeedbackClient.toString(),
-      pNota: _ratingValue.toString(),
+      pNota: _ratingValue!.toString().split('.')[0],
       pComentariu: controllerTestimonialText.text,
     );
     return resAdaugaFeedback;
@@ -141,7 +141,7 @@ class _TestimonialScreenState extends State<TestimonialScreen> {
       pParola: userPassMD5,
       pIdMedic: widget.idMedic.toString(),
       pIdFactura: widget.idFactura.toString(),
-      pNota: _ratingValue.toString(),
+pNota: _ratingValue!.toString().split('.')[0],
       pComentariu: controllerTestimonialText.text,
     );
 

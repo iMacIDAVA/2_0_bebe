@@ -78,15 +78,33 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
   }
 
   void logOut() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.clear();
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return const IntroScreen();
-      },
-    ));
-    setState(() {});
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  
+  // Store the OneSignal token before clearing everything
+  String? oneSignalToken = prefs.getString('oneSignalId');
+
+  // Clear only user-related data, not the token
+  await prefs.clear();
+
+  // Restore the OneSignal token after clearing
+  if (oneSignalToken != null && oneSignalToken.isNotEmpty) {
+    await prefs.setString('oneSignalId', oneSignalToken);
+    print("🚀 Logout complete! OneSignal token preserved: $oneSignalToken");
+  } else {
+    print("⚠️ No OneSignal token found to preserve.");
   }
+
+  // Navigate to IntroScreen
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const IntroScreen(),
+    ),
+  );
+
+  setState(() {}); // Refresh UI
+}
+
 
   Future<http.Response?> trimitePinPentruStergereContClient() async {
     LocalizationsApp l = LocalizationsApp.of(context)!;

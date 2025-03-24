@@ -153,6 +153,10 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
         await notificaDoctor();
 
         if (mounted && resGetCont != null) {
+
+               countdownTimer?.cancel(); // ✅ Cancel timer
+    remainingTimeNotifier.dispose();
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -1139,17 +1143,30 @@ class _QuestionaireScreenState extends State<QuestionaireScreen> {
 
                   if (context.mounted) {
                     if (questionaireKey.currentState!.validate()) {
-                      if (widget.tipServiciu == 1) {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) {
-                          return  ApelVideoPacientScreen(
-                            medic: widget.medicDetalii,
-                            contClientMobile: widget.contClientMobile,
-                          );
-                        }));
-                      } else if (widget.tipServiciu == 2) {
+                    if (widget.tipServiciu == 1) {
+
+                           countdownTimer?.cancel(); // ✅ Cancel timer
+    remainingTimeNotifier.dispose();
+
+
+  Navigator.of(context).popUntil((route) => route.isFirst); // ✅ Clears stack
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ApelVideoPacientScreen(
+        medic: widget.medicDetalii,
+        contClientMobile: widget.contClientMobile,
+      ),
+    ),
+  );
+}
+else if (widget.tipServiciu == 2) {
                       } else if (widget.tipServiciu == 3) {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) {
+
+                                 countdownTimer?.cancel(); // ✅ Cancel timer
+    remainingTimeNotifier.dispose();
                             //return const PaymentScreen();
                             return ChatScreenPage(
                               medic: widget.medicDetalii,

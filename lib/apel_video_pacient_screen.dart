@@ -169,6 +169,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
         // );
         FacturaClientMobile factura = listaFacturi.first;
 
+Navigator.of(context).popUntil((route) => route.isFirst);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -337,6 +338,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
           // Navigate back to a safe screen
           if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
             Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => TestimonialScreen(idMedic: widget.medic.id, idFactura: listaFacturi.first.id, factura: listaFacturi.first))
@@ -379,6 +381,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
             FacturaClientMobile factura = listaFacturi.first;
 
+Navigator.of(context).popUntil((route) => route.isFirst);
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -571,22 +574,25 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
               child: _remoteVideo(),
               // child: Text('ss'),
             ),
-            Align(
-              alignment: Alignment.topRight,
-              child: SizedBox(
-                width: 100,
-                height: 150,
-                child: Center(
-                  child: _localUserJoined
-                      ? _engine != null
-                          ? AgoraVideoView(
-                              controller: VideoViewController(
-                                rtcEngine: _engine!,
-                                canvas: const VideoCanvas(uid: 0),
-                              ),
-                            )
-                          : const CircularProgressIndicator()
-                      : const CircularProgressIndicator(),
+            Padding(
+               padding: const EdgeInsets.only(right: 18.0, top: 48.0),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: SizedBox(
+                  width: 100,
+                  height: 150,
+                  child: Center(
+                    child: _localUserJoined
+                        ? _engine != null
+                            ? AgoraVideoView(
+                                controller: VideoViewController(
+                                  rtcEngine: _engine!,
+                                  canvas: const VideoCanvas(uid: 0),
+                                ),
+                              )
+                            : const CircularProgressIndicator()
+                        : const CircularProgressIndicator(),
+                  ),
                 ),
               ),
             ),
@@ -744,6 +750,7 @@ class _ApelVideoPacientScreenState extends State<ApelVideoPacientScreen> {
 
                         FacturaClientMobile factura = listaFacturi.first;
 
+Navigator.of(context).popUntil((route) => route.isFirst);
                         Navigator.push(
                           context,
                           MaterialPageRoute(

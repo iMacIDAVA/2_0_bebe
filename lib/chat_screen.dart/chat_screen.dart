@@ -109,6 +109,7 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
 
     // ✅ Navigate back to the payment screen
     if (mounted) {
+      
       Future.delayed(Duration(milliseconds: 300), () {
         Navigator.pushReplacement(
           context,
@@ -379,65 +380,76 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     );
   }
 
-  void _sendFilesAsMessage(List<String> files) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  bool isUploading = false; // Add this at the beginning of the class
 
-    print("🚀 Sending Attachments... ${files.length} files");
+void _sendFilesAsMessage(List<String> files) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String user = prefs.getString('user') ?? '';
+  String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
 
-    List<String> uploadedUrls = [];
+  print("🚀 Sending Attachments... ${files.length} files");
 
-    for (String filePath in files) {
-      File file = File(filePath);
-      String fileName = path.basenameWithoutExtension(file.path);
-      String extension = path.extension(file.path);
-      List<int> fileBytes = await file.readAsBytes();
-      String base64File = base64Encode(fileBytes);
-      String pCheie = keyAppPacienti;
+  List<String> uploadedUrls = [];
 
-      try {
+  // 🔹 Step 1: Show placeholder message
+  setState(() {
+    isUploading = true;
+  });
 
-        print("📤 Uploading: $fileName$extension");
-        // Upload the file
-        String? fileUrl = await apiCallFunctions.adaugaMesajCuAtasamentDinContMedic(
-          pCheie: pCheie,
-          pUser: user,
-          pParolaMD5: userPassMD5,
-          pIdMedic: widget.medic.id.toString(),
-          pMesaj: "File Attachment: $fileName$extension",
-          pDenumireFisier: fileName,
-          pExtensie: extension,
-          pSirBitiDocument: base64File,
-        );
+  for (String filePath in files) {
+    File file = File(filePath);
+    String fileName = path.basenameWithoutExtension(file.path);
+    String extension = path.extension(file.path);
+    List<int> fileBytes = await file.readAsBytes();
+    String base64File = base64Encode(fileBytes);
+    String pCheie = keyAppPacienti;
 
-        if (fileUrl != null) {
-          uploadedUrls.add(fileUrl);
-        } else {
-          print("❌ Failed to upload: $filePath");
-        }
-      } catch (error) {
-        print("❌ Error uploading file: $error");
+    try {
+      print("📤 Uploading: $fileName$extension");
+
+      // Upload the file
+      String? fileUrl = await apiCallFunctions.adaugaMesajCuAtasamentDinContMedic(
+        pCheie: pCheie,
+        pUser: user,
+        pParolaMD5: userPassMD5,
+        pIdMedic: widget.medic.id.toString(),
+        pMesaj: "File Attachment: $fileName$extension",
+        pDenumireFisier: fileName,
+        pExtensie: extension,
+        pSirBitiDocument: base64File,
+      );
+
+      if (fileUrl != null) {
+        uploadedUrls.add(fileUrl);
+      } else {
+        print("❌ Failed to upload: $filePath");
       }
+    } catch (error) {
+      print("❌ Error uploading file: $error");
     }
-
-    // Send message with uploaded file URLs
-    if (uploadedUrls.isNotEmpty) {
-      for (String fileUrl in uploadedUrls) {
-        await apiCallFunctions.adaugaMesajDinContClient(
-          pUser: user,
-          pParola: userPassMD5,
-          pIdMedic: widget.medic.id.toString(),
-          pMesaj: fileUrl,
-        );
-        print("✅ Sent file as message: $fileUrl");
-      }
-
-      print("✅ Sent files as actual images.");
-      _fetchMessages(); // Refresh chat
-    }
-
   }
+
+  // 🔹 Step 2: Hide placeholder message
+  setState(() {
+    isUploading = false;
+  });
+
+  // 🔹 Step 3: Send actual file URLs
+  if (uploadedUrls.isNotEmpty) {
+    for (String fileUrl in uploadedUrls) {
+      await apiCallFunctions.adaugaMesajDinContClient(
+        pUser: user,
+        pParola: userPassMD5,
+        pIdMedic: widget.medic.id.toString(),
+        pMesaj: fileUrl,
+      );
+      print("✅ Sent file as message: $fileUrl");
+    }
+
+    print("✅ Sent files as actual images.");
+    _fetchMessages(); // Refresh chat
+  }
+}
 
   void _proceedToChat() {
     setState(() {
@@ -984,121 +996,122 @@ class _ChatScreenPageState extends State<ChatScreenPage> {
     }
   }
 
-  Widget _buildMessageList() {
-    return ListView.builder(
-      controller: _controller,
-      itemCount: mesajeConversatie.length,
-      itemBuilder: (context, index) {
-        final message = mesajeConversatie[index];
-        final isCurrentUser = message.idExpeditor == widget.contClientMobile.id;
-
-        // Extract the message text
-        final String text = message.comentariu.trim();
-        final bool isImageUrl =
-            text.endsWith('.jpg') || text.endsWith('.png') || text.endsWith('.jpeg') || text.endsWith('.gif');
-        final bool isPdf = text.endsWith('.pdf');
-        final bool isUrl = text.startsWith('http://') || text.startsWith('https://');
-
-        // Skip messages containing "File Attachment"
-     if (RegExp(r"^(File|Photo)\s*Attachment", caseSensitive: false).hasMatch(text)) {
-  return const SizedBox.shrink(); // Return an empty widget for such messages
-}
-
-
-        // Skip rendering files if chatOnly is true
-        if (widget.chatOnly && isUrl) {
-          return const SizedBox.shrink(); // Do not render files in chat-only mode
-        }
-
+Widget _buildMessageList() {
+  return ListView.builder(
+    controller: _controller,
+    itemCount: mesajeConversatie.length + (isUploading ? 1 : 0), // Add 1 if uploading
+    itemBuilder: (context, index) {
+      if (isUploading && index == mesajeConversatie.length) {
+        // 🔹 Show placeholder message while uploading
         return Align(
-          alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: Alignment.centerRight,
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isCurrentUser ? const Color.fromRGBO(14, 190, 127, 1) : const Color.fromRGBO(240, 240, 240, 1),
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(10),
-                topRight: const Radius.circular(10),
-                bottomLeft: Radius.circular(isCurrentUser ? 10 : 0),
-                bottomRight: Radius.circular(isCurrentUser ? 0 : 10),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  offset: Offset(0, 3),
-                  blurRadius: 5,
-                ),
-              ],
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Column(
-              crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (isUrl && !widget.chatOnly) // Render files only if chatOnly is false
-                  isImageUrl
-                      ? GestureDetector(
-                          onTap: () {
-                            print('Opening image: $text');
-                            _handleFileOpen(text);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 5),
-                            child: Image.network(
-                              text,
-                              width: 150,
-                              height: 150,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Text(
-                                  "Failed to load image.",
-                                  style: TextStyle(color: Colors.red),
-                                );
-                              },
-                            ),
-                          ),
-                        )
-                      : GestureDetector(
-                          onTap: () => _handleFileOpen(text),
-                          child: Row(
-                            children: [
-                              Icon(
-                                isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file,
-                                color: isPdf ? Colors.red : Colors.blue,
-                              ),
-                              const SizedBox(width: 8),
-                              // IconButton(
-                              //   icon: const Icon(Icons.download, color: Colors.red),
-                              //   onPressed: () => _downloadFileAndShowSnackbar(text),
-                              // ),
-                              Flexible(
-                                child: Text(
-                                  path.basename(text),
-                                  style: TextStyle(
-                                    color: isCurrentUser ? Colors.white : Colors.black,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                if (!isUrl)
-                  Text(
-                    text,
-                    style: TextStyle(
-                      color: isCurrentUser ? Colors.white : Colors.black,
-                      fontSize: 18,
-                      height: 1.5,
-                    ),
-                  ),
-              ],
+            child: Text(
+              "Se trimite fișiere...",
+              style: TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
             ),
           ),
         );
-      },
-    );
-  }
+      }
+
+      final message = mesajeConversatie[index];
+      final isCurrentUser = message.idExpeditor == widget.contClientMobile.id;
+
+      final String text = message.comentariu.trim();
+      final bool isImageUrl =
+          text.endsWith('.jpg') || text.endsWith('.png') || text.endsWith('.jpeg') || text.endsWith('.gif');
+      final bool isPdf = text.endsWith('.pdf');
+      final bool isUrl = text.startsWith('http://') || text.startsWith('https://');
+
+      if (RegExp(r"^(File|Photo)\s*Attachment", caseSensitive: false).hasMatch(text)) {
+        return const SizedBox.shrink();
+      }
+
+      if (widget.chatOnly && isUrl) {
+        return const SizedBox.shrink();
+      }
+
+      return Align(
+        alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isCurrentUser ? const Color.fromRGBO(14, 190, 127, 1) : const Color.fromRGBO(240, 240, 240, 1),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(10),
+              topRight: const Radius.circular(10),
+              bottomLeft: Radius.circular(isCurrentUser ? 10 : 0),
+              bottomRight: Radius.circular(isCurrentUser ? 0 : 10),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if (isUrl && !widget.chatOnly)
+                isImageUrl
+                    ? GestureDetector(
+                        onTap: () {
+                          _handleFileOpen(text);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Image.network(
+                            text,
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Text("Failed to load image.", style: TextStyle(color: Colors.red));
+                            },
+                          ),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: () => _handleFileOpen(text),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                              color: isPdf ? Colors.red : Colors.blue,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                path.basename(text),
+                                style: TextStyle(
+                                  color: isCurrentUser ? Colors.white : Colors.black,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              if (!isUrl)
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: isCurrentUser ? Colors.white : Colors.black,
+                    fontSize: 18,
+                    height: 1.5,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 
   Widget _buildMessageInput() {
     // ✅ Apply restriction only for chatOnly: false (chatOnly: true remains unchanged)

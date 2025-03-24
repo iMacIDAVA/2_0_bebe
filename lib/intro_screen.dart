@@ -11,6 +11,7 @@ import 'package:sos_bebe_app/utils_api/classes.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
+import 'package:uuid/uuid.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -30,6 +31,7 @@ class _IntroScreenState extends State<IntroScreen> {
   void initState() {
     super.initState();
     initOneSignal();
+    manuallyFetchOneSignalId();
   }
 
   Future<void> initOneSignal() async {
@@ -39,15 +41,41 @@ class _IntroScreenState extends State<IntroScreen> {
     await checkUserLoginState();
   }
 
-  Future<void> getPlayerId() async {
-    final id = OneSignal.User.pushSubscription.id;
-    oneSignalId = id ?? '';
+ Future<void> getPlayerId() async {
+    final String? id = OneSignal.User.pushSubscription.id;
+
     if (id != null) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('oneSignalId', id);
+      oneSignalId = id;
+    } else {
+      oneSignalId = '';
+      await initOneSignal();
+    }
+    if (id != null) {
+      await SharedPreferences.getInstance().then((value) {
+        value.setString('oneSignalId', id);
+      });
     }
     setState(() {});
   }
+
+
+Future<void> manuallyFetchOneSignalId() async {
+  print("📢 Manually Fetching OneSignal Player ID...");
+
+  String? playerId = OneSignal.User.pushSubscription.id;
+
+  if (playerId != null && playerId.isNotEmpty) {
+    print("✅ OneSignal Player ID Retrieved: $playerId");
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('oneSignalId', playerId);
+    print("🔹 OneSignal Player ID saved in SharedPreferences.");
+  } else {
+    print("❌ OneSignal Player ID is still NULL.");
+  }
+}
+
+
 
   Future<void> checkUserLoginState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -86,6 +114,13 @@ class _IntroScreenState extends State<IntroScreen> {
     if (user.isEmpty || userPassMD5.isEmpty) {
       throw Exception("Missing user credentials");
     }
+
+    print('pUser : ${user}');
+        print('pParola : ${userPassMD5}');
+            print('pDeviceToken : ${prefs.getString('oneSignalId') ?? ""}');
+                print('pTipDispozitiv : ${Platform.isAndroid ? '1' : '2'}');
+                    print('pModelDispozitiv : ${await apiCallFunctions.getDeviceInfo()}');
+                        print('pTokenVoip : ${''}');
 
     resGetCont = await apiCallFunctions.getContClient(
       pUser: user,

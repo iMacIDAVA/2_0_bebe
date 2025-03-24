@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -82,6 +83,15 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     getContDetalii();
 
     getListaMedici();
+
+    aa();
+  }
+
+  aa() async {
+       SharedPreferences prefs = await SharedPreferences.getInstance();
+    String user = prefs.getString('user') ?? '';
+   var a =  prefs.getString('oneSignalId') ?? "";
+   print('aaaa : ${a}');
   }
 
   Future<void> getListaMedici() async {
@@ -133,6 +143,8 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
   }
 
   Future<void> getContDetalii() async {
+
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
     String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';

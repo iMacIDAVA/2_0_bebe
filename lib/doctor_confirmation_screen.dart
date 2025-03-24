@@ -55,17 +55,28 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
     startTimer();
   }
 
-  void initNotificationListener() {
-    OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-      saveNotificationData(event.notification);
-    });
+void initNotificationListener() {
+  print("🔔 Initializing OneSignal Notification Listeners...");
 
-    OneSignal.Notifications.addClickListener((event) {
-      saveNotificationData(event.notification);
-    });
-  }
+  OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+    print("🟢 Foreground Notification Received!");
+    saveNotificationData(event.notification);
+  });
+
+  OneSignal.Notifications.addClickListener((event) {
+    print("🖱️ Notification Clicked!");
+    saveNotificationData(event.notification);
+  });
+}
+
 
   Future<void> saveNotificationData(OSNotification notification) async {
+
+     print("📩 Notification Received:");
+  print("🔔 Title: ${notification.title}");
+  print("📝 Body: ${notification.body}");
+  print("📊 Additional Data: ${notification.additionalData}");
+
     remainingTimeNotifier.dispose();
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -83,6 +94,10 @@ class _NotificationDisplayScreenState extends State<NotificationDisplayScreen> {
   }
 
   void handleNotification(OSNotification notification) async {
+
+     print("🔄 Handling Notification...");
+  print("📩 Body: ${notification.body}");
+
     String? alertMessage = notification.body;
     if (alertMessage != null) {
       if (alertMessage.toLowerCase().contains('confirmare')) {
