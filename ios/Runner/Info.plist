@@ -15,7 +15,13 @@
 	<key>CFBundleName</key>
 	<string>sos_bebe_app</string>
     <key>NSCameraUsageDescription</key>
-    <string>Scan your card to add it automatically</string>
+    <string>Această aplicație are nevoie de acces la cameră pentru apeluri video.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Această aplicație are nevoie de acces la biblioteca foto pentru a încărca imagini.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Această aplicație are nevoie de acces la biblioteca foto pentru a salva imagini.</string>
+    <key>NSUserNotificationUsageDescription</key>
+    <string>Această aplicație folosește notificări pentru a te ține la curent.</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
