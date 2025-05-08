@@ -19,6 +19,8 @@ import 'package:http/http.dart' as http;
 
 ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
+
+
 List<MedicMobile> listaMediciInitiala = [];
 
 MedicMobile? medicSelectat;
