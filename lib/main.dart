@@ -6,6 +6,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sos_bebe_app/firebase_options.dart';
 import 'package:sos_bebe_app/fixing/chat.dart';
+import 'package:sos_bebe_app/fixing/screens/consultation_screnn.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
@@ -65,7 +66,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: ChatScreen(isDoctor: true,) //const IntroScreen(),
+      //home: const IntroScreen(), //
+      //home:ConsultationScreen(patientId:1) // const IntroScreen(), //
+      home:ConsultationScreen(patientId:1) // const IntroScreen(), //
     );
   }
 }
