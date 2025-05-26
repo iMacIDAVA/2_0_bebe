@@ -1,51 +1,45 @@
 {
   "project_info": {
-    "project_number": "629418451122",
-    "project_id": "sos-bebe-pacient",
-    "storage_bucket": "sos-bebe-pacient.appspot.com"
+    "project_number": "1078998892043",
+    "project_id": "sos-ffc0c",
+    "storage_bucket": "sos-ffc0c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:629418451122:android:a08c06bef79882cccaa9ab",
+        "mobilesdk_app_id": "1:1078998892043:android:e1830b655c5592c025d10e",
         "android_client_info": {
           "package_name": "com.example.sos_bebe_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "629418451122-0a0mttatvosruoc955ro87ajeal5r8oq.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.sos_bebe_app",
-            "certificate_hash": "838a534eeee0365d0c9e315d1b656e6f42335273"
-          }
-        },
-        {
-          "client_id": "629418451122-knek8ue4ere1dmk4m1qso45h7macagv9.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAMO_7L9bjkMZP7kEyqyOgEHH7PkKgG0s0"
+          "current_key": "AIzaSyCqTO6Z01b88YM36w1qpns8pnkJ7xhQxBQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "629418451122-knek8ue4ere1dmk4m1qso45h7macagv9.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "629418451122-j03dgdma8759kfg1vksv8a019ikus5l5.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.sosBebeApp"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078998892043:android:7caf1c076b4d7d9225d10e",
+        "android_client_info": {
+          "package_name": "com.example.sos_bebe_profil_bebe_doctor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqTO6Z01b88YM36w1qpns8pnkJ7xhQxBQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
         }
       }
     }
