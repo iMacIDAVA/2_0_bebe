@@ -50,20 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAMO_7L9bjkMZP7kEyqyOgEHH7PkKgG0s0',
-    appId: '1:629418451122:android:a08c06bef79882cccaa9ab',
-    messagingSenderId: '629418451122',
-    projectId: 'sos-bebe-pacient',
-    storageBucket: 'sos-bebe-pacient.appspot.com',
+    apiKey: 'AIzaSyCqTO6Z01b88YM36w1qpns8pnkJ7xhQxBQ',
+    appId: '1:1078998892043:android:e1830b655c5592c025d10e',
+    messagingSenderId: '1078998892043',
+    projectId: 'sos-ffc0c',
+    storageBucket: 'sos-ffc0c.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBJ1T4V6i3QzXQYePAQDkL5SzwDqxovNaA',
-    appId: '1:629418451122:ios:c9644799fa188ee5caa9ab',
-    messagingSenderId: '629418451122',
-    projectId: 'sos-bebe-pacient',
-    storageBucket: 'sos-bebe-pacient.appspot.com',
-    iosClientId: '629418451122-j03dgdma8759kfg1vksv8a019ikus5l5.apps.googleusercontent.com',
+    apiKey: 'AIzaSyBR7IfqndJnE1cGi5BJCVkU4_Ks2PXGsu8',
+    appId: '1:1078998892043:ios:f021199f3fe2bd0d25d10e',
+    messagingSenderId: '1078998892043',
+    projectId: 'sos-ffc0c',
+    storageBucket: 'sos-ffc0c.firebasestorage.app',
     iosBundleId: 'com.example.sosBebeApp',
   );
 

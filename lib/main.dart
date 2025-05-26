@@ -5,9 +5,12 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sos_bebe_app/firebase_options.dart';
+import 'package:sos_bebe_app/fixing/chat.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
+
+import 'fixing/TestVideoCallScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +47,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'SOS Bebe',
       locale: const Locale('ro', 'RO'),
@@ -61,7 +65,71 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const IntroScreen(),
+      home: ChatScreen(isDoctor: true,) //const IntroScreen(),
     );
   }
 }
+
+//
+// import 'package:flutter/material.dart';
+// import 'package:agora_rtm/agora_rtm.dart';
+//
+// import 'fixing/chat.dart';
+//
+//
+// void main() {
+//   runApp(const MyApp());
+// }
+//
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       home: ChatHomeScreen(),
+//     );
+//   }
+// }
+//
+// class ChatHomeScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Chat Test'),
+//       ),
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             ElevatedButton(
+//               onPressed: () {
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) =>  ChatScreen(isDoctor: true),
+//                   ),
+//                 );
+//               },
+//               child: const Text('Join Chat as Doctor'),
+//             ),
+//             const SizedBox(height: 20),
+//             ElevatedButton(
+//               onPressed: () {
+//                 Navigator.push(
+//                   context,
+//                   MaterialPageRoute(
+//                     builder: (context) =>  ChatScreen(isDoctor: false),
+//                   ),
+//                 );
+//               },
+//               child: const Text('Join Chat as Patient'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+

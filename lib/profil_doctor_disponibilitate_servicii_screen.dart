@@ -1,3 +1,5 @@
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:agora_token_service/agora_token_service.dart';
 import 'package:intl/intl.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sos_bebe_app/doctor_confirmation_screen.dart';
 
 import 'package:sos_bebe_app/utils/utils_widgets.dart';
@@ -24,6 +27,9 @@ import 'package:http/http.dart' as http;
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/vezi_medici_salvati_screen.dart';
 import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
+
+import 'fixing/TestVideoCallScreen.dart';
+import 'apel_video_pacient_screen.dart';
 
 ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
@@ -66,6 +72,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
           pUser: user,
           pParola: userPassMD5,
         ) ??
+        [];
         [];
   }
 
@@ -148,12 +155,12 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
       data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
       child: Scaffold(
         appBar: AppBar(
-          // title: Text(
-          //   l.universalInapoi,
-          // ),
-          // backgroundColor: const Color.fromRGBO(14, 190, 127, 1),
+          actions: [
+
+          ],
           foregroundColor: Colors.white,
-          leading: BackButton(
+          leading:
+           BackButton(
             onPressed: () async {
               if (context.mounted) {
                 if (widget.ecranTotiMedicii) {
@@ -966,6 +973,30 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
         onTap: () async {
+
+          //
+          //
+          // // Navigate to video call screen
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => ApelVideoPacientScreen(
+          //       medic: widget.medicDetalii,
+          //       contClientMobile: widget.contClientMobile,
+          //     ),
+          //   ),
+          // );
+          //
+          //   print("widget.medicDetalii");
+          //   print(widget.medicDetalii.id);
+          //   print(widget.contClientMobile.email);
+          //
+          //
+          //
+          //
+          //
+          //   return ;
+
           SharedPreferences prefs = await SharedPreferences.getInstance();
           String patientId = prefs.getString(pref_keys.userId) ?? '';
           String patientNume = prefs.getString(pref_keys.userNume) ?? '';
@@ -1024,7 +1055,7 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
           constraints: const BoxConstraints(minHeight: 53),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            color: widget.color,
+            color:widget.color,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1077,7 +1108,9 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
       ),
     );
   }
+
 }
+
 
 class RecenzieWidget extends StatelessWidget {
   final String textNume;

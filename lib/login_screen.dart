@@ -348,6 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       return resGetCont;
     } catch (e) {
+      print(e.toString());
       showSnackbar(
         context,
         e.toString(),

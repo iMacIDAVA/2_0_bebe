@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -77,6 +78,15 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
 
   Uint8List? _profileImage;
 
+  bool isLoading = false ;
+  List<MedicMobile> listaMediciInitiala = [];
+
+  //StreamSubscription<List<MedicMobile>>? _streamSubscription;
+
+  // CHANGE: Added StreamController and StreamSubscription for manual stream
+  StreamController<List<MedicMobile>>? _streamController;
+  StreamSubscription<List<MedicMobile>>? _streamSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -96,43 +106,138 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
    print('aaaa : ${a}');
   }
 
+  // CHANGE: Use StreamController to skip polling when mediciOnlineList is true
   Future<void> getListaMedici() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    _streamController = StreamController<List<MedicMobile>>.broadcast();
+
+    // CHANGE: Initial fetch to populate data
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+    String userPassMD5 = prefs.getString('userPassMD5') ?? '';
+    final initialData = await apiCallFunctions.getListaMedici(
+      pUser: user,
+      pParola: userPassMD5,
+    ) ??
+        <MedicMobile>[];
+    _streamController!.add(initialData);
 
-    listaMediciInitiala = await apiCallFunctions.getListaMedici(
-          pUser: user,
-          pParola: userPassMD5,
-        ) ??
-        [];
+    // CHANGE: Periodic polling with flag check
+    Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (mediciOnlineList) {
+        print('Polling skipped: mediciOnlineList is true');
+        return; // Skip polling
+      }
 
-    setState(() {
-      listaFiltrata = List.from(listaMediciInitiala);
-      allMedics.clear();
-      mediciOnline.clear();
+      print('Polling: Fetching doctor list');
+      final data = await apiCallFunctions.getListaMedici(
+        pUser: user,
+        pParola: userPassMD5,
+      ) ??
+          <MedicMobile>[];
+      _streamController!.add(data);
 
-      for (var element in listaMediciInitiala) {
-        allMedics.add(
-          IconStatusNumeRatingSpitalLikesMedic(
-            medicItem: element,
-            contClientMobile: widget.contClientMobile,
-          ),
-        );
+    });
 
-        if (element.status == 1 || element.status == 2 || element.status == 3) {
-          mediciOnline.add(
+    _streamSubscription = _streamController!.stream.listen((List<MedicMobile> listaMediciInitiala) {
+
+      setState(() {
+        this.listaMediciInitiala = listaMediciInitiala;
+
+        // Reapply active filter
+        if (scrieOintrebareLista) {
+          listaFiltrata = listaMediciInitiala.where((doctor) => doctor.primesteIntrebari).toList();
+        } else if (consultatieVideoLista) {
+          listaFiltrata = listaMediciInitiala.where((doctor) => doctor.consultatieVideo).toList();
+        } else if (interpretareAnalizeLista) {
+          listaFiltrata = listaMediciInitiala.where((doctor) => doctor.interpreteazaAnalize).toList();
+        } else if (mediciOnlineList) {
+          listaFiltrata = listaMediciInitiala.where((doctor) => doctor.status == 1 || doctor.status == 3).toList();
+        } else if (searchController.text.isNotEmpty) {
+          listaFiltrata = listaMediciInitiala
+              .where((doctor) => doctor.numeleComplet.toLowerCase().contains(searchController.text.toLowerCase()))
+              .toList();
+        } else {
+          listaFiltrata = List.from(listaMediciInitiala);
+        }
+        listaCautata = List.from(listaFiltrata);
+
+        allMedics.clear();
+        mediciOnline.clear();
+
+        for (var element in listaMediciInitiala) {
+          allMedics.add(
             IconStatusNumeRatingSpitalLikesMedic(
               medicItem: element,
               contClientMobile: widget.contClientMobile,
             ),
           );
-        }
-      }
 
-      isDoneLoading = true;
+          if (element.status == 1 || element.status == 2 || element.status == 3) {
+            mediciOnline.add(
+              IconStatusNumeRatingSpitalLikesMedic(
+                medicItem: element,
+                contClientMobile: widget.contClientMobile,
+              ),
+            );
+          }
+        }
+
+        isLoading = false;
+        isDoneLoading = true;
+      });
+    }, onError: (error) {
+
+      setState(() {
+        isLoading = false;
+        isDoneLoading = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching doctors: $error')),
+      );
     });
   }
+
+  // Future<void> getListaMedici() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   String user = prefs.getString('user') ?? '';
+  //   String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+  //
+  //   listaMediciInitiala = await apiCallFunctions.getListaMedici(
+  //         pUser: user,
+  //         pParola: userPassMD5,
+  //       ) ??
+  //       [];
+  //
+  //   setState(() {
+  //     listaFiltrata = List.from(listaMediciInitiala);
+  //     allMedics.clear();
+  //     mediciOnline.clear();
+  //
+  //     for (var element in listaMediciInitiala) {
+  //       allMedics.add(
+  //         IconStatusNumeRatingSpitalLikesMedic(
+  //           medicItem: element,
+  //           contClientMobile: widget.contClientMobile,
+  //         ),
+  //       );
+  //
+  //       if (element.status == 1 || element.status == 2 || element.status == 3) {
+  //         mediciOnline.add(
+  //           IconStatusNumeRatingSpitalLikesMedic(
+  //             medicItem: element,
+  //             contClientMobile: widget.contClientMobile,
+  //           ),
+  //         );
+  //       }
+  //     }
+  //
+  //     isDoneLoading = true;
+  //   });
+  // }
 
   Future<void> _loadAndDecodeImage() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -423,21 +528,39 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 25),
+                        isLoading?  Padding(padding: EdgeInsetsDirectional.only(top: 200) , child: CircularProgressIndicator( color: Color.fromRGBO(30, 214, 158, 1),) ,):
+
                         Center(
+                          //here
                           child: Column(
                             children: totiMediciiList
                                 ? allMedics
                                 : mediciOnlineList
                                 ? mediciOnline
                                 : (scrieOintrebareLista || consultatieVideoLista || interpretareAnalizeLista)
-                                ? listaFiltrata.map((doctor) => IconStatusNumeRatingSpitalLikesMedic(
+                                ? listaFiltrata.map((doctor) =>
+                                IconStatusNumeRatingSpitalLikesMedic(
                               medicItem: doctor,
                               contClientMobile: widget.contClientMobile,
                             )).toList()
                                 : allMedics,
                           ),
                         ),
+                        // const SizedBox(height: 25),
+                        // Center(
+                        //   child: Column(
+                        //     children: totiMediciiList
+                        //         ? allMedics
+                        //         : mediciOnlineList
+                        //         ? mediciOnline
+                        //         : (scrieOintrebareLista || consultatieVideoLista || interpretareAnalizeLista)
+                        //         ? listaFiltrata.map((doctor) => IconStatusNumeRatingSpitalLikesMedic(
+                        //       medicItem: doctor,
+                        //       contClientMobile: widget.contClientMobile,
+                        //     )).toList()
+                        //         : allMedics,
+                        //   ),
+                        // ),
 
 
                       ],

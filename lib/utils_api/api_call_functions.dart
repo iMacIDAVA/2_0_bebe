@@ -282,6 +282,8 @@ Future<ContClientMobile?> getContClient({
       // If the server did return a 201 CREATED response,
       // then parse the JSON.
 
+      print("_streamSubscription *************************");
+      print(resGetListaMedici.body);
       List<MedicMobile> parseMediciMobile(String responseBody) {
         final parsed = (jsonDecode(responseBody) as List).cast<Map<String, dynamic>>();
 
