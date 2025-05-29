@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sos_bebe_app/fixing/screens/questionaireScreen.dart';
+import 'package:sos_bebe_app/fixing/screens/rev.dart';
+import 'package:sos_bebe_app/fixing/screens/videoCallScreen.dart';
 import '../services/consultation_service.dart';
+import '../services/video_call_service.dart';
 import 'payment_screen.dart';
 
 class ConsultationScreen extends StatefulWidget {
@@ -21,6 +24,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   Timer? _pollingTimer;
   Timer? _countdownTimer;
   final ValueNotifier<int> _remainingTimeNotifier = ValueNotifier(180); // 3 minutes timeout
+  final _videoCallService = VideoCallService();
+
 
   @override
   void initState() {
@@ -60,10 +65,13 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
   Future<void> _loadCurrentConsultation() async {
     try {
-      final response = await _consultationService.getCurrentConsultation(widget.patientId);
+
+      final response = await _consultationService.getCurrentConsultation(patientId: widget.patientId);
       if (response['has_active_session']) {
         final newStatus = response['data']['status'];
         final oldStatus = _currentConsultation?['status'];
+
+
 
         setState(() {
           _currentConsultation = response['data'];
@@ -88,7 +96,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     }
   }
 
-  Future<void> _requestConsultation(int doctorId, String sessionType) async {
+  Future<void> _requestConsultation({required int doctorId,required String sessionType}) async {
     try {
       final response = await _consultationService.requestConsultation(
         patientId: widget.patientId,
@@ -336,6 +344,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     );
   }
 
+
   Widget _buildCallReadyScreen() {
     return Center(
       child: Column(
@@ -367,7 +376,47 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
+              print('_currentConsultation!');
+              print(_currentConsultation);
               // Navigate to call screen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => TestVideoCallScreen(isDoctor: false  , channelName: _currentConsultation!['channel_name']  ,)),
+              ).then((value) async {
+
+
+                try {
+                  // This is the specific line that ends the call
+                  await _videoCallService.endCall(_currentConsultation!['id']);
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Call ended successfully')),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    print('Error ending call: ${e.toString()}');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error ending call: ${e.toString()}')),
+                    );
+                  }
+                }
+
+
+                /// when the client click on end call he should be pe promp are sure you want to end the call ?
+                ///  this should be handed the video  on the the video call screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TestimonialScreenSimple(
+                      idMedic: 2, // Replace with actual doctor ID
+                    ),
+                  ),
+                );
+              });
+
+
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2196F3),
@@ -424,14 +473,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-              // showDialog(
-              //   context: context,
-              //   builder: (context) => ConsultationRequestDialog(
-              //     onRequest: (doctorId, sessionType) {
-              //       _requestConsultation(doctorId, sessionType);
-              //     },
-              //   ),
-              // );
+              _requestConsultation(doctorId: 2, sessionType: 'Call');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2196F3),
@@ -489,13 +531,13 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       case 'PaymentPending' :
         return _buildPaymentPendingScreen();
 
-      case 'PaymentCompleted':
+      case 'PaymentCompleted' || 'FormPending' :
         return _buildQuestionnaireScreen();
 
-      case 'FormPending':
-        return _buildFormPendingScreen();
+      case  'FormSubmitted' :
+        return fromSubmittedScreen();
 
-      case 'CallReady':
+      case 'CallReady' || 'CallStarted':
         return _buildCallReadyScreen();
 
       default:
@@ -652,7 +694,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ElevatedButton(
             onPressed: () async {
               try {
-               // First update status to FormPending
+                // First update status to FormPending
                 await _consultationService.updateConsultationStatus(
                   _currentConsultation!['id'],
                   'form_pending',
@@ -662,18 +704,20 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QuestionnaireScreen(
+                    builder: (context) => QuestionnaireScreen(numePacient: 'lora', dataNasterii: '10-10-2020', greutate: '70',
 
-                      consultationId: _currentConsultation!['id'],
                     ),
                   ),
                 );
+
+
+
 
                 if (result == true) {
                   // Questionnaire submitted successfully
                   await _consultationService.updateConsultationStatus(
                     _currentConsultation!['id'],
-                    'call_ready',
+                    'FormSubmitted',
                   );
 
                   // Reload consultation to show next state
@@ -703,6 +747,38 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class fromSubmittedScreen extends StatelessWidget {
+  const fromSubmittedScreen({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Color(0xFF1ED69E),
+            ),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Form submitted, waiting for doctor review',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1ED69E),
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -2,16 +2,18 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:sos_bebe_app/fixing/screens/api_config.dart';
 
 class ConsultationService {
-  String _baseUrl = 'http://10.0.2.2:8000/api';
+  String _baseUrl = ApiConfig.baseUrl;
 
   // Request a new consultation
   Future<Map<String, dynamic>> requestConsultation({
     required int patientId,
     required int doctorId,
     required String sessionType,
-  }) async {
+  }) async
+  {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/consultation/request/'),
@@ -34,16 +36,17 @@ class ConsultationService {
   }
 
   // Get current consultation for patient
-  Future<Map<String, dynamic>> getCurrentConsultation(int patientId) async {
+  Future<Map<String, dynamic>> getCurrentConsultation({required int patientId}) async {
     try {
       final response = await http.get(
         // Uri.parse('$_baseUrl/consultation/current/$patientId/'),
-        Uri.parse('${_baseUrl}/consultation/current/patient/1/'),
+        Uri.parse('${_baseUrl}/consultation/current/patient/${patientId}/'),
       );
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
+        print('Faixxxled to load consultation ${response.body}');
         throw Exception('Faixxxled to load consultation ${response.body}');
       }
     } catch (e) {
@@ -69,9 +72,14 @@ class ConsultationService {
           endpoint = '$_baseUrl/consultation/$consultationId/formPending/';
           break;
 
+          case 'FormSubmitted':
+            return;
+          break;
+
+
         default:
           print('defalt $status');
-          throw Exception('Invalid status: $status');
+          throw Exception('Invalid statusxxxx: $status');
       }
 
 
@@ -93,27 +101,28 @@ class ConsultationService {
     }
   }
 
-  // Submit medical questionnaire
-  Future<Map<String, dynamic>> submitQuestionnaire(
-      int consultationId,
-      Map<String, dynamic> formData,
-      ) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$_baseUrl/consultation/$consultationId/form/'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(formData),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to submit questionnaire');
-      }
-    } catch (e) {
-      throw Exception('Error: $e');
-    }
-  }
+  // // Submit medical questionnaire
+  // Future<Map<String, dynamic>> submitQuestionnaire(
+  //     int consultationId,
+  //     Map<String, dynamic> formData,
+  //     ) async
+  // {
+  //   try {
+  //     final response = await http.put(
+  //       Uri.parse('$_baseUrl/consultation/$consultationId/form/'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: json.encode(formData),
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       return json.decode(response.body);
+  //     } else {
+  //       throw Exception('Failed to submit questionnaire');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error: $e');
+  //   }
+  // }
 
   // Get consultation history
   Future<List<Map<String, dynamic>>> getConsultationHistory(int patientId) async {
@@ -132,4 +141,32 @@ class ConsultationService {
       throw Exception('Error loading consultation history: $e');
     }
   }
+
+  // Submit questionnaire and link it to consultation
+  Future<Map<String, dynamic>> submitQuestionnaire(
+      int sessionId,
+      Map<String, dynamic> questionnaireData,
+      ) async {
+    //print("<>");
+    // print("response.body");
+    // return {};
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/consultation/$sessionId/create-questionnaire/'),
+        headers: {'Content-Type': 'application/json',},
+        body: json.encode(questionnaireData),
+      );
+
+      if (response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Failed to submit questionnaire');
+      }
+    } catch (e) {
+      throw Exception('Errdddor: $e');
+    }
+  }
+
+
 }

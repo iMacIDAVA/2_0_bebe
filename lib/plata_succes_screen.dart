@@ -62,12 +62,8 @@ class _PlataRealizataCuSuccesScreenState extends State<PlataRealizataCuSuccesScr
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (BuildContext context) => QuestionaireScreen(
-              tipServiciu: widget.tipServiciu,
-              contClientMobile: widget.contClientMobile,
-              medicDetalii: widget.medicDetalii,
-              pret: widget.pret,
-              chatOnly: widget.tipServiciu == 3 ? true : false,
+            builder: (BuildContext context) => QuestionaireScreen(numePacient: 'paient', dataNasterii: '2020/10/10', greutate: '78',
+
             ),
           ),
         );

@@ -1,15 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
+
+
 import 'dart:convert';
 
-class QuestionnaireScreen extends StatefulWidget {
-  final int consultationId;
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-  const QuestionnaireScreen({
-    Key? key,
-    required this.consultationId,
-  }) : super(key: key);
+import '../services/consultation_service.dart';
+import 'package:intl/intl.dart';
+
+class QuestionnaireScreen extends StatefulWidget {
+  final String numePacient;
+  final String dataNasterii;
+  final String greutate;
+
+  QuestionnaireScreen({
+    required this.numePacient,
+    required this.dataNasterii,
+    required this.greutate,
+  });
 
   @override
   _QuestionnaireScreenState createState() => _QuestionnaireScreenState();
@@ -17,287 +25,288 @@ class QuestionnaireScreen extends StatefulWidget {
 
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _isSubmitting = false;
-  String? _error;
+  final _numeReprezentantController = TextEditingController();
+  final _medicamentController = TextEditingController();
+  bool _alergicLaMedicament = false;
+  bool _alergicLaParacetamol = false;
+  Map<String, bool> _symptoms = {
+    'Febră': false,
+    'Tuse': false,
+    'Dificultăți respiratorii': false,
+    'Astenie': false,
+    'Cefalee': false,
+    'Dureri în gât': false,
+    'Greturi/Varsaturi': false,
+    'Diaree/Constipație': false,
+    'Refuzul alimentației': false,
+    'Irjaț la piele': false,
+    'Nas înfundat': false,
+    'Rinoree': false,
+  };
 
-  // Form controllers
-  final _representativeNameController = TextEditingController();
-  final _patientNameController = TextEditingController();
-  final _birthDateController = TextEditingController();
-  final _weightController = TextEditingController();
+  @override
+  void dispose() {
+    _numeReprezentantController.dispose();
+    _medicamentController.dispose();
+    super.dispose();
+  }
 
-  // Symptom toggles
-  bool _isAllergicToMedication = false;
-  bool _hasFever = false;
-  bool _hasCough = false;
-  bool _hasBreathingDifficulties = false;
-  bool _hasFatigue = false;
-  bool _hasHeadache = false;
-  bool _hasSoreThroat = false;
-  bool _hasNauseaVomiting = false;
-  bool _hasDiarrheaConstipation = false;
-  bool _hasRefusedFood = false;
-  bool _hasSkinIrritation = false;
-  bool _hasStuffyNose = false;
-  bool _hasRunnyNose = false;
+  String _formatDate(String date) {
+    final parts = date.split('/');
+    if (parts.length == 3) {
+      return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+    }
+    return date; // Fallback if format is invalid
+  }
 
-  Future<void> _submitQuestionnaire() async {
-    if (!_formKey.currentState!.validate()) return;
+  double _parseGreutate(String greutate) {
+    return double.tryParse(greutate.replaceAll(' kg', '')) ?? 0.0;
+  }
 
-    setState(() {
-      _isSubmitting = true;
-      _error = null;
-    });
+  Future<void> submitTheForm() async {
+    if (_formKey.currentState!.validate()) {
+      final _consultationService = ConsultationService();
+      try {
+        // Get current consultation
+        final consultation = await _consultationService.getCurrentConsultation(patientId: 1);
+        final sessionId = consultation['data']['id'];
+        final questionnaireData = {
+          'nume_si_prenume_reprezentant_legal': _numeReprezentantController.text,
+          'nume_si_prenume': widget.numePacient,
+          "data_nastere": DateFormat('yyyy-MM-dd').format(DateFormat('dd-MM-yyyy').parse(widget.dataNasterii)),
+          'greutate': _parseGreutate(widget.greutate),
+          'alergic_la_vreun_medicament': _alergicLaMedicament,
+          'la_ce_medicament_este_alergic': _alergicLaMedicament ?  _medicamentController.text : null,
+          'febra': _symptoms['Febră']!,
+          'tuse': _symptoms['Tuse']!,
+          'dificultati_respiratorii': _symptoms['Dificultăți respiratorii']!,
+          'astenie': _symptoms['Astenie']!,
+          'cefalee': _symptoms['Cefalee']!,
+          'dureri_in_gat': _symptoms['Dureri în gât']!,
+          'greturi_varsaturi': _symptoms['Greturi/Varsaturi']!,
+          'diaree_constipatie': _symptoms['Diaree/Constipație']!,
+          'refuzul_alimentatie': _symptoms['Refuzul alimentației']!,
+          'iritatii_piele': _symptoms['Irjaț la piele']!,
+          'nas_infundat': _symptoms['Nas înfundat']!,
+          'rinoree': _symptoms['Rinoree']!,
+        };
 
-    try {
-      // First submit the questionnaire
-      final questionnaireResponse = await http.post(
-        Uri.parse('http://localhost:8000/api/questionnaires/'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'nume_si_prenume_reprezentant_legal': _representativeNameController.text,
-          'nume_si_prenume': _patientNameController.text,
-          'data_nastere': _birthDateController.text,
-          'greutate': double.parse(_weightController.text),
-          'alergic_la_vreun_medicament': _isAllergicToMedication,
-          'febra': _hasFever,
-          'tuse': _hasCough,
-          'dificultati_respiratorii': _hasBreathingDifficulties,
-          'astenie': _hasFatigue,
-          'cefalee': _hasHeadache,
-          'dureri_in_gat': _hasSoreThroat,
-          'greturi_varsaturi': _hasNauseaVomiting,
-          'diaree_constipatie': _hasDiarrheaConstipation,
-          'refuzul_alimentatie': _hasRefusedFood,
-          'iritatii_piele': _hasSkinIrritation,
-          'nas_infundat': _hasStuffyNose,
-          'rinoree': _hasRunnyNose,
-        }),
-      );
-
-      if (questionnaireResponse.statusCode == 200) {
-        final questionnaireData = jsonDecode(questionnaireResponse.body);
-        final questionnaireId = questionnaireData['id'];
-
-        // Then submit the form
-        final formResponse = await http.post(
-          Uri.parse('http://localhost:8000/api/consultation/${widget.consultationId}/submit-form/'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'questionnaire_id': questionnaireId,
-          }),
+        // Submit questionnaire
+        final result = await _consultationService.submitQuestionnaire(
+          sessionId,
+          questionnaireData,
         );
 
-        if (formResponse.statusCode == 200) {
-          Navigator.pop(context, true); // Return success
-        } else {
-          throw Exception('Failed to submit form');
+        if (result['status'] == 'success') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Questionnaire submitted successfully')),
+            );
+            // Navigate to next screen
+            Navigator.pop(context, true);
+          }
         }
-      } else {
-        throw Exception('Failed to submit questionnaire');
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Errorxxx: ${e.toString()}')),
+          );
+        }
       }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
     }
+
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          'Medical Questionnaire',
-          style: GoogleFonts.rubik(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-        centerTitle: true,
+      appBar:AppBar(
+        backgroundColor: Colors.white,
+        title: Text('Chestionar'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Representative Legal Name
-              TextFormField(
-                controller: _representativeNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Legal Representative Name',
-                  border: OutlineInputBorder(),
+              // Patient Details Section (Non-Editable)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Nume și Prenume Pacient',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  Text(
+                    widget.numePacient,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+
+
+                  Text(
+                    'Data nașterii',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  Text(
+                    widget.dataNasterii,
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+              Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Greutate',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  Text(
+                    '${widget.greutate} kg',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+              Divider(),
+              // Allergy Section
+              SwitchListTile(
+                contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                title: Text(
+                  'Alergic la vreun medicament?',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the legal representative name';
-                  }
-                  return null;
+                value: _alergicLaMedicament,
+                activeColor: Color(0xFF60D69C),
+                onChanged: (bool value) {
+                  setState(() {
+                    _alergicLaMedicament = value;
+                    if (!value) _medicamentController.clear();
+                  });
+                },
+                secondary: _alergicLaMedicament
+                    ? SizedBox(
+                  width: 200,
+                  child: TextFormField(
+                    controller: _medicamentController,
+                    decoration: InputDecoration(
+                      hintText: 'La ce medicament este alergie?',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                )
+                    : null,
+              ),
+              Divider(),
+              SwitchListTile(
+                contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                title: Text(
+                  'Alergic la Paracetamol',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                ),
+                value: _alergicLaParacetamol,
+                activeColor: Color(0xFF60D69C),
+                onChanged: (bool value) {
+                  setState(() {
+                    _alergicLaParacetamol = value;
+                  });
                 },
               ),
-              const SizedBox(height: 16),
-
-              // Patient Name
-              TextFormField(
-                controller: _patientNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Patient Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the patient name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Birth Date
-              TextFormField(
-                controller: _birthDateController,
-                decoration: const InputDecoration(
-                  labelText: 'Birth Date (YYYY-MM-DD)',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the birth date';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Weight
-              TextFormField(
-                controller: _weightController,
-                decoration: const InputDecoration(
-                  labelText: 'Weight (kg)',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the weight';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
+              Divider(),
               // Symptoms Section
               Text(
-                'Symptoms',
-                style: GoogleFonts.rubik(
+                'Simptome Pacient',
+                style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF2196F3),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Symptom toggles
-              _buildSymptomToggle('Allergic to any medication', _isAllergicToMedication, (value) {
-                setState(() => _isAllergicToMedication = value);
-              }),
-              _buildSymptomToggle('Fever', _hasFever, (value) {
-                setState(() => _hasFever = value);
-              }),
-              _buildSymptomToggle('Cough', _hasCough, (value) {
-                setState(() => _hasCough = value);
-              }),
-              _buildSymptomToggle('Breathing difficulties', _hasBreathingDifficulties, (value) {
-                setState(() => _hasBreathingDifficulties = value);
-              }),
-              _buildSymptomToggle('Fatigue', _hasFatigue, (value) {
-                setState(() => _hasFatigue = value);
-              }),
-              _buildSymptomToggle('Headache', _hasHeadache, (value) {
-                setState(() => _hasHeadache = value);
-              }),
-              _buildSymptomToggle('Sore throat', _hasSoreThroat, (value) {
-                setState(() => _hasSoreThroat = value);
-              }),
-              _buildSymptomToggle('Nausea/Vomiting', _hasNauseaVomiting, (value) {
-                setState(() => _hasNauseaVomiting = value);
-              }),
-              _buildSymptomToggle('Diarrhea/Constipation', _hasDiarrheaConstipation, (value) {
-                setState(() => _hasDiarrheaConstipation = value);
-              }),
-              _buildSymptomToggle('Refused food', _hasRefusedFood, (value) {
-                setState(() => _hasRefusedFood = value);
-              }),
-              _buildSymptomToggle('Skin irritation', _hasSkinIrritation, (value) {
-                setState(() => _hasSkinIrritation = value);
-              }),
-              _buildSymptomToggle('Stuffy nose', _hasStuffyNose, (value) {
-                setState(() => _hasStuffyNose = value);
-              }),
-              _buildSymptomToggle('Runny nose', _hasRunnyNose, (value) {
-                setState(() => _hasRunnyNose = value);
-              }),
-
-              if (_error != null)
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: Color(0xFFE53935),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-              const SizedBox(height: 24),
-
-              // Submit Button
-              ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitQuestionnaire,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        'Submit Questionnaire',
-                        style: GoogleFonts.rubik(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ..._symptoms.keys.map((String key) {
+                return Column(
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+                      title: Text(
+                        key,
+                        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                       ),
+                      value: _symptoms[key]!,
+                      activeColor: Color(0xFF60D69C),
+                      onChanged: (bool value) {
+                        setState(() {
+                          _symptoms[key] = value;
+                        });
+                      },
+                    ),
+                    Divider(),
+                  ],
+                );
+              }).toList(),
+              SizedBox(height: 20),
+              // Legal Representative Section
+              Text(
+                'Reprezentant legal al copilului',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Nume și Prenume',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  SizedBox(
+                    width: 150,
+                    child: TextFormField(
+                      controller: _numeReprezentantController,
+                      textAlign: TextAlign.end,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Introduceți numele',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Vă rugăm să introduceți numele și prenumele reprezentantului';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              Divider(),
+              SizedBox(height: 20),
+              // Continue Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: submitTheForm,
+                  child: Text(
+                    'CONTINUA test',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF60D69C),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -305,36 +314,5 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       ),
     );
   }
-
-  Widget _buildSymptomToggle(String label, bool value, Function(bool) onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.rubik(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF2196F3),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _representativeNameController.dispose();
-    _patientNameController.dispose();
-    _birthDateController.dispose();
-    _weightController.dispose();
-    super.dispose();
-  }
 }
+

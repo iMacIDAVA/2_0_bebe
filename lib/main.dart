@@ -67,7 +67,6 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       //home: const IntroScreen(), //
-      //home:ConsultationScreen(patientId:1) // const IntroScreen(), //
       home:ConsultationScreen(patientId:1) // const IntroScreen(), //
     );
   }
