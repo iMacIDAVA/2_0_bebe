@@ -12,6 +12,7 @@ import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
 
 import 'fixing/TestVideoCallScreen.dart';
+import 'fixing/services/consultation_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +49,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'SOS Bebe',
       locale: const Locale('ro', 'RO'),
@@ -66,9 +66,56 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      //home: const IntroScreen(), //
-      home:ConsultationScreen(patientId:1) // const IntroScreen(), //
+      home: const HomeScreen(),
     );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveSession();
+  }
+
+   Future<void> checkActiveSession(BuildContext context, int patientId) async {
+    final ConsultationService consultationService = ConsultationService();
+    try {
+      final response = await consultationService.getCurrentConsultation(patientId: patientId);
+
+
+      if (response['has_active_session']) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConsultationScreen(
+              patientId: patientId,
+              doctorId: response['data']['doctor_id'],
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking active session: $e');
+    }
+  }
+
+  Future<void> _checkActiveSession() async {
+    // Replace with the actual patient ID
+    int currentPatientId = 1;
+    await checkActiveSession(context, currentPatientId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const IntroScreen();
   }
 }
 

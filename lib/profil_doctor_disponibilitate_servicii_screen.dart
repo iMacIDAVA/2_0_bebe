@@ -987,68 +987,76 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
           //   ),
           // );
           //
-          //   print("widget.medicDetalii");
-          //   print(widget.medicDetalii.id);
-          //   print(widget.contClientMobile.email);
-          //
-          //
+
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            String patientId = prefs.getString(pref_keys.userId) ?? '';
+            String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+            String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+            print("Dr id " + widget.medicDetalii.id.toString()) ;
+            print("paient id " + patientId ) ;
+            print("price session : "  + widget.pret);
+            print("servise type " + widget.tipServiciu.toString());
+
           //
           //
           //
           //   return ;
 
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          String patientId = prefs.getString(pref_keys.userId) ?? '';
-          String patientNume = prefs.getString(pref_keys.userNume) ?? '';
-          String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
 
-          String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
-
-          String pCheie = keyAppPacienti;
-          int pIdMedic = widget.medicDetalii.id;
-          String pTip = widget.tipServiciu.toString();
-
-          String tipLabel;
-          switch (widget.tipServiciu) {
-            case 1:
-              tipLabel = 'Apel';
-              break;
-            case 2:
-              tipLabel = 'Recomandare';
-              break;
-            case 3:
-              tipLabel = 'întrebare';
-              break;
-            default:
-              tipLabel = 'Necunoscut';
-          }
-
-          String pMesaj = 'Ai o nouă cerere de la $patientPrenume $patientNume: $tipLabel';
-
-          await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
-            pCheie: pCheie,
-            pIdMedic: pIdMedic,
-            pTip: pTip,
-            pMesaj: pMesaj,
-            pObservatii: pObservatii,
-          );
-
-          doctorStatusService.doctorBusyStatus[pIdMedic] = true;
-
-          setState(() {});
-
-          await Future.delayed(const Duration(seconds: 1));
-
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return NotificationDisplayScreen(
-                pret: widget.pret,
-                tipServiciu: widget.tipServiciu,
-                contClientMobile: widget.contClientMobile,
-                medicDetalii: widget.medicDetalii,
-              );
-            },
-          ));
+          /// ORGINAL SHIT CODE
+          // SharedPreferences prefs = await SharedPreferences.getInstance();
+          // String patientId = prefs.getString(pref_keys.userId) ?? '';
+          // String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+          // String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+          //
+          // String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+          //
+          // String pCheie = keyAppPacienti;
+          // int pIdMedic = widget.medicDetalii.id;
+          // String pTip = widget.tipServiciu.toString();
+          //
+          // String tipLabel;
+          // switch (widget.tipServiciu) {
+          //   case 1:
+          //     tipLabel = 'Apel';
+          //     break;
+          //   case 2:
+          //     tipLabel = 'Recomandare';
+          //     break;
+          //   case 3:
+          //     tipLabel = 'întrebare';
+          //     break;
+          //   default:
+          //     tipLabel = 'Necunoscut';
+          // }
+          //
+          // String pMesaj = 'Ai o nouă cerere de la $patientPrenume $patientNume: $tipLabel';
+          //
+          // await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+          //   pCheie: pCheie,
+          //   pIdMedic: pIdMedic,
+          //   pTip: pTip,
+          //   pMesaj: pMesaj,
+          //   pObservatii: pObservatii,
+          // );
+          //
+          // doctorStatusService.doctorBusyStatus[pIdMedic] = true;
+          //
+          // setState(() {});
+          //
+          // await Future.delayed(const Duration(seconds: 1));
+          //
+          // Navigator.push(context, MaterialPageRoute(
+          //   builder: (context) {
+          //     return NotificationDisplayScreen(
+          //       pret: widget.pret,
+          //       tipServiciu: widget.tipServiciu,
+          //       contClientMobile: widget.contClientMobile,
+          //       medicDetalii: widget.medicDetalii,
+          //     );
+          //   },
+          // ));
         },
         child: Container(
           padding: const EdgeInsets.all(8.0),
@@ -1074,7 +1082,7 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
                     ),
                     Flexible(
                       child: Text(
-                        widget.textServiciu,
+                        widget.textServiciu ,
                         style: GoogleFonts.rubik(color: Colors.white, fontWeight: FontWeight.normal, fontSize: 10.5),
                         // maxLines: 3,
                         // overflow: TextOverflow.ellipsis,

@@ -43,6 +43,7 @@ class ConsultationService {
         Uri.parse('${_baseUrl}/consultation/current/patient/${patientId}/'),
       );
 
+      print('${_baseUrl}/consultation/current/patient/${patientId}/') ;
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -50,6 +51,7 @@ class ConsultationService {
         throw Exception('Faixxxled to load consultation ${response.body}');
       }
     } catch (e) {
+      print('Error loading consultation: $e') ;
       throw Exception('Error loading consultation: $e');
     }
   }
@@ -70,6 +72,10 @@ class ConsultationService {
           break;
         case 'form_pending':
           endpoint = '$_baseUrl/consultation/$consultationId/formPending/';
+          break;
+
+          case 'callEnded':
+          endpoint = '$_baseUrl/consultation/$consultationId/callEnded/';
           break;
 
           case 'FormSubmitted':

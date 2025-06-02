@@ -4,16 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:sos_bebe_app/fixing/CountdownWrapper.dart';
+import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
+
+import '../services/consultation_service.dart';
 
 
 
 class PaymentScreen extends StatefulWidget {
   final double amount;
+  final int currentConsultation ;
 
   const PaymentScreen({
     Key? key,
     required this.amount,
+    required this.currentConsultation
   }) : super(key: key);
 
   @override
@@ -28,6 +34,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _isCardFormVisible = false;
   Key _cardFormKey = UniqueKey();
   CardFieldInputDetails? _cardDetails;
+  final ConsultationService _consultationService = ConsultationService();
 
   @override
   void initState() {
@@ -255,7 +262,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF0EBE7F),
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
@@ -263,156 +270,173 @@ class _PaymentScreenState extends State<PaymentScreen> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Consultation Details
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Consultation Details',
-                      style: GoogleFonts.rubik(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF2196F3),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+          child: CountdownWrapper(
+            duration: const Duration(minutes: 3),
+            onTimeout: () async {
 
-                    const SizedBox(height: 8),
-                    Text(
-                      'Amount: \$${widget.amount.toStringAsFixed(2)}',
-                      style: GoogleFonts.rubik(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+              await _consultationService.updateConsultationStatus(
+                widget.currentConsultation,
+                'callEnded',
+              );
 
-              // Card Form
-              Container(
-                height: 280,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const IntroScreen(),
                 ),
-                child: Visibility(
-                  visible: _isCardFormVisible,
-                  child: CardFormField(
-                    key: _cardFormKey,
-                    onCardChanged: (cardDetails) {
-                      setState(() {
-                        _cardDetails = cardDetails;
-                      });
-                    },
-                    style: CardFormStyle(
-                      textColor: Colors.black87,
-                      placeholderColor: Colors.black45,
-                      backgroundColor: Colors.grey[100],
-                      fontSize: 16,
-                      textErrorColor: Colors.redAccent,
-                      cursorColor: Colors.black,
-                    ),
-                    countryCode: 'RO',
-                    enablePostalCode: false,
-                    autofocus: true,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              if (_error != null)
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Consultation Details
                 Container(
-                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: Color(0xFFE53935),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              const SizedBox(height: 16),
-
-              // Payment Button
-              ElevatedButton(
-                onPressed: _isProcessingPayment ? null : () async {
-                  if (_formKey.currentState!.validate()) {
-                    if (_cardDetails == null || !_cardDetails!.complete) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please complete card details'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    setState(() {
-                      _isProcessingPayment = true;
-                      _error = null;
-                    });
-
-                    try {
-                      await createPaymentIntent();
-                    } catch (e) {
-                      setState(() {
-                        _error = e.toString()+ "<<<<<";
-                        print(_error) ;
-                        _isProcessingPayment = false;
-                      });
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isProcessingPayment
-                    ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeWidth: 2,
-                  ),
-                )
-                    : Text(
-                  'Pay \$${widget.amount.toStringAsFixed(2)}',
-                  style: GoogleFonts.rubik(
-                    fontSize: 16,
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Consultation Details',
+                        style: GoogleFonts.rubik(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF0EBE7F),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      const SizedBox(height: 8),
+                      Text(
+                        'Amount: \$${widget.amount.toStringAsFixed(2)}',
+                        style: GoogleFonts.rubik(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+
+                // Card Form
+                Container(
+                  height: 280,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Visibility(
+                    visible: _isCardFormVisible,
+                    child: CardFormField(
+                      key: _cardFormKey,
+                      onCardChanged: (cardDetails) {
+                        setState(() {
+                          _cardDetails = cardDetails;
+                        });
+                      },
+                      style: CardFormStyle(
+                        textColor: Colors.black87,
+                        placeholderColor: Colors.black45,
+                        backgroundColor: Colors.grey[100],
+                        fontSize: 16,
+                        textErrorColor: Colors.redAccent,
+                        cursorColor: Colors.black,
+                      ),
+                      countryCode: 'RO',
+                      enablePostalCode: false,
+                      autofocus: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                if (_error != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: Color(0xFFE53935),
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                const SizedBox(height: 16),
+
+                // Payment Button
+                ElevatedButton(
+                  onPressed: _isProcessingPayment ? null : () async {
+                    if (_formKey.currentState!.validate()) {
+                      if (_cardDetails == null || !_cardDetails!.complete) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please complete card details'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        _isProcessingPayment = true;
+                        _error = null;
+                      });
+
+                      try {
+                        await createPaymentIntent();
+                      } catch (e) {
+                        setState(() {
+                          _error = e.toString()+ "<<<<<";
+                          print(_error) ;
+                          _isProcessingPayment = false;
+                        });
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0EBE7F),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isProcessingPayment
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : Text(
+                    'Pay \$${widget.amount.toStringAsFixed(2)}',
+                    style: GoogleFonts.rubik(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

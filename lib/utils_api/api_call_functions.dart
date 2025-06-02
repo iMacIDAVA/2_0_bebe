@@ -177,6 +177,9 @@ Future<String?> adaugaMesajCuAtasamentDinContMedic({
       //body: jsonEncode(parametriiApiCall),
     );
 
+    print("res.body debug");
+    print(res.body);
+
     return res;
   }
 

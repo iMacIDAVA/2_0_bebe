@@ -100,8 +100,11 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
   Future<http.Response?> adaugaFeedbackDinContClient() async {
     LocalizationsApp l = LocalizationsApp.of(context)!;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user') ?? 'Test@t.com';
-    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '123456789';
+    // String user = prefs.getString('user') ?? 'Test@t.com';
+    // String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '123456789';
+
+    String user =  'test@t.com';
+    String userPassMD5 = '123456789';
 
     String textMessage = '';
     Color backgroundColor = Colors.red;
@@ -122,6 +125,10 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
       pNota: _ratingValue!.toString().split('.')[0],
       pComentariu: controllerTestimonialText.text,
     );
+    print('Debug!');
+    print(resAdaugaFeedback);
+
+
 
     if (!_isMounted) return null;
 
@@ -427,6 +434,7 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
                               )
                             : GestureDetector(
                                 onTap: () async {
+
                                   if (controllerTestimonialText.text.isNotEmpty) {
                                     if (_isMounted) {
                                       setState(() {
@@ -437,6 +445,7 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
                                     }
 
                                     http.Response? resAdaugaFeedback = await adaugaFeedbackDinContClient();
+
 
                                     if (context.mounted) {
                                       if (int.parse(resAdaugaFeedback!.body) == 200) {

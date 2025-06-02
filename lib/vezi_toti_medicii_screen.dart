@@ -126,7 +126,7 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     _streamController!.add(initialData);
 
     // CHANGE: Periodic polling with flag check
-    Timer.periodic(const Duration(seconds: 2), (timer) async {
+    Timer.periodic(const Duration(seconds: 40), (timer) async {
       if (mediciOnlineList) {
         print('Polling skipped: mediciOnlineList is true');
         return; // Skip polling
