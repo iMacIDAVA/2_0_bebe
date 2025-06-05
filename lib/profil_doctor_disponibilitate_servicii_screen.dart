@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:agora_token_service/agora_token_service.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sos_bebe_app/doctor_confirmation_screen.dart';
+import 'package:sos_bebe_app/fixing/services/consultation_service.dart';
 
 import 'package:sos_bebe_app/utils/utils_widgets.dart';
 import 'package:sos_bebe_app/utils_api/doctor_busy_service.dart';
@@ -30,6 +33,7 @@ import 'package:sos_bebe_app/vezi_toti_medicii_screen.dart';
 
 import 'fixing/TestVideoCallScreen.dart';
 import 'apel_video_pacient_screen.dart';
+import 'fixing/screens/consultation_screnn.dart';
 
 ApiCallFunctions apiCallFunctions = ApiCallFunctions();
 
@@ -961,6 +965,8 @@ class ButtonServiciiProfilDoctor extends StatefulWidget {
 
 class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor> {
   String pretModificat = "";
+  ConsultationService  consultationService = ConsultationService() ;
+
   @override
   void initState() {
     super.initState();
@@ -973,91 +979,142 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
         onTap: () async {
+          try  {
 
-          //
-          //
-          // // Navigate to video call screen
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => ApelVideoPacientScreen(
-          //       medic: widget.medicDetalii,
-          //       contClientMobile: widget.contClientMobile,
-          //     ),
-          //   ),
-          // );
-          //
 
             SharedPreferences prefs = await SharedPreferences.getInstance();
             String patientId = prefs.getString(pref_keys.userId) ?? '';
             String patientNume = prefs.getString(pref_keys.userNume) ?? '';
             String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
-
             print("Dr id " + widget.medicDetalii.id.toString()) ;
             print("paient id " + patientId ) ;
             print("price session : "  + widget.pret);
             print("servise type " + widget.tipServiciu.toString());
-
-          //
-          //
-          //
-          //   return ;
+            print(widget.medicDetalii.pretIntrebare) ;
+           // consultationService.requestConsultation(doctorId: widget.medicDetalii.id, sessionType: 'Call', patientId: int.parse(patientId) , amount: 4000);
 
 
-          /// ORGINAL SHIT CODE
-          // SharedPreferences prefs = await SharedPreferences.getInstance();
-          // String patientId = prefs.getString(pref_keys.userId) ?? '';
-          // String patientNume = prefs.getString(pref_keys.userNume) ?? '';
-          // String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
-          //
-          // String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
-          //
-          // String pCheie = keyAppPacienti;
-          // int pIdMedic = widget.medicDetalii.id;
-          // String pTip = widget.tipServiciu.toString();
-          //
-          // String tipLabel;
-          // switch (widget.tipServiciu) {
-          //   case 1:
-          //     tipLabel = 'Apel';
-          //     break;
-          //   case 2:
-          //     tipLabel = 'Recomandare';
-          //     break;
-          //   case 3:
-          //     tipLabel = 'întrebare';
-          //     break;
-          //   default:
-          //     tipLabel = 'Necunoscut';
-          // }
-          //
-          // String pMesaj = 'Ai o nouă cerere de la $patientPrenume $patientNume: $tipLabel';
-          //
-          // await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
-          //   pCheie: pCheie,
-          //   pIdMedic: pIdMedic,
-          //   pTip: pTip,
-          //   pMesaj: pMesaj,
-          //   pObservatii: pObservatii,
-          // );
-          //
-          // doctorStatusService.doctorBusyStatus[pIdMedic] = true;
-          //
-          // setState(() {});
-          //
-          // await Future.delayed(const Duration(seconds: 1));
-          //
-          // Navigator.push(context, MaterialPageRoute(
-          //   builder: (context) {
-          //     return NotificationDisplayScreen(
-          //       pret: widget.pret,
-          //       tipServiciu: widget.tipServiciu,
-          //       contClientMobile: widget.contClientMobile,
-          //       medicDetalii: widget.medicDetalii,
-          //     );
-          //   },
-          // ));
+            await sendNotificationToDoctor(
+              doctorId: widget.medicDetalii.id, // The ID of the doctor you want to notify
+              message: "Your notification message here",
+              notificationType: "1", // Type of notification (consultation, question, etc.)
+            );
+
+            // Log parameters for debugging
+            print("Dr id: ${widget.medicDetalii.id}");
+            print("Patient id: $patientId");
+            print("Price session: ${widget.pret}");
+            print("Service type: ${widget.tipServiciu}");
+            print("Question price: ${widget.medicDetalii.pretIntrebare}");
+
+            // Call requestConsultation
+            final response = await consultationService.requestConsultation(
+              doctorId: widget.medicDetalii.id,
+              sessionType: 'Call', // Use dynamic session type or default to 'Call'
+              patientId: int.parse(patientId),
+              amount:widget.medicDetalii.pretIntrebare?? 0.0, // Use dynamic amount
+            );
+
+            // Check if the request was successful
+            if (response['data'] != null) {
+              // Navigate to ConsultationScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ConsultationScreen(
+                    patientId: int.parse(patientId),
+                    doctorId: widget.medicDetalii.id,
+                  ),
+                ),
+              );
+            } else {
+              print("errorccc");
+              // Show error if response is not as expected
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to initiate consultation')),
+              );
+            }
+
+
+            // SharedPreferences prefs = await SharedPreferences.getInstance();
+            // String patientId = prefs.getString(pref_keys.userId) ?? '';
+            // String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+            // String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+            //
+            //
+            // print("Dr id " + widget.medicDetalii.id.toString()) ;
+            // print("paient id " + patientId ) ;
+            // print("price session : "  + widget.pret);
+            // print("servise type " + widget.tipServiciu.toString());
+            // print(widget.medicDetalii.pretIntrebare) ;
+            // consultationService.requestConsultation(doctorId: widget.medicDetalii.id, sessionType: 'Call', patientId: int.parse(patientId) , amount: 4000);
+            //
+
+
+            /// ORGINAL SHIT CODE
+            // SharedPreferences prefs = await SharedPreferences.getInstance();
+            // String patientId = prefs.getString(pref_keys.userId) ?? '';
+            // String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+            // String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+            //
+            // String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+            //
+            // String pCheie = keyAppPacienti;
+            // int pIdMedic = widget.medicDetalii.id;
+            // String pTip = widget.tipServiciu.toString();
+            //
+            // String tipLabel;
+            // switch (widget.tipServiciu) {
+            //   case 1:
+            //     tipLabel = 'Apel';
+            //     break;
+            //   case 2:
+            //     tipLabel = 'Recomandare';
+            //     break;
+            //   case 3:
+            //     tipLabel = 'întrebare';
+            //     break;
+            //   default:
+            //     tipLabel = 'Necunoscut';
+            // }
+            //
+            // String pMesaj = 'Ai o nouă cerere de la $patientPrenume $patientNume: $tipLabel';
+            //
+            // await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+            //   pCheie: pCheie,
+            //   pIdMedic: pIdMedic,
+            //   pTip: pTip,
+            //   pMesaj: pMesaj,
+            //   pObservatii: pObservatii,
+            // );
+            //
+            // doctorStatusService.doctorBusyStatus[pIdMedic] = true;
+            //
+            // setState(() {});
+            //
+            // await Future.delayed(const Duration(seconds: 1));
+            //
+            // Navigator.push(context, MaterialPageRoute(
+            //   builder: (context) {
+            //     return NotificationDisplayScreen(
+            //       pret: widget.pret,
+            //       tipServiciu: widget.tipServiciu,
+            //       contClientMobile: widget.contClientMobile,
+            //       medicDetalii: widget.medicDetalii,
+            //     );
+            //   },
+            // ));
+          }
+          catch(e){
+            ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(content: Text('Failed to initiate consultation Doctor is currently in an active consultation ')),
+            );
+            print("lalo error $e");
+          }
+
         },
+
+
         child: Container(
           padding: const EdgeInsets.all(8.0),
           constraints: const BoxConstraints(minHeight: 53),
@@ -1114,6 +1171,32 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
           ),
         ),
       ),
+    );
+  }
+
+
+  Future<void> sendNotificationToDoctor({
+    required int doctorId,
+    required String message,
+    required String notificationType,
+  }) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Get patient information
+    String patientId = prefs.getString(pref_keys.userId) ?? '';
+    String patientNume = prefs.getString(pref_keys.userNume) ?? '';
+    String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
+
+    // Format additional data
+    String pObservatii = '$patientId\$#\$$patientPrenume $patientNume';
+
+    // Send notification
+    await apiCallFunctions.trimitePushPrinOneSignalCatreMedic(
+      pCheie: keyAppPacienti, // Your app key
+      pIdMedic: doctorId,
+      pTip: notificationType,
+      pMesaj: message,
+      pObservatii: pObservatii,
     );
   }
 

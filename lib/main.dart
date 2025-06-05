@@ -4,12 +4,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/firebase_options.dart';
 import 'package:sos_bebe_app/fixing/chat.dart';
 import 'package:sos_bebe_app/fixing/screens/consultation_screnn.dart';
+import 'package:sos_bebe_app/fixing/screens/videoCallScreen.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/localizations/1_localizations.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
+import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
 
 import 'fixing/TestVideoCallScreen.dart';
 import 'fixing/services/consultation_service.dart';
@@ -90,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final response = await consultationService.getCurrentConsultation(patientId: patientId);
 
+     //print("${response}  <<<<<<<<<<<<<<<<<");
 
       if (response['has_active_session']) {
         Navigator.push(
@@ -109,9 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkActiveSession() async {
     // Replace with the actual patient ID
-    int currentPatientId = 1;
-    await checkActiveSession(context, currentPatientId);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String patientId = prefs.getString(pref_keys.userId) ?? '';
+    //int currentPatientId = 29;
+    await checkActiveSession(context, int.parse(patientId));
   }
+
+  /*
+
+  * */
 
   @override
   Widget build(BuildContext context) {

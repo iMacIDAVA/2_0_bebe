@@ -4,9 +4,12 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/consultation_service.dart';
 import 'package:intl/intl.dart';
+import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
+
 
 class QuestionnaireScreen extends StatefulWidget {
   final String numePacient;
@@ -67,8 +70,13 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     if (_formKey.currentState!.validate()) {
       final _consultationService = ConsultationService();
       try {
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String patientId = prefs.getString(pref_keys.userId) ?? '';
+        //int currentPatientId = 29;
         // Get current consultation
-        final consultation = await _consultationService.getCurrentConsultation(patientId: 1);
+        final consultation = await _consultationService.getCurrentConsultation(patientId:int.parse(patientId) );
+        print("Debug submit the from ");
         final sessionId = consultation['data']['id'];
         final questionnaireData = {
           'nume_si_prenume_reprezentant_legal': _numeReprezentantController.text,
@@ -90,6 +98,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           'nas_infundat': _symptoms['Nas înfundat']!,
           'rinoree': _symptoms['Rinoree']!,
         };
+
 
         // Submit questionnaire
         final result = await _consultationService.submitQuestionnaire(

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:sos_bebe_app/fixing/screens/api_config.dart';
 
+
 class ConsultationService {
   String _baseUrl = ApiConfig.baseUrl;
 
@@ -12,6 +13,8 @@ class ConsultationService {
     required int patientId,
     required int doctorId,
     required String sessionType,
+    required double amount
+
   }) async
   {
     try {
@@ -22,13 +25,14 @@ class ConsultationService {
           'patient_id': patientId,
           'doctor_id': doctorId,
           'session_type': sessionType,
+          'amount' : amount
         }),
       );
 
       if (response.statusCode == 201) {
         return json.decode(response.body);
       } else {
-        throw Exception('Failed to request consultation');
+        throw Exception('Failed to request consultation ${response.body}');
       }
     } catch (e) {
       throw Exception('Error requesting consultation: $e');

@@ -100,11 +100,9 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
   Future<http.Response?> adaugaFeedbackDinContClient() async {
     LocalizationsApp l = LocalizationsApp.of(context)!;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    // String user = prefs.getString('user') ?? 'Test@t.com';
-    // String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '123456789';
+    String user = prefs.getString('user') ?? 'Test@t.com';
+    String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '123456789';
 
-    String user =  'test@t.com';
-    String userPassMD5 = '123456789';
 
     String textMessage = '';
     Color backgroundColor = Colors.red;

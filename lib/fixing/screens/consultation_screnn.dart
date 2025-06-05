@@ -108,12 +108,13 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     }
   }
 
-  Future<void> _requestConsultation({required int doctorId,required String sessionType}) async {
+  Future<void> _requestConsultation({required int doctorId,required String sessionType ,required double amount}) async {
     try {
       final response = await _consultationService.requestConsultation(
         patientId: widget.patientId,
         doctorId: doctorId,
         sessionType: sessionType,
+        amount: amount
       );
 
       setState(() {
@@ -384,7 +385,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const Icon(
             Icons.video_call,
             size: 80,
-            color: Color(0xFF2196F3),
+            color: Color(0xFF0EBE7F),
           ),
           const SizedBox(height: 24),
           Text(
@@ -392,7 +393,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF2196F3),
+              color: const Color(0xFF0EBE7F),
             ),
           ),
           const SizedBox(height: 12),
@@ -450,7 +451,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF0EBE7F),
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
                 vertical: 12,
@@ -481,7 +482,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const Icon(
             Icons.medical_services,
             size: 80,
-            color: Color(0xFF2196F3),
+            color: Color(0xFF0EBE7F),
           ),
           const SizedBox(height: 24),
           Text(
@@ -489,7 +490,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF2196F3),
+              color: const Color(0xFF0EBE7F),
             ),
           ),
           const SizedBox(height: 12),
@@ -504,7 +505,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-              _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call');
+             // _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call', amount: widget.);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2196F3),
@@ -832,14 +833,14 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
 
   Widget _buildQuestionnaireScreen() {
-    return Center(
+    return CountdownWrapper(child: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
             Icons.assignment,
             size: 80,
-            color: Color(0xFF2196F3),
+            color: Color(0xFF0EBE7F),
           ),
           const SizedBox(height: 24),
           Text(
@@ -847,7 +848,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF2196F3),
+              color: const Color(0xFF0EBE7F),
             ),
           ),
           const SizedBox(height: 12),
@@ -879,9 +880,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                   ),
                 );
 
-
-
-
                 if (result == true) {
                   // Questionnaire submitted successfully
                   await _consultationService.updateConsultationStatus(
@@ -899,7 +897,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF0EBE7F),
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
                 vertical: 12,
@@ -919,7 +917,23 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
         ],
       ),
-    );
+    ), duration: Duration(minutes: 3),       onTimeout: () async {
+
+      await _consultationService.updateConsultationStatus(
+        _currentConsultation!['id'],
+        'callEnded',
+      );
+      _loadCurrentConsultation();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const IntroScreen(),
+        ),
+      );
+    },
+
+    )  ;
+
   }
 }
 
