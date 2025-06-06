@@ -97,8 +97,7 @@ class ConsultationService {
         Uri.parse(endpoint),
         headers: {'Content-Type': 'application/json'},
       );
-      print("888888888888888");
-      print(response.body);
+
 
 
       if (response.statusCode != 200) {

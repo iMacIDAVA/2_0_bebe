@@ -304,7 +304,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                 child: ElevatedButton(
                   onPressed: submitTheForm,
                   child: Text(
-                    'CONTINUA test',
+                    'CONTINUA',
                     style: TextStyle(fontSize: 16),
                   ),
                   style: ElevatedButton.styleFrom(

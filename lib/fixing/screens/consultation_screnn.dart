@@ -54,6 +54,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   }
 
   void _startCountdown() {
+    // Only start countdown if status is 'Requested'
+    if (_currentConsultation?['status'] != 'Requested') {
+      _countdownTimer?.cancel();
+      return;
+    }
+
     _countdownTimer?.cancel();
     _remainingTimeNotifier.value = 180; // Reset to 3 minutes
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -61,13 +67,16 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         _remainingTimeNotifier.value--;
       } else {
         timer.cancel();
-        _cancelConsultation();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const IntroScreen(),
-          ),
-        );
+        // Only cancel if still in Requested status
+        if (_currentConsultation?['status'] == 'Requested') {
+          _cancelConsultation();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const Scaffold(body: Center(child: Text("i got tyhe bug !!!!"),),),
+            ),
+          );
+        }
       }
     });
   }
@@ -83,15 +92,17 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         final newStatus = response['data']['status'];
         final oldStatus = _currentConsultation?['status'];
 
-
-
         setState(() {
           _currentConsultation = response['data'];
           _isLoading = false;
         });
 
-        if (newStatus == 'Requested' && oldStatus != 'Requested') {
+        // Only start countdown if status is Requested
+        if (newStatus == 'Requested') {
           _startCountdown();
+        } else {
+          // Cancel countdown for any other status
+          _countdownTimer?.cancel();
         }
       } else {
         setState(() {
@@ -108,27 +119,27 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     }
   }
 
-  Future<void> _requestConsultation({required int doctorId,required String sessionType ,required double amount}) async {
-    try {
-      final response = await _consultationService.requestConsultation(
-        patientId: widget.patientId,
-        doctorId: doctorId,
-        sessionType: sessionType,
-        amount: amount
-      );
-
-      setState(() {
-        _currentConsultation = response['data'];
-        _isLoading = false;
-      });
-      _startCountdown();
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
+  // Future<void> _requestConsultation({required int doctorId,required String sessionType ,required double amount}) async {
+  //   try {
+  //     final response = await _consultationService.requestConsultation(
+  //       patientId: widget.patientId,
+  //       doctorId: doctorId,
+  //       sessionType: sessionType,
+  //       amount: amount
+  //     );
+  //
+  //     setState(() {
+  //       _currentConsultation = response['data'];
+  //       _isLoading = false;
+  //     });
+  //     _startCountdown();
+  //   } catch (e) {
+  //     setState(() {
+  //       _error = e.toString();
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
   Future<void> _cancelConsultation() async {
     if (_currentConsultation == null) return;
@@ -149,18 +160,62 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   }
 
   Widget _buildRequestedScreen() {
+    return CountdownWrapper(
+      onTimeout: () async{
+          await _consultationService.updateConsultationStatus(
+            _currentConsultation!['id'],
+            'reject',
+          );
+          _loadCurrentConsultation();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const IntroScreen(),
+            ),
+          );
+
+
+      },
+      child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.hourglass_empty,
+                size: 80,
+                color: Color(0xFF0EBE7F),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Aștept medicul',
+                style: GoogleFonts.rubik(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF0EBE7F),
+                ),
+              ),
+
+
+            ],
+          ),),
+    );
+
+
+  }
+
+  Widget _buildPaymentPendingScreen() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            Icons.hourglass_empty,
+            Icons.payment,
             size: 80,
             color: Color(0xFF0EBE7F),
           ),
           const SizedBox(height: 24),
           Text(
-            'Waiting for Doctor',
+            'Medicul ți-a acceptat cererea',
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -168,153 +223,75 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          ValueListenableBuilder<int>(
-            valueListenable: _remainingTimeNotifier,
-            builder: (context, remainingSeconds, child) {
-              final minutes = remainingSeconds ~/ 60;
-              final seconds = remainingSeconds % 60;
-              return Text(
-                'Time remaining: ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                style: GoogleFonts.rubik(
-                  fontSize: 16,
-                  color: const Color(0xFF0EBE7F),
-                ),
-              );
-            },
+          Text(
+            'Te rugăm să finalizezi plata pentru a continua consultația',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.rubik(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 32),
-          // ElevatedButton(
-          //   onPressed: _cancelConsultation,
-          //   style: ElevatedButton.styleFrom(
-          //     backgroundColor: const Color(0xFFE53935),
-          //     padding: const EdgeInsets.symmetric(
-          //       horizontal: 32,
-          //       vertical: 12,
-          //     ),
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(8),
-          //     ),
-          //   ),
-          //   child: Text(
-          //     'Cancel Request',
-          //     style: GoogleFonts.rubik(
-          //       fontSize: 16,
-          //       color: Colors.white,
-          //       fontWeight: FontWeight.bold,
-          //     ),
-          //   ),
-          // ),
-        ],
-      ),
-    );
-  }
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // First, update status to PaymentPending
+                await _consultationService.updateConsultationStatus(
+                  _currentConsultation!['id'],
+                  'payment_pending',
+                );
+                // print("_currentConsultation");
+                // print(_currentConsultation!['amount'].toDouble);
+                // print(_currentConsultation!['amount'].runtimeType);
 
-  Widget _buildPaymentPendingScreen() {
-    return CountdownWrapper(
-      duration: const Duration(minutes: 3),
-      onTimeout: () async {
+                // Navigate to payment screen
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentScreen(
+                      amount:double.parse(_currentConsultation!['amount'] ?? 0.0),
+                        currentConsultation :  _currentConsultation!['id'],
 
-        await _consultationService.updateConsultationStatus(
-          _currentConsultation!['id'],
-          'callEnded',
-        );
-        _loadCurrentConsultation();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const IntroScreen(),
-          ),
-        );
-      },
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.payment,
-              size: 80,
-              color: Color(0xFF0EBE7F),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Doctor Accepted Your Request',
-              style: GoogleFonts.rubik(
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF0EBE7F),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Please complete the payment to proceed with the consultation',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.rubik(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  // First, update status to PaymentPending
+                    ),
+                  ),
+                );
+
+                if (result == true) {
+                  // Payment successful, update status to payment_completed
                   await _consultationService.updateConsultationStatus(
                     _currentConsultation!['id'],
-                    'payment_pending',
-                  );
-                  // print("_currentConsultation");
-                  // print(_currentConsultation!['amount'].toDouble);
-                  // print(_currentConsultation!['amount'].runtimeType);
-
-                  // Navigate to payment screen
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PaymentScreen(
-                        amount:double.parse(_currentConsultation!['amount'] ?? 0.0),
-                          currentConsultation :  _currentConsultation!['id'],
-
-                      ),
-                    ),
+                    'payment_completed',
                   );
 
-                  if (result == true) {
-                    // Payment successful, update status to payment_completed
-                    await _consultationService.updateConsultationStatus(
-                      _currentConsultation!['id'],
-                      'payment_completed',
-                    );
-
-                    // Reload consultation to show next state
-                    _loadCurrentConsultation();
-                  }
-                } catch (e) {
-                  setState(() {
-                    _error = e.toString();
-                  });
+                  // Reload consultation to show next state
+                  _loadCurrentConsultation();
                 }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0EBE7F),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              } catch (e) {
+                setState(() {
+                  _error = e.toString();
+                });
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0EBE7F),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32,
+                vertical: 12,
               ),
-              child: Text(
-                'Proceed to Payment',
-                style: GoogleFonts.rubik(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ],
-        ),
+            child: Text(
+              'Continuă cu plata',
+              style: GoogleFonts.rubik(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -383,13 +360,13 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            Icons.video_call,
+            Icons.check_circle,
             size: 80,
             color: Color(0xFF0EBE7F),
           ),
           const SizedBox(height: 24),
           Text(
-            'Ready to Join',
+            'Gata să te alături',
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -398,7 +375,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'The doctor is ready to start the consultation',
+            'Medicul este gata să înceapă consultația',
             textAlign: TextAlign.center,
             style: GoogleFonts.rubik(
               fontSize: 16,
@@ -410,16 +387,59 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             onPressed: () {
               print('_currentConsultation!');
               print(_currentConsultation);
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false, channelName: _currentConsultation!['channel_name'])),
+              ).then((value) async {
+                // First check if _currentConsultation is still valid
+                if (_currentConsultation != null) {
+                  try {
+                    await _videoCallService.endCall(_currentConsultation!['id']);
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Call ended successfully')),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      print('Error ending call: ${e.toString()}');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error ending call: ${e.toString()}')),
+                      );
+                    }
+                  }
+
+                  // Only navigate to testimonial if we still have the consultation data
+                  if (_currentConsultation != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TestimonialScreenSimple(
+                          idMedic: _currentConsultation!['doctor_id'],
+                        ),
+                      ),
+                    );
+                  }
+                } else {
+                  // If consultation is null, just go back
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                }
+              });
+
+
+
+
+              return ;
               // Navigate to call screen
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => TestVideoCallScreen(isDoctor: false  , channelName: _currentConsultation!['channel_name']  ,)),
+                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),
               ).then((value) async {
-
-
                 try {
                   // This is the specific line that ends the call
                   await _videoCallService.endCall(_currentConsultation!['id']);
-
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Call ended successfully')),
@@ -434,15 +454,11 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                     );
                   }
                 }
-
-
-                /// when the client click on end call he should be pe promp are sure you want to end the call ?
-                ///  this should be handed the video  on the the video call screen
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => TestimonialScreenSimple(
-                      idMedic: 2, // Replace with actual doctor ID
+                      idMedic: _currentConsultation!['doctor_id'], // Replace with actual doctor ID
                     ),
                   ),
                 );
@@ -461,7 +477,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               ),
             ),
             child: Text(
-              'Join Session',
+
+              'Intră în sesiune,',
               style: GoogleFonts.rubik(
                 fontSize: 16,
                 color: Colors.white,
@@ -648,9 +665,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
   Widget _buildAcceptedScreen() {
     return CountdownWrapper(
-      duration: const Duration(minutes: 3),
       onTimeout: () async {
-
         await _consultationService.updateConsultationStatus(
           _currentConsultation!['id'],
           'callEnded',
@@ -674,7 +689,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Doctor Accepted Your Request',
+              'Medicul ți-a acceptat cererea',
               style: GoogleFonts.rubik(
                 fontSize: 24,
                 fontWeight: FontWeight.w500,
@@ -683,7 +698,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Please proceed to payment to continue with the consultation',
+              'Te rugăm să continui cu plata pentru a putea continua consultația',
               textAlign: TextAlign.center,
               style: GoogleFonts.rubik(
                 fontSize: 16,
@@ -730,7 +745,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                 ),
               ),
               child: Text(
-                'Proceed to Payment',
+                'Continuă cu plata',
                 style: GoogleFonts.rubik(
                   fontSize: 16,
                   color: Colors.white,
@@ -740,7 +755,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
           ],
         ),
-      ),
+      )
     );
   }
 
@@ -833,8 +848,10 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
 
   Widget _buildQuestionnaireScreen() {
-    return CountdownWrapper(child: Center(
-      child: Column(
+    return
+
+      CountdownWrapper(
+      child: Center(child:Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
@@ -844,7 +861,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Medical Questionnaire',
+            'Chestionar medical',
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -853,7 +870,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Please fill out the medical questionnaire to proceed',
+            'Te rugăm să completezi chestionarul medical pentru a continua',
             textAlign: TextAlign.center,
             style: GoogleFonts.rubik(
               fontSize: 16,
@@ -907,7 +924,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               ),
             ),
             child: Text(
-              'Fill Questionnaire',
+              'Completează chestionarul',
               style: GoogleFonts.rubik(
                 fontSize: 16,
                 color: Colors.white,
@@ -916,9 +933,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
           ),
         ],
-      ),
-    ), duration: Duration(minutes: 3),       onTimeout: () async {
-
+      )),
+      onTimeout: () async {
       await _consultationService.updateConsultationStatus(
         _currentConsultation!['id'],
         'callEnded',
@@ -955,7 +971,7 @@ class fromSubmittedScreen extends StatelessWidget {
           ),
           SizedBox(height: 16),
           Text(
-            'Form submitted, waiting for doctor review',
+            'Formularul a fost trimis, așteptăm revizuirea medicului',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,

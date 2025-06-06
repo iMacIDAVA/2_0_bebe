@@ -982,6 +982,8 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
           try  {
 
 
+
+
             SharedPreferences prefs = await SharedPreferences.getInstance();
             String patientId = prefs.getString(pref_keys.userId) ?? '';
             String patientNume = prefs.getString(pref_keys.userNume) ?? '';

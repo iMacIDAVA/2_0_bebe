@@ -255,7 +255,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          'Payment',
+          'Plată',
           style: GoogleFonts.rubik(
             color: Colors.white,
             fontSize: 16,
@@ -270,8 +270,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: CountdownWrapper(
-            duration: const Duration(minutes: 3),
+          child:
+
+          CountdownWrapper(
             onTimeout: () async {
 
               await _consultationService.updateConsultationStatus(
@@ -307,7 +308,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Consultation Details',
+                        'Detalii consultație',
                         style: GoogleFonts.rubik(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
@@ -318,7 +319,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                       const SizedBox(height: 8),
                       Text(
-                        'Amount: \$${widget.amount.toStringAsFixed(2)}',
+                        'sumă: \$${widget.amount.toStringAsFixed(2)}',
                         style: GoogleFonts.rubik(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -427,7 +428,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   )
                       : Text(
-                    'Pay \$${widget.amount.toStringAsFixed(2)}',
+                    'Plăti \$${widget.amount.toStringAsFixed(2)}',
                     style: GoogleFonts.rubik(
                       fontSize: 16,
                       color: Colors.white,

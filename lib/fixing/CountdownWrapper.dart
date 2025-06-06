@@ -9,7 +9,7 @@ class CountdownWrapper extends StatefulWidget {
   const CountdownWrapper({
     Key? key,
     required this.child,
-    this.duration = const Duration(minutes: 20),
+    this.duration = const Duration(minutes: 30),
     required this.onTimeout,
   }) : super(key: key);
 
@@ -171,6 +171,5 @@ class CountdownWrapperState extends State<CountdownWrapper> {
 //     );
 //   }
 // }
-
 
 
