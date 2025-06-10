@@ -387,52 +387,11 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             onPressed: () {
               print('_currentConsultation!');
               print(_currentConsultation);
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false, channelName: _currentConsultation!['channel_name'])),
-              ).then((value) async {
-                // First check if _currentConsultation is still valid
-                if (_currentConsultation != null) {
-                  try {
-                    await _videoCallService.endCall(_currentConsultation!['id']);
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Call ended successfully')),
-                      );
-                      Navigator.pop(context);
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      print('Error ending call: ${e.toString()}');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error ending call: ${e.toString()}')),
-                      );
-                    }
-                  }
-
-                  // Only navigate to testimonial if we still have the consultation data
-                  if (_currentConsultation != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TestimonialScreenSimple(
-                          idMedic: _currentConsultation!['doctor_id'],
-                        ),
-                      ),
-                    );
-                  }
-                } else {
-                  // If consultation is null, just go back
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
-                }
-              });
 
 
 
 
-              return ;
+
               // Navigate to call screen
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),

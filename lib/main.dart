@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const IntroScreen();
+    return  ChatScreen(isDoctor: false,) ;//const IntroScreen();
   }
 }
 
