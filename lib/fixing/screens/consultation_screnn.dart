@@ -387,11 +387,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             onPressed: () {
               print('_currentConsultation!');
               print(_currentConsultation);
-
-
-
-
-
               // Navigate to call screen
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),

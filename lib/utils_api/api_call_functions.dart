@@ -124,6 +124,7 @@ Future<String?> adaugaMesajCuAtasamentDinContMedic({
     resGetUltimulChestionarCompletatByContMedic =
         await postApelFunctie(parametriiApiCall, 'SchimbaPozaProfilDinContClient');
 
+    print("resGetUltimulChestionarCompletatByContMedic!.statusCode");
     print(resGetUltimulChestionarCompletatByContMedic!.statusCode);
     if (resGetUltimulChestionarCompletatByContMedic.statusCode == 200) {
       print('poza cu succes');
