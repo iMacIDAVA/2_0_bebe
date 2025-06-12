@@ -103,7 +103,7 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
        SharedPreferences prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user') ?? '';
    var a =  prefs.getString('oneSignalId') ?? "";
-   print('aaaa : ${a}');
+   // print('aaaa : ${a}');
   }
 
   // CHANGE: Use StreamController to skip polling when mediciOnlineList is true
@@ -126,7 +126,7 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
     _streamController!.add(initialData);
 
     // CHANGE: Periodic polling with flag check
-    Timer.periodic(const Duration(seconds: 5), (timer) async {
+    Timer.periodic(const Duration(seconds:10), (timer) async {
       if (mediciOnlineList) {
         print('Polling skipped: mediciOnlineList is true');
         return; // Skip polling

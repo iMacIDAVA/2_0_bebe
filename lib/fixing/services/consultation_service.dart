@@ -13,7 +13,9 @@ class ConsultationService {
     required int patientId,
     required int doctorId,
     required String sessionType,
-    required double amount
+    required double amount,
+    required String patientName,
+    required String DrName,
 
   }) async
   {
@@ -25,7 +27,9 @@ class ConsultationService {
           'patient_id': patientId,
           'doctor_id': doctorId,
           'session_type': sessionType,
-          'amount' : amount
+          'amount' : amount,
+          'patient_name' : patientName ,
+          'doctor_name' : DrName
         }),
       );
 

@@ -982,39 +982,66 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
           try  {
 
 
-
-
             SharedPreferences prefs = await SharedPreferences.getInstance();
             String patientId = prefs.getString(pref_keys.userId) ?? '';
             String patientNume = prefs.getString(pref_keys.userNume) ?? '';
             String patientPrenume = prefs.getString(pref_keys.userPrenume) ?? '';
-            print("Dr id " + widget.medicDetalii.id.toString()) ;
-            print("paient id " + patientId ) ;
-            print("price session : "  + widget.pret);
-            print("servise type " + widget.tipServiciu.toString());
-            print(widget.medicDetalii.pretIntrebare) ;
-           // consultationService.requestConsultation(doctorId: widget.medicDetalii.id, sessionType: 'Call', patientId: int.parse(patientId) , amount: 4000);
+            // print("Dr id " + widget.medicDetalii.id.toString()) ;
+            // print("paient id " + patientId ) ;
+            // print("price session : "  + widget.pret);
+            // print("servise type " + widget.tipServiciu.toString());
+            // print(widget.medicDetalii.pretIntrebare) ;
 
 
+            print("patientNume");
+            print(patientNume);
+            print("widget.medicDetalii.numeleComplet") ;
+            print(widget.medicDetalii.numeleComplet) ;
             await sendNotificationToDoctor(
               doctorId: widget.medicDetalii.id, // The ID of the doctor you want to notify
               message: "Your notification message here",
               notificationType: "1", // Type of notification (consultation, question, etc.)
             );
 
-            // Log parameters for debugging
-            print("Dr id: ${widget.medicDetalii.id}");
-            print("Patient id: $patientId");
-            print("Price session: ${widget.pret}");
-            print("Service type: ${widget.tipServiciu}");
-            print("Question price: ${widget.medicDetalii.pretIntrebare}");
+            // // Log parameters for debugging
+            // print("Dr id: ${widget.medicDetalii.numeleComplet}");
+            // print("Patient id: $patientId");
+            // print("Price session: ${widget.pret}");
+            // print("Service type: ${widget.tipServiciu}");
+            // print("Question price: ${widget.medicDetalii.pretIntrebare}");
+            // print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++") ;
+
+
+
+            String result;
+            switch (widget.tipServiciu) {
+              case 3:
+                result = "Chat";
+                break;
+              case 1:
+                result = "Call";
+                break;
+              case 2:
+                result = "Recommendation";
+                break;
+              default:
+                print("errror");
+                result = "xx";
+            }
+
+          
+
+
+        
 
             // Call requestConsultation
             final response = await consultationService.requestConsultation(
               doctorId: widget.medicDetalii.id,
-              sessionType: 'Call', // Use dynamic session type or default to 'Call'
+              sessionType: result, // Use dynamic session type or default to 'Call'
               patientId: int.parse(patientId),
-              amount:widget.medicDetalii.pretIntrebare?? 0.0, // Use dynamic amount
+              amount:double.tryParse(widget.pret ?? '1.0') ?? 0.0, // Use dynamic amount
+              DrName : widget.medicDetalii.numeleComplet ?? "DR",
+              patientName : patientNume ?? "Patient" ,
             );
 
             // Check if the request was successful

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sos_bebe_app/fixing/chat.dart';
 import 'package:sos_bebe_app/fixing/screens/questionaireScreen.dart';
 import 'package:sos_bebe_app/fixing/screens/rev.dart';
 import 'package:sos_bebe_app/fixing/screens/videoCallScreen.dart';
@@ -354,96 +355,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   }
 
 
-  Widget _buildCallReadyScreen() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.check_circle,
-            size: 80,
-            color: Color(0xFF0EBE7F),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Gata să te alături',
-            style: GoogleFonts.rubik(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF0EBE7F),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Medicul este gata să înceapă consultația',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.rubik(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              print('_currentConsultation!');
-              print(_currentConsultation);
-              // Navigate to call screen
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),
-              ).then((value) async {
-                try {
-                  // This is the specific line that ends the call
-                  await _videoCallService.endCall(_currentConsultation!['id']);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Call ended successfully')),
-                    );
-                    Navigator.pop(context);
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    print('Error ending call: ${e.toString()}');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error ending call: ${e.toString()}')),
-                    );
-                  }
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TestimonialScreenSimple(
-                      idMedic: _currentConsultation!['doctor_id'], // Replace with actual doctor ID
-                    ),
-                  ),
-                );
-              });
 
-
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0EBE7F),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-
-              'Intră în sesiune,',
-              style: GoogleFonts.rubik(
-                fontSize: 16,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildNoConsultationScreen() {
     return Center(
@@ -559,9 +471,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     //   );
     // }
 
+
     if (_currentConsultation == null) {
       return _buildNoConsultationScreen();
     }
+
+
 
     switch (_currentConsultation!['status']) {
       case 'Requested':
@@ -580,7 +495,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         return fromSubmittedScreen();
 
       case 'CallReady' || 'CallStarted':
-        return _buildCallReadyScreen();
+        return _buildSessionScreen();
 
       default:
         print( 'Unknown status: ${_currentConsultation!['status']}',) ;
@@ -601,6 +516,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Consultation',
           style: GoogleFonts.rubik(
@@ -615,6 +531,219 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       ),
       body: _buildContent(),
     );
+  }
+
+  /// Navigate to Chat screen
+  Widget _buildChatScreen() {
+    // Dummy screen for Chat
+    return   Scaffold(
+
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'În atenția dumneavoastră',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.red[900],
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey[50]!, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Card(
+              color: Color(0xFF0EBE7F),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      '• Vă rugăm să adresați medicului o singură întrebare.',
+                      style: TextStyle(fontSize: 16, height: 1.5 ,color: Colors.white , fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      '• Textul poate avea maxim 400 de caractere.',
+                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      '• Butonul **TRIMITE ÎNTREBAREA** se utilizează o singură dată după finalizarea scrierii mesajului.',
+                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      '• Vă informăm că după 10 minute fereastra se închide automat!',
+                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      recommendation : _currentConsultation!['session_type'] =='Recommendation' ,
+                      isDoctor: false,
+                      doctorId: _currentConsultation!['doctor_id'].toString(),
+                      patientId: _currentConsultation!['patient_id'].toString(),
+                      doctorName: _currentConsultation!['doctor_name'],
+                      patientName: _currentConsultation!['patient_name'],
+                      chatRoomId: _currentConsultation!['channel_name'],
+                    ),
+
+                  ),(Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[900],
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              child: const Text(
+                'Am înțeles',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  /// Navigate to the video call screen
+  Widget _buildCallReadyScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.check_circle,
+            size: 80,
+            color: Color(0xFF0EBE7F),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Gata să te alături',
+            style: GoogleFonts.rubik(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF0EBE7F),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Medicul este gata să înceapă consultația',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.rubik(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              print('_currentConsultation!');
+              print(_currentConsultation);
+              // Navigate to call screen
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),
+              ).then((value) async {
+                try {
+                  // This is the specific line that ends the call
+                  await _videoCallService.endCall(_currentConsultation!['id']);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Call ended successfully')),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    print('Error ending call: ${e.toString()}');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error ending call: ${e.toString()}')),
+                    );
+                  }
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TestimonialScreenSimple(
+                      idMedic: _currentConsultation!['doctor_id'], // Replace with actual doctor ID
+                    ),
+                  ),
+                );
+              });
+
+
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0EBE7F),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32,
+                vertical: 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+
+              'Intră în sesiune,',
+              style: GoogleFonts.rubik(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Swich screen
+  Widget _buildSessionScreen() {
+    switch (_currentConsultation!['session_type']) {
+      case 'Call':
+        return _buildCallReadyScreen();
+      case 'Chat' || 'Recommendation' :
+        return _buildChatScreen();
+
+      default:
+        return const Center(child: Text('Unknown Status'));
+    }
   }
 
   Widget _buildAcceptedScreen() {
@@ -799,7 +928,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   //     ),
   //   );
   // }
-
 
   Widget _buildQuestionnaireScreen() {
     return

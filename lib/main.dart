@@ -119,13 +119,19 @@ class _HomeScreenState extends State<HomeScreen> {
     await checkActiveSession(context, int.parse(patientId));
   }
 
-  /*
 
-  * */
 
   @override
   Widget build(BuildContext context) {
-    return  ChatScreen(isDoctor: false,) ;//const IntroScreen();
+    return
+      // ChatScreen(isDoctor: false,// or false for patient
+      // doctorId: 'DOCTOR_12345',
+      // patientId: 'PATIENT_67890',
+      // doctorName: 'Dr. Smith',
+      // patientName: 'John Doe',
+      // chatRoomId: 'DOCTOR_12345_PATIENT_67891',) ;
+      //
+    const IntroScreen();
   }
 }
 
