@@ -353,30 +353,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.10.0"
-  firebase_messaging:
-    dependency: "direct main"
-    description:
-      name: firebase_messaging
-      sha256: "980259425fa5e2afc03e533f33723335731d21a56fd255611083bceebf4373a8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "14.7.10"
-  firebase_messaging_platform_interface:
-    dependency: transitive
-    description:
-      name: firebase_messaging_platform_interface
-      sha256: "54e283a0e41d81d854636ad0dad73066adc53407a60a7c3189c9656e2f1b6107"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.5.18"
-  firebase_messaging_web:
-    dependency: transitive
-    description:
-      name: firebase_messaging_web
-      sha256: "90dc7ed885e90a24bb0e56d661d4d2b5f84429697fd2cbb9e5890a0ca370e6f4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.18"
   firebase_storage:
     dependency: "direct main"
     description:
@@ -865,10 +841,10 @@ packages:
     dependency: "direct main"
     description:
       name: onesignal_flutter
-      sha256: e4262d34bcbbd3f005f0254e27ad5e7f095f6a689666a0ad16a319ab6624b82d
+      sha256: f3940387d6c7033a9c341aa0548f24d98217fce9182f9ad80bf2554b9dd3dc1a
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.1"
+    version: "5.2.0"
   open_filex:
     dependency: "direct main"
     description:

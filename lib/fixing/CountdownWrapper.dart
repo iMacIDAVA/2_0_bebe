@@ -9,10 +9,10 @@ class CountdownWrapper extends StatefulWidget {
   const CountdownWrapper({
     Key? key,
     required this.child,
-    this.duration = const Duration(minutes: 30),
+    this.duration = const Duration(minutes: 3),
     required this.onTimeout,
   }) : super(key: key);
-
+// 
   @override
   CountdownWrapperState createState() => CountdownWrapperState();
 }

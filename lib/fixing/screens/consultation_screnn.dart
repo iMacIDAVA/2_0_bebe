@@ -675,18 +675,27 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             onPressed: () {
               print('_currentConsultation!');
               print(_currentConsultation);
-              // Navigate to call screen
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name']   ,)),
+
+// Navigate to call screen and clear all previous routes
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => VideoCallScreeen(
+                    isDoctor: false,
+                    channelName: _currentConsultation!['channel_name'],
+                    sessionId: _currentConsultation!['id'],
+                    drId: _currentConsultation!['doctor_id'],
+                  ),
+                ),
+                    (route) => false,
               ).then((value) async {
                 try {
-                  // This is the specific line that ends the call
+                  // End the call
                   await _videoCallService.endCall(_currentConsultation!['id']);
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Call ended successfully')),
                     );
-                    Navigator.pop(context);
                   }
                 } catch (e) {
                   if (mounted) {
@@ -696,15 +705,54 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                     );
                   }
                 }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TestimonialScreenSimple(
-                      idMedic: _currentConsultation!['doctor_id'], // Replace with actual doctor ID
+
+                // Navigate to testimonial screen after call ends
+                if (mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => TestimonialScreenSimple(
+                        idMedic: _currentConsultation!['doctor_id'],
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
               });
+
+              // print('_currentConsultation!');
+              // print(_currentConsultation);
+              // // Navigate to call screen
+              // Navigator.of(context).push(
+              //   MaterialPageRoute(builder: (context) => VideoCallScreeen(isDoctor: false  , channelName: _currentConsultation!['channel_name'],
+              //     sessionId:  _currentConsultation!['id'] ,
+              //     drId: _currentConsultation!['doctor_id']
+              //   )),
+              // ).then((value) async {
+              //   try {
+              //     // This is the specific line that ends the call
+              //     await _videoCallService.endCall(_currentConsultation!['id']);
+              //     if (mounted) {
+              //       ScaffoldMessenger.of(context).showSnackBar(
+              //         const SnackBar(content: Text('Call ended successfully')),
+              //       );
+              //       Navigator.pop(context);
+              //     }
+              //   } catch (e) {
+              //     if (mounted) {
+              //       print('Error ending call: ${e.toString()}');
+              //       ScaffoldMessenger.of(context).showSnackBar(
+              //         SnackBar(content: Text('Error ending call: ${e.toString()}')),
+              //       );
+              //     }
+              //   }
+              //   Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //       builder: (context) => TestimonialScreenSimple(
+              //         idMedic: _currentConsultation!['doctor_id'], // Replace with actual doctor ID
+              //       ),
+              //     ),
+              //   );
+              // });
 
 
             },

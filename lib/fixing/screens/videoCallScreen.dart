@@ -494,15 +494,22 @@ import 'package:agora_token_service/agora_token_service.dart';
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sos_bebe_app/fixing/screens/rev.dart';
+
+import '../services/video_call_service.dart';
 
 class VideoCallScreeen extends StatefulWidget {
   final bool isDoctor;
   final String channelName;
+  final int sessionId ;
+  final int drId ;
 
   const VideoCallScreeen({
     Key? key,
     required this.isDoctor,
     required this.channelName,
+    required this.sessionId ,
+    required this.drId
   }) : super(key: key);
 
   @override
@@ -521,7 +528,7 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
   ValueNotifier<int> remainingTimeNotifier = ValueNotifier(900); // 15 minutes
   bool _isTimeUp = false;
   Timer? _timer;
-
+  final _videoCallService = VideoCallService();
   static const appId = "da37c68ec4f64cd1af4093c758f20869";
   static const appCertificate = '69b34ac5d15044a7906063342cc15471';
 
@@ -696,7 +703,7 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
               ),
             ),
             Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 const SizedBox(height: 480),
                 Container(
@@ -795,10 +802,19 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         try {
                           _engine?.leaveChannel();
-                          Navigator.of(context).pop();
+                          await _videoCallService.endCall(widget.sessionId);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TestimonialScreenSimple(
+                                idMedic:  widget.drId
+                              ),
+                            ),
+                          );
+                         // Navigator.of(context).pop();
                         }
                         catch(e){
                           print("error while ending hte call $e");
