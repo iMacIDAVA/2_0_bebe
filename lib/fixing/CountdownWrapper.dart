@@ -9,10 +9,10 @@ class CountdownWrapper extends StatefulWidget {
   const CountdownWrapper({
     Key? key,
     required this.child,
-    this.duration = const Duration(minutes: 3),
+    this.duration = const Duration(minutes: 30),
     required this.onTimeout,
   }) : super(key: key);
-// 
+//
   @override
   CountdownWrapperState createState() => CountdownWrapperState();
 }
@@ -71,16 +71,42 @@ class CountdownWrapperState extends State<CountdownWrapper> {
           left: 0,
           right: 0,
           child: Center(
-            child: Text(
-              'Time left: ${_formatTime(_secondsLeft)}',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            child:  Container(
+              width: 150,
+              height: 50,
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                  color: Color(0xFFFFE4E3),
+                  borderRadius: BorderRadius.circular(30)
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Container(
+                  height: 15,
+                    width:  15,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(30)
+                    ),
+                  ),
+                  SizedBox(width: 5,) ,
+                  Text(
+                    '${_formatTime(_secondsLeft)}',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(width: 10,) ,
+                  Image.asset('assets/images/sss.png',width: 30,)
+                ],
               ),
             ),
           ),
         ),
+
       ],
     );
   }

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/fixing/CountdownWrapper.dart';
 import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/utils/consts.dart';
-
+import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
+import '../../datefacturare/date_facturare_completare_rapida.dart';
 import '../services/consultation_service.dart';
 
 
@@ -16,10 +18,12 @@ class PaymentScreen extends StatefulWidget {
   final double amount;
   final int currentConsultation ;
 
+
   const PaymentScreen({
     Key? key,
     required this.amount,
-    required this.currentConsultation
+    required this.currentConsultation ,
+
   }) : super(key: key);
 
   @override
@@ -291,10 +295,52 @@ class _PaymentScreenState extends State<PaymentScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Consultation Details
+                // Container(
+                //   decoration: BoxDecoration(
+                //     color: Colors.white,
+                //     borderRadius: BorderRadius.circular(8),
+                //     boxShadow: [
+                //       BoxShadow(
+                //         color: Colors.black.withOpacity(0.1),
+                //         blurRadius: 4,
+                //         offset: const Offset(0, 2),
+                //       ),
+                //     ],
+                //   ),
+                //   padding: const EdgeInsets.all(16),
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     children: [
+                //       Text(
+                //         'Detalii consultație',
+                //         style: GoogleFonts.rubik(
+                //           fontSize: 18,
+                //           fontWeight: FontWeight.w500,
+                //           color: const Color(0xFF0EBE7F),
+                //         ),
+                //       ),
+                //       const SizedBox(height: 12),
+                //
+                //       const SizedBox(height: 8),
+                //       Text(
+                //         'sumă: \$${widget.amount.toStringAsFixed(2)}',
+                //         style: GoogleFonts.rubik(
+                //           fontSize: 16,
+                //           fontWeight: FontWeight.bold,
+                //           color: Colors.black87,
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 Container(
+                  height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/f.png'),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -304,31 +350,44 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ],
                   ),
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        'Detalii consultație',
-                        style: GoogleFonts.rubik(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF0EBE7F),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Servicii Pediatrie',
+                            style: GoogleFonts.rubik(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Adresati o întrebare medicului',
+                            style: GoogleFonts.rubik(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-
-                      const SizedBox(height: 8),
                       Text(
-                        'sumă: \$${widget.amount.toStringAsFixed(2)}',
+                        '${widget.amount.toStringAsFixed(2)} RON',
                         style: GoogleFonts.rubik(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Colors.white,
                         ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 24),
 
                 // Card Form
@@ -402,10 +461,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                       try {
                         await createPaymentIntent();
+
+                        SharedPreferences prefs = await SharedPreferences.getInstance();
+                        String user = prefs.getString('user') ?? '';
+                        String userPassMD5 = prefs.getString(pref_keys.userPassMD5) ?? '';
+
+                        await apiCallFunctions.anuntaMedicDeServiciuTerminat(
+                          pUser: user,
+                          pParola: userPassMD5,
+                          pIdMedic: "7" ,//widget.doctorId.toString(),
+                          tipPlata: "1",
+                        );
+
+
                       } catch (e) {
                         setState(() {
                           _error = e.toString()+ "<<<<<";
-                          print(_error) ;
+                          print(_error);
                           _isProcessingPayment = false;
                         });
                       }

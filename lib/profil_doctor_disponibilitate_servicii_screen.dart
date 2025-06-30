@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -279,7 +280,7 @@ class _ProfilDoctorDisponibilitateServiciiScreenState extends State<ProfilDoctor
                           : widget.medicDetalii.monedaPreturi == euro.value
                               ? l.profilDoctorDisponibilitateServiciiMonedaEuro
                               : l.profilDoctorDisponibilitateServiciiMonedaRon,
-                      textServiciu: l.profilDoctorDisponibilitateServiciiPrimitiRecomandare,
+                      textServiciu: "INTERPRETARE ANALIZE",
                       iconLocation: './assets/images/reteta_profil_doctor_icon.png',
                       color: const Color.fromRGBO(241, 201, 0, 1),
                       tipConsultatieReteta: true,
@@ -981,7 +982,6 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
         onTap: () async {
           try  {
 
-
             SharedPreferences prefs = await SharedPreferences.getInstance();
             String patientId = prefs.getString(pref_keys.userId) ?? '';
             String patientNume = prefs.getString(pref_keys.userNume) ?? '';
@@ -992,6 +992,7 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
             // print("servise type " + widget.tipServiciu.toString());
             // print(widget.medicDetalii.pretIntrebare) ;
 
+            ///
 
             print("patientNume");
             print(patientNume);
@@ -1052,7 +1053,8 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
                 MaterialPageRoute(
                   builder: (context) => ConsultationScreen(
                     patientId: int.parse(patientId),
-                    doctorId: widget.medicDetalii.id,
+                    doctorId: widget.medicDetalii.id
+
                   ),
                 ),
               );
@@ -1202,6 +1204,7 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
       ),
     );
   }
+
 
 
   Future<void> sendNotificationToDoctor({

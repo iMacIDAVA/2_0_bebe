@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sos_bebe_app/fixing/chat.dart';
 import 'package:sos_bebe_app/fixing/screens/questionaireScreen.dart';
 import 'package:sos_bebe_app/fixing/screens/rev.dart';
@@ -10,6 +12,9 @@ import '../CountdownWrapper.dart';
 import '../services/consultation_service.dart';
 import '../services/video_call_service.dart';
 import 'payment_screen.dart';
+import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
+import 'package:http/http.dart' as http;
+
 
 class ConsultationScreen extends StatefulWidget {
   final int patientId;
@@ -142,6 +147,24 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   //   }
   // }
 
+  Future<Map<String, dynamic>?> getChestionarClientMobileRaw({
+    required String pUser,
+    required String pParola,
+    required int pIdChestionar,
+  }) async {
+    final Map<String, String> params = {
+      'pUser': pUser,
+      'pParolaMD5': pParola,
+      'pIdChestionar': pIdChestionar.toString(),
+    };
+
+    // Use your actual method name here, e.g. 'GetChestionarClientMobile'
+    http.Response? response = await apiCallFunctions.getApelFunctie(params, 'GetUltimulChestionarCompletatByContClient');
+    if (response != null && response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
   Future<void> _cancelConsultation() async {
     if (_currentConsultation == null) return;
     try {
@@ -181,18 +204,13 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.hourglass_empty,
-                size: 80,
-                color: Color(0xFF0EBE7F),
-              ),
-              const SizedBox(height: 24),
+
               Text(
-                'Aștept medicul',
+                'Aşteptağı râspunsul medicului',
                 style: GoogleFonts.rubik(
                   fontSize: 24,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF0EBE7F),
+                  color: const Color(0xFF677195),
                 ),
               ),
 
@@ -252,6 +270,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                     builder: (context) => PaymentScreen(
                       amount:double.parse(_currentConsultation!['amount'] ?? 0.0),
                         currentConsultation :  _currentConsultation!['id'],
+
+
 
                     ),
                   ),
@@ -389,6 +409,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ElevatedButton(
             onPressed: () {
              // _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call', amount: widget.);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => IntroScreen()
+                ),(Route<dynamic> route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2196F3),
@@ -515,130 +541,247 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(
-          'Consultation',
-          style: GoogleFonts.rubik(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        backgroundColor: const Color(0xFF0EBE7F),
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
       body: _buildContent(),
     );
   }
 
   /// Navigate to Chat screen
   Widget _buildChatScreen() {
-    // Dummy screen for Chat
-    return   Scaffold(
-
+    return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
-          'În atenția dumneavoastră',
+        title: Text(
+          '',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.red[900],
+        backgroundColor: Color(0xFF0EBE7F),
         elevation: 0,
         centerTitle: true,
+
       ),
       body: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueGrey[50]!, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
+        color: Colors.white,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Card(
-              color: Color(0xFF0EBE7F),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      '• Vă rugăm să adresați medicului o singură întrebare.',
-                      style: TextStyle(fontSize: 16, height: 1.5 ,color: Colors.white , fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      '• Textul poate avea maxim 400 de caractere.',
-                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      '• Butonul **TRIMITE ÎNTREBAREA** se utilizează o singură dată după finalizarea scrierii mesajului.',
-                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      '• Vă informăm că după 10 minute fereastra se închide automat!',
-                      style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
-                    ),
-                  ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'În atenția dumneavoastră',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                Text(
+                  '• Vă rugăm să adresați medicului o singură întrebare.',
+                  style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '• Textul poate avea maxim 400 de caractere.',
+                  style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '• Butonul TRIMITE ÎNTREBAREA se utilizează o singură dată după finalizarea scrierii mesajului.',
+                  style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '• Vă informăm că după 10 minute fereastra se închide automat!',
+                  style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey[700]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Vă mulțumim!',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0EBE7F),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(
-                      recommendation : _currentConsultation!['session_type'] =='Recommendation' ,
-                      isDoctor: false,
-                      doctorId: _currentConsultation!['doctor_id'].toString(),
-                      patientId: _currentConsultation!['patient_id'].toString(),
-                      doctorName: _currentConsultation!['doctor_name'],
-                      patientName: _currentConsultation!['patient_name'],
-                      chatRoomId: _currentConsultation!['channel_name'],
+            Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Scrie text',
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
                     ),
-
-                  ),(Route<dynamic> route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[900],
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                elevation: 2,
-              ),
-              child: const Text(
-                'Am înțeles',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          recommendation: _currentConsultation!['session_type'] == 'Recommendation',
+                          isDoctor: false,
+                          doctorId: _currentConsultation!['doctor_id'].toString(),
+                          patientId: _currentConsultation!['patient_id'].toString(),
+                          doctorName: _currentConsultation!['doctor_name'],
+                          patientName: _currentConsultation!['patient_name'],
+                          chatRoomId: _currentConsultation!['channel_name'],
+                          amount: double.tryParse(_currentConsultation!['amount'] ?? "0.0") ?? 0.0 ,
+                        ),
+                      ),
+                          (Route<dynamic> route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF0EBE7F),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'TRIMITE ÎNTREBAREA',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+
+
+
+  /// Navigate to Chat screen
+  // Widget _buildChatScreen() {
+  //   // Dummy screen for Chat
+  //   return   Scaffold(
+  //
+  //     appBar: AppBar(
+  //       automaticallyImplyLeading: false,
+  //       title: const Text(
+  //         'În atenția dumneavoastră',
+  //         style: TextStyle(
+  //           fontSize: 22,
+  //           fontWeight: FontWeight.w600,
+  //           color: Colors.white,
+  //         ),
+  //       ),
+  //       backgroundColor: Colors.red[900],
+  //       elevation: 0,
+  //       centerTitle: true,
+  //     ),
+  //     body: Container(
+  //       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+  //       decoration: BoxDecoration(
+  //         gradient: LinearGradient(
+  //           colors: [Colors.blueGrey[50]!, Colors.white],
+  //           begin: Alignment.topCenter,
+  //           end: Alignment.bottomCenter,
+  //         ),
+  //       ),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Card(
+  //             color: Color(0xFF0EBE7F),
+  //             elevation: 4,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(20),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: const [
+  //                   Text(
+  //                     '• Vă rugăm să adresați medicului o singură întrebare.',
+  //                     style: TextStyle(fontSize: 16, height: 1.5 ,color: Colors.white , fontWeight: FontWeight.bold),
+  //                   ),
+  //                   SizedBox(height: 10),
+  //                   Text(
+  //                     '• Textul poate avea maxim 400 de caractere.',
+  //                     style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+  //                   ),
+  //                   SizedBox(height: 10),
+  //                   Text(
+  //                     '• Butonul **TRIMITE ÎNTREBAREA** se utilizează o singură dată după finalizarea scrierii mesajului.',
+  //                     style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+  //                   ),
+  //                   SizedBox(height: 10),
+  //                   Text(
+  //                     '• Vă informăm că după 10 minute fereastra se închide automat!',
+  //                     style: TextStyle(fontSize: 16, height: 1.5,color: Colors.white , fontWeight: FontWeight.bold),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 30),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               Navigator.pushAndRemoveUntil(
+  //                 context,
+  //                 MaterialPageRoute(
+  //                   builder: (context) => ChatScreen(
+  //                     recommendation : _currentConsultation!['session_type'] =='Recommendation' ,
+  //                     isDoctor: false,
+  //                     doctorId: _currentConsultation!['doctor_id'].toString(),
+  //                     patientId: _currentConsultation!['patient_id'].toString(),
+  //                     doctorName: _currentConsultation!['doctor_name'],
+  //                     patientName: _currentConsultation!['patient_name'],
+  //                     chatRoomId: _currentConsultation!['channel_name'],
+  //                   ),
+  //
+  //                 ),(Route<dynamic> route) => false,
+  //               );
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: Colors.red[900],
+  //               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //               elevation: 2,
+  //             ),
+  //             child: const Text(
+  //               'Am înțeles',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.w600,
+  //                 color: Colors.white,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
 
   /// Navigate to the video call screen
@@ -810,172 +953,188 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
         );
       },
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.check_circle,
-              size: 80,
-              color: Color(0xFF0EBE7F),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Card(
+            surfaceTintColor: Colors.white,
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Medicul ți-a acceptat cererea',
-              style: GoogleFonts.rubik(
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF0EBE7F),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Te rugăm să continui cu plata pentru a putea continua consultația',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.rubik(
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await _consultationService.updateConsultationStatus(
-                    _currentConsultation!['id'],
-                    'payment_pending',
-                  );
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Doctorul ${_currentConsultation!['doctorName'] ?? 'Daniela Preoteasa'} a confirmat',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.rubik(
+                      fontSize: 18,
+                      color: const Color(0xFF6B7280),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        await _consultationService.updateConsultationStatus(
+                          _currentConsultation!['id'],
+                          'payment_pending',
+                        );
 
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PaymentScreen(
-                        amount: double.parse(_currentConsultation!['amount'] ?? 0.0), currentConsultation: _currentConsultation!['id'] ,
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PaymentScreen(
+                              amount: double.parse(_currentConsultation!['amount'] ?? '0.0'),
+                              currentConsultation: _currentConsultation!['id'],
 
+                            ),
+                          ),
+                        );
+
+                        if (result == true) {
+                          await _consultationService.updateConsultationStatus(
+                            _currentConsultation!['id'],
+                            'payment_completed',
+                          );
+                          _loadCurrentConsultation();
+                        }
+                      } catch (e) {
+                        setState(() {
+                          _error = e.toString();
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0FBE7F),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Text(
+                      'EFECTUAȚI PLATA',
+                      style: GoogleFonts.rubik(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  );
-
-                  if (result == true) {
-                    await _consultationService.updateConsultationStatus(
-                      _currentConsultation!['id'],
-                      'payment_completed',
-                    );
-                    _loadCurrentConsultation();
-                  }
-                } catch (e) {
-                  setState(() {
-                    _error = e.toString();
-                  });
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0EBE7F),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Continuă cu plata',
-                style: GoogleFonts.rubik(
-                  fontSize: 16,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      )
+      ),
     );
   }
-
   // Widget _buildAcceptedScreen() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         const Icon(
-  //           Icons.check_circle,
-  //           size: 80,
-  //           color: Color(0xFF0EBE7F),
+  //   return CountdownWrapper(
+  //     onTimeout: () async {
+  //       await _consultationService.updateConsultationStatus(
+  //         _currentConsultation!['id'],
+  //         'callEnded',
+  //       );
+  //       _loadCurrentConsultation();
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => const IntroScreen(),
   //         ),
-  //         const SizedBox(height: 24),
-  //         Text(
-  //           'Doctor Accepted Your Request',
-  //           style: GoogleFonts.rubik(
-  //             fontSize: 24,
-  //             fontWeight: FontWeight.w500,
-  //             color: const Color(0xFF0EBE7F),
+  //       );
+  //     },
+  //     child: Center(
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           const Icon(
+  //             Icons.check_circle,
+  //             size: 80,
+  //             color: Color(0xFF0EBE7F),
   //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Text(
-  //           'Please proceed to payment to continue with the consultation',
-  //           textAlign: TextAlign.center,
-  //           style: GoogleFonts.rubik(
-  //             fontSize: 16,
-  //             color: Colors.black87,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 32),
-  //         ElevatedButton(
-  //           onPressed: () async {
-  //             try {
-  //               // Update status to payment_pending
-  //               await _consultationService.updateConsultationStatus(
-  //                 _currentConsultation!['id'],
-  //                 'payment_pending',
-  //               );
-  //
-  //               // Navigate to payment screen
-  //               final result = await Navigator.push(
-  //                 context,
-  //                 MaterialPageRoute(
-  //                   builder: (context) => PaymentScreen(
-  //                     amount:double.parse(_currentConsultation!['amount'] ?? 0.0),                    ),
-  //                 ),
-  //               );
-  //
-  //               if (result == true) {
-  //                 // Payment successful, update status to payment_completed
-  //                 await _consultationService.updateConsultationStatus(
-  //                   _currentConsultation!['id'],
-  //                   'payment_completed',
-  //                 );
-  //
-  //                 // Reload consultation to show next state
-  //                 _loadCurrentConsultation();
-  //               }
-  //             } catch (e) {
-  //               setState(() {
-  //                 _error = e.toString();
-  //               });
-  //             }
-  //           },
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: const Color(0xFF0EBE7F),
-  //             padding: const EdgeInsets.symmetric(
-  //               horizontal: 32,
-  //               vertical: 12,
-  //             ),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(8),
+  //           const SizedBox(height: 24),
+  //           Text(
+  //             'Medicul ți-a acceptat cererea',
+  //             style: GoogleFonts.rubik(
+  //               fontSize: 24,
+  //               fontWeight: FontWeight.w500,
+  //               color: const Color(0xFF0EBE7F),
   //             ),
   //           ),
-  //           child: Text(
-  //             'Proceed to Payment',
+  //           const SizedBox(height: 12),
+  //           Text(
+  //             'Te rugăm să continui cu plata pentru a putea continua consultația',
+  //             textAlign: TextAlign.center,
   //             style: GoogleFonts.rubik(
   //               fontSize: 16,
-  //               color: Colors.white,
-  //               fontWeight: FontWeight.bold,
+  //               color: Colors.black87,
   //             ),
   //           ),
-  //         ),
-  //       ],
-  //     ),
+  //           const SizedBox(height: 32),
+  //           ElevatedButton(
+  //             onPressed: () async {
+  //               try {
+  //                 await _consultationService.updateConsultationStatus(
+  //                   _currentConsultation!['id'],
+  //                   'payment_pending',
+  //                 );
+  //
+  //
+  //                 final result = await Navigator.push(
+  //                   context,
+  //                   MaterialPageRoute(
+  //                     builder: (context) => PaymentScreen(
+  //                       amount: double.parse(_currentConsultation!['amount'] ?? 0.0), currentConsultation: _currentConsultation!['id'] ,
+  //                       serviceType: '1',
+  //                       doctorId: 7,
+  //                       ///HERE
+  //
+  //                     ),
+  //                   ),
+  //                 );
+  //
+  //                 if (result == true) {
+  //                   await _consultationService.updateConsultationStatus(
+  //                     _currentConsultation!['id'],
+  //                     'payment_completed',
+  //                   );
+  //                   _loadCurrentConsultation();
+  //                 }
+  //               } catch (e) {
+  //                 setState(() {
+  //                   _error = e.toString();
+  //                 });
+  //               }
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: const Color(0xFF0EBE7F),
+  //               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //             ),
+  //             child: Text(
+  //               'Continuă cu plata',
+  //               style: GoogleFonts.rubik(
+  //                 fontSize: 16,
+  //                 color: Colors.white,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     )
   //   );
   // }
+
+
 
   Widget _buildQuestionnaireScreen() {
     return
@@ -1011,6 +1170,25 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ElevatedButton(
             onPressed: () async {
               try {
+                SharedPreferences prefss = await SharedPreferences.getInstance();
+                String user = prefss.getString('user') ?? 'Test@t.com';
+                String userPassMD5 = prefss.getString(pref_keys.userPassMD5) ?? '123456789';
+                final map = await getChestionarClientMobileRaw(
+                  pUser: user,
+                  pParola:userPassMD5 ,
+                  pIdChestionar:widget.patientId ,
+                );
+
+                final data= map ;
+
+                final firstName = data!['PrenumeCompletat'] ?? '';
+                final lastName = data['NumeCompletat'] ?? '';
+                final fullName = '$firstName $lastName'.trim();
+                final weight = data['GreutateCompletata'];
+                final birthDate = data['DataNastereCompletata'].split('T').first;
+
+
+
                 // First update status to FormPending
                 await _consultationService.updateConsultationStatus(
                   _currentConsultation!['id'],
@@ -1021,7 +1199,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QuestionnaireScreen(numePacient: 'lora', dataNasterii: '10-10-2020', greutate: '70',
+                    builder: (context) =>
+                        QuestionnaireScreen(numePacient: fullName, dataNasterii: birthDate, greutate: weight,
 
                     ),
                   ),
@@ -1113,4 +1292,5 @@ class fromSubmittedScreen extends StatelessWidget {
       ),
     );
   }
+
 }

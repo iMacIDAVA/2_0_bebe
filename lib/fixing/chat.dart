@@ -8,26 +8,12 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sos_bebe_app/fixing/screens/rev.dart';
+import 'package:sos_bebe_app/fixing/services/showPaymentModalBottomSheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
-import '../datefacturare/date_facturare_completare_rapida.dart';
+import '../datefacturare/date_facturare_completare_rapida.dart' as s ;
 import 'package:path/path.dart' as path;
-import 'package:http/http.dart' as http;
-
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:path/path.dart' as path;
-import 'package:http/http.dart' as http;
-
 import '../intro_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -38,6 +24,7 @@ class ChatScreen extends StatefulWidget {
   final String patientName;
   final String chatRoomId;
   final bool recommendation ;
+  final double amount;
 
   const ChatScreen({
     super.key,
@@ -47,6 +34,7 @@ class ChatScreen extends StatefulWidget {
     required this.doctorName,
     required this.patientName,
     required this.chatRoomId,
+    required this.amount ,
     this.recommendation = false
   });
 
@@ -94,6 +82,34 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _initializeChatRoom();
     _startTimer();
+  }
+
+  Future<bool> _checkConversationCompleted() async {
+    try {
+      final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+      final chatRoomSnapshot = await chatRoomRef.get();
+      if (chatRoomSnapshot.exists) {
+        final data = chatRoomSnapshot.data();
+        bool conversationCompleted = data?['conversationCompleted'] ?? false;
+        if (!conversationCompleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Please wait for the doctor to respond before exiting.')),
+          );
+          return false;
+        }
+        return true;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Chat room not found.')),
+        );
+        return false;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error checking conversation status: $e')),
+      );
+      return false;
+    }
   }
 
   Future<void> _initializeChatRoom() async {
@@ -458,42 +474,61 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    if (_secondsRemaining > 0 && !_timerEnded)
-                      ElevatedButton(
-                        onPressed: _showTimerDialogg,
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                          backgroundColor: const Color(0xFF62CD9C),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+                    if (_secondsRemaining > 0 && !_timerEnded && widget.recommendation == false )
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _showTimerDialogg,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            backgroundColor: const Color(0xFF62CD9C),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'TRIMITE ÎNTREBAREA',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                          child: const Text(
+                            'TRIMITE ÎNTREBAREA',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                          ),
                         ),
                       ),
                     if (_secondsRemaining > 0 && !_timerEnded)
-                      if(!widget.recommendation)
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          await _pickFile();
-                          if (_fileBase64 != null) {
-                            await _uploadFile();
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF62CD9C),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      if(widget.recommendation)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                           try{
+                             await _pickFile();
+                             if (_fileBase64 != null) {
+                               await _uploadFile();
+                               _messageSent = true;
+                               _timer.cancel();
+                               setState(() {
+                                 _timerEnded = true;
+                                 _showTimerDialog = false;
+                                 _secondsRemaining = 0;
+                                 _timerNotifier.value = 0;
+                               });
+                             }
+
+                           }
+                           catch(e){
+
+
+                           }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF62CD9C),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        ),
-                        icon: Icon(Icons.attach_file),
-                        label: Text(
-                          'Trimite fișier',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          icon: Icon(Icons.attach_file),
+                          label: Text(
+                            'Trimite fișier',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
                         ),
                       ),
                     if (_timerEnded)
@@ -503,9 +538,25 @@ class _ChatScreenState extends State<ChatScreen> {
                           SizedBox(
                             height: 70,
                             child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context, MaterialPageRoute(builder: (context) => const IntroScreen()), (Route<dynamic> route) => false,  );
+
+                              onPressed: () async {
+                                bool canExit = await _checkConversationCompleted();
+                                if (canExit) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TestimonialScreenSimple(
+                                          idMedic:  int.parse(widget.doctorId)
+                                      ),
+                                    ),
+                                  );
+
+                                  // Navigator.pushAndRemoveUntil(
+                                  //   context,
+                                  //   MaterialPageRoute(builder: (context) => const IntroScreen()),
+                                  //       (Route<dynamic> route) => false,
+                                  // );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
@@ -525,7 +576,22 @@ class _ChatScreenState extends State<ChatScreen> {
                             height: 70,
                             child: ElevatedButton(
                               onPressed: () {
+                                showPaymentModalBottomSheet(
+                                  context: context,
+                                  amount: widget.amount,
+                                  onSuccess: (){
+                                    _timer.cancel(); // Cancel existing timer
+                                    setState(() {
+                                      _timerEnded = false;
+                                      _showTimerDialog = true;
+                                      _secondsRemaining = 10 * 60;
+                                      _timerNotifier.value = 10 * 60;
+                                    });
+                                    _startTimer(); // Restart the timer
 
+
+                                  }
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF62CD9C),
@@ -550,6 +616,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ValueListenableBuilder<int>(
               valueListenable: _timerNotifier,
               builder: (context, seconds, child) {
+                if(widget.recommendation)
+                  return SizedBox();
                 return TimerDialog(
                   onSend: (message) {
                     _messageController.text = message;
