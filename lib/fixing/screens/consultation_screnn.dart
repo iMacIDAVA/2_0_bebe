@@ -643,7 +643,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                           doctorName: _currentConsultation!['doctor_name'],
                           patientName: _currentConsultation!['patient_name'],
                           chatRoomId: _currentConsultation!['channel_name'],
-                          amount: double.tryParse(_currentConsultation!['amount'] ?? "0.0") ?? 0.0 ,
+                          amount: double.tryParse(_currentConsultation!['amount'] ?? "0.0" ) ?? 0,
                         ),
                       ),
                           (Route<dynamic> route) => false,

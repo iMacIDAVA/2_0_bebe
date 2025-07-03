@@ -304,6 +304,7 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
         },
         child: Scaffold(
             resizeToAvoidBottomInset: false,
+            backgroundColor: Colors.white,
             body: isDoneLoading
                 ? SingleChildScrollView(
                     child: Column(

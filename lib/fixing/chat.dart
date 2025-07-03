@@ -12,7 +12,7 @@ import 'package:sos_bebe_app/fixing/screens/rev.dart';
 import 'package:sos_bebe_app/fixing/services/showPaymentModalBottomSheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
-import '../datefacturare/date_facturare_completare_rapida.dart' as s ;
+import '../datefacturare/date_facturare_completare_rapida.dart' as s;
 import 'package:path/path.dart' as path;
 import '../intro_screen.dart';
 
@@ -23,7 +23,7 @@ class ChatScreen extends StatefulWidget {
   final String doctorName;
   final String patientName;
   final String chatRoomId;
-  final bool recommendation ;
+  final bool recommendation;
   final double amount;
 
   const ChatScreen({
@@ -34,8 +34,8 @@ class ChatScreen extends StatefulWidget {
     required this.doctorName,
     required this.patientName,
     required this.chatRoomId,
-    required this.amount ,
-    this.recommendation = false
+    required this.amount,
+    this.recommendation = false,
   });
 
   @override
@@ -45,6 +45,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
 
   late String currentUserId;
   late String currentUserName;
@@ -64,6 +65,12 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  int _completionTimerSeconds = 60; // Persist remaining seconds
+  Timer? _completionTimer; // Timer for conversationCompleted
+  ValueNotifier<int>? _completionTimerNotifier; // Notifier for the completion timer
+
+  final ScrollController _scrollController = ScrollController(); // Add this
+
   @override
   void initState() {
     super.initState();
@@ -80,8 +87,49 @@ class _ChatScreenState extends State<ChatScreen> {
       otherUserName = widget.doctorName;
     }
 
+    // Initialize chat room safely
     _initializeChatRoom();
     _startTimer();
+  }
+
+  Future<void> _setConversationCompletedTrue() async {
+    try {
+      final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+      await chatRoomRef.update({
+        'conversationCompleted': true,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Conversation marked as completed.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error setting conversation completed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _setConversationCompletedFalse() async {
+    try {
+      final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+      await chatRoomRef.update({
+        'conversationCompleted': false,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Conversation marked as not completed.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error setting conversation not completed: $e')),
+        );
+      }
+    }
   }
 
   Future<bool> _checkConversationCompleted() async {
@@ -92,22 +140,28 @@ class _ChatScreenState extends State<ChatScreen> {
         final data = chatRoomSnapshot.data();
         bool conversationCompleted = data?['conversationCompleted'] ?? false;
         if (!conversationCompleted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Please wait for the doctor to respond before exiting.')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Așteaptă răspunsul medicului înainte să ieși.')),
+            );
+          }
           return false;
         }
         return true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chat room not found.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Chat room not found.')),
+          );
+        }
         return false;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error checking conversation status: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error checking conversation status: $e')),
+        );
+      }
       return false;
     }
   }
@@ -120,6 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
         await chatRoomRef.set({
           'createdAt': FieldValue.serverTimestamp(),
           'participants': [widget.doctorId, widget.patientId],
+          'conversationCompleted': false, // Ensure initial state
         });
       }
     } catch (e) {
@@ -133,6 +188,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage({String? fileUrl, String? fileName}) async {
     if (_messageController.text.trim().isEmpty && fileUrl == null) return;
+    if (_messageSent) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You can only send one message per session.')),
+        );
+      }
+      return;
+    }
 
     final message = {
       'senderId': currentUserId,
@@ -150,23 +213,24 @@ class _ChatScreenState extends State<ChatScreen> {
           .doc(widget.chatRoomId)
           .collection('messages')
           .add(message);
-      _messageController.clear();
-      setState(() {
-        _uploadedFileUrl = null;
-        _fileName = null;
-        _fileExtension = null;
-        _fileBase64 = null;
-      });
-      if (fileUrl != null) return;
-      if (!_messageSent) {
-        _messageSent = true;
-        _timer.cancel();
+      if (mounted) {
         setState(() {
-          _timerEnded = true;
-          _showTimerDialog = false;
-          _secondsRemaining = 0;
-          _timerNotifier.value = 0;
+          _uploadedFileUrl = null;
+          _fileName = null;
+          _fileExtension = null;
+          _fileBase64 = null;
+          _messageSent = true; // Mark message as sent
+          _timerEnded = true; // End session after one message
+          _showTimerDialog = false; // Hide dialog
+          _secondsRemaining = 0; // Reset timer
+          _timerNotifier.value = 0; // Update notifier
+          _timer.cancel(); // Cancel timer
         });
+        _messageController.clear();
+        // Scroll to the latest message
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -179,7 +243,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (mounted && _secondsRemaining > 0 && !_timerEnded) {
+      if (mounted && _secondsRemaining > 0 && !_timerEnded && !_messageSent) {
         _secondsRemaining--;
         _timerNotifier.value = _secondsRemaining;
       } else {
@@ -200,10 +264,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showTimerDialogg() {
-    if (!_timerEnded) {
-      setState(() {
-        _showTimerDialog = true;
-      });
+    if (!_timerEnded && !_messageSent) {
+      if (mounted) {
+        setState(() {
+          _showTimerDialog = true;
+        });
+      }
     }
   }
 
@@ -214,46 +280,65 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _pickFile() async {
+    if (_messageSent) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You can only send one file per session.')),
+        );
+      }
+      return;
+    }
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       );
 
-      if (result != null && result.files.single.path != null) {
-        File file = File(result.files.single.path!);
+      final filePath = result?.files.single.path;
+      if (filePath != null) {
+        File file = File(filePath);
         _fileName = path.basenameWithoutExtension(file.path);
         _fileExtension = path.extension(file.path);
 
         List<int> fileBytes = await file.readAsBytes();
         _fileBase64 = base64Encode(fileBytes);
 
-        setState(() {
-          _errorMessage = null;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
       } else {
-        setState(() {
-          _errorMessage = 'No file selected';
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'No file selected';
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error picking file: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error picking file: $e';
+        });
+      }
     }
   }
 
   Future<void> _uploadFile() async {
     if (_fileBase64 == null || _fileName == null || _fileExtension == null) {
-      setState(() {
-        _errorMessage = 'Please select a file first';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Please select a file first';
+        });
+      }
       return;
     }
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -285,30 +370,67 @@ class _ChatScreenState extends State<ChatScreen> {
       print("=== Upload Response ===");
       print("File URL: $fileUrl");
 
-      setState(() {
-        _isLoading = false;
-        if (fileUrl != null) {
-          fileUrl = fileUrl?.trim();
-          fileUrl = Uri.encodeFull(fileUrl!);
-          _uploadedFileUrl = fileUrl;
-          _errorMessage = null;
-          print("Upload successful! URL: $fileUrl");
-          _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
-        } else {
-          _errorMessage = 'Upload failed - no URL returned';
-          print("Upload failed - no URL returned");
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (fileUrl != null) {
+            fileUrl = fileUrl?.trim();
+            fileUrl = Uri.encodeFull(fileUrl!);
+            _uploadedFileUrl = fileUrl;
+            _errorMessage = null;
+            print("Upload successful! URL: $fileUrl");
+            _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
+          } else {
+            _errorMessage = 'Upload failed - no URL returned';
+            print("Upload failed - no URL returned");
+          }
+        });
+      }
     } catch (e) {
       print("=== Upload Error ===");
       print("Error details: $e");
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error uploading file: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error uploading file: $e';
+        });
+      }
     }
   }
 
+  Future<void> _sendPatientMessage({required String msg , bool conversationCompleted = true}) async {
+    try {
+      final message = {
+        'senderId': 'system',
+        'senderName': 'System',
+        'type': 'text',
+        'message': msg,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore
+          .collection('chat_rooms')
+          .doc(widget.chatRoomId)
+          .collection('messages')
+          .add(message);
+
+      await _firestore.collection('chat_rooms').doc(widget.chatRoomId).update({
+        'conversationCompleted': conversationCompleted,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('System message sent: Patient left the chat')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sending system message: $e')),
+        );
+      }
+    }
+  }
 
   Widget _buildMessage(Map<String, dynamic> message, bool isMe) {
     final timestamp = (message['timestamp'] as Timestamp?)?.toDate();
@@ -328,22 +450,24 @@ class _ChatScreenState extends State<ChatScreen> {
           child: isFile
               ? GestureDetector(
             onTap: () async {
-              String url = message['fileUrl'];
+              String url = message['fileUrl'] ?? '';
               final cleanUrl = url.trim();
-              final uri = Uri.parse(cleanUrl);
-              if (await canLaunchUrl(uri)) {
+              final uri = Uri.tryParse(cleanUrl);
+              if (uri != null && await canLaunchUrl(uri)) {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Could not open file')),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open file')),
+                  );
+                }
               }
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(width: 8),
-               Image.asset('assets/img.png' , height: 150,),
+                Image.asset('assets/img.png', height: 150),
                 const SizedBox(width: 8),
                 Icon(
                   Icons.download,
@@ -353,23 +477,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(width: 8),
               ],
             ),
-
-            // Row(
-            //   mainAxisSize: MainAxisSize.min,
-            //   children: [
-            //     const SizedBox(width: 8),
-            //     Flexible(
-            //       child: Text(
-            //         message['fileName'] ?? 'File',
-            //         style: TextStyle(
-            //           color: isMe ? Colors.white : Colors.blue,
-            //           fontSize: 16.0,
-            //         ),
-            //         overflow: TextOverflow.ellipsis,
-            //       ),
-            //     ),
-            //   ],
-            // ),
           )
               : Text(
             message['message'] ?? '',
@@ -397,7 +504,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the
+        automaticallyImplyLeading: false,
         title: Center(
           child: Text(
             widget.isDoctor ? widget.patientName : widget.doctorName,
@@ -410,17 +517,56 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Column(
             children: [
+              // Expanded(
+              //   child: StreamBuilder<QuerySnapshot>(
+              //     stream: _firestore
+              //         .collection('chat_rooms')
+              //         .doc(widget.chatRoomId)
+              //         .collection('messages')
+              //         .orderBy('timestamp', descending: false)
+              //         .snapshots(),
+              //     builder: (context, snapshot) {
+              //       if (snapshot.hasError) {
+              //         return Center(child: Text('Error: ${snapshot.error}'));
+              //       }
+              //       if (snapshot.connectionState == ConnectionState.waiting) {
+              //         return const Center(child: CircularProgressIndicator());
+              //       }
+              //
+              //       final messages = snapshot.data?.docs ?? [];
+              //
+              //       if (messages.isEmpty) {
+              //         return const Center(child: Text('No messages yet.'));
+              //       }
+              //
+              //       return ListView.builder(
+              //
+              //
+              //         padding: EdgeInsets.all(8.0),
+              //         itemCount: messages.length,
+              //         itemBuilder: (context, index) {
+              //           final message = messages[index].data() as Map<String, dynamic>?;
+              //           if (message == null) {
+              //             return SizedBox.shrink();
+              //           }
+              //           final isMe = message['senderId'] == currentUserId;
+              //           return _buildMessage(message, isMe);
+              //         },
+              //       );
+              //     },
+              //   ),
+              // ),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _firestore
                       .collection('chat_rooms')
                       .doc(widget.chatRoomId)
                       .collection('messages')
-                      .orderBy('timestamp', descending: true)
+                      .orderBy('timestamp', descending: true) // Change to descending: true
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error: '));
+                      return Center(child: Text('Error: ${snapshot.error}'));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -432,8 +578,16 @@ class _ChatScreenState extends State<ChatScreen> {
                       return const Center(child: Text('No messages yet.'));
                     }
 
+                    // Scroll to the latest message after the frame is built
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_scrollController.hasClients) {
+                        _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+                      }
+                    });
+
                     return ListView.builder(
-                      reverse: true,
+                      controller: _scrollController, // Attach ScrollController
+                      reverse: true, // Newest messages at bottom
                       padding: EdgeInsets.all(8.0),
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
@@ -448,7 +602,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 ),
               ),
-              if (!_timerEnded)
+              if (!_timerEnded && !_messageSent)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -469,12 +623,75 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
+              StreamBuilder<DocumentSnapshot>(
+                stream: _firestore.collection('chat_rooms').doc(widget.chatRoomId).snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting ||
+                      !snapshot.hasData ||
+                      !snapshot.data!.exists) {
+                    _completionTimer?.cancel();
+                    return const SizedBox.shrink();
+                  }
+
+                  final isCompleted = snapshot.data?.data() != null
+                      ? (snapshot.data!.data() as Map<String, dynamic>)['conversationCompleted'] as bool? ?? false
+                      : false;
+
+                  if (!isCompleted) {
+                    _completionTimer?.cancel();
+                    return const SizedBox.shrink();
+                  }
+
+                  _completionTimerNotifier ??= ValueNotifier<int>(_completionTimerSeconds);
+
+                  if (_completionTimer == null || !_completionTimer!.isActive) {
+                    _completionTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+                      if (_completionTimerNotifier!.value <= 0) {
+                        t.cancel();
+                        _completionTimer = null;
+                        _completionTimerNotifier?.dispose();
+                        _completionTimerNotifier = null;
+                        if (mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TestimonialScreenSimple(
+                                idMedic: int.parse(widget.doctorId),
+                              ),
+                            ),
+                                (Route<dynamic> route) => false,
+                          );
+                        }
+                      } else {
+                        _completionTimerNotifier!.value--;
+                        _completionTimerSeconds = _completionTimerNotifier!.value;
+                      }
+                    });
+                  }
+
+                  return ValueListenableBuilder<int>(
+                    valueListenable: _completionTimerNotifier!,
+                    builder: (context, secondsLeft, child) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Visibility(
+                          visible: secondsLeft > 0,
+                          child: Text(
+                            secondsLeft == 0 ? 'Calculating...' : 'Time remaining: ${_formatTime(secondsLeft)}',
+                            style: const TextStyle(fontSize: 16, color: Colors.red),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    if (_secondsRemaining > 0 && !_timerEnded && widget.recommendation == false )
+                    if (_secondsRemaining > 0 && !_timerEnded && !_messageSent && !widget.recommendation)
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _showTimerDialogg,
@@ -491,30 +708,22 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                       ),
-                    if (_secondsRemaining > 0 && !_timerEnded)
-                      if(widget.recommendation)
+                    if (_secondsRemaining > 0 && !_timerEnded && !_messageSent && widget.recommendation)
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                           try{
-                             await _pickFile();
-                             if (_fileBase64 != null) {
-                               await _uploadFile();
-                               _messageSent = true;
-                               _timer.cancel();
-                               setState(() {
-                                 _timerEnded = true;
-                                 _showTimerDialog = false;
-                                 _secondsRemaining = 0;
-                                 _timerNotifier.value = 0;
-                               });
-                             }
-
-                           }
-                           catch(e){
-
-
-                           }
+                            try {
+                              await _pickFile();
+                              if (_fileBase64 != null) {
+                                await _uploadFile();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error uploading file: $e')),
+                                );
+                              }
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF62CD9C),
@@ -531,31 +740,26 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                       ),
-                    if (_timerEnded)
+                    if (_timerEnded || _messageSent)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           SizedBox(
                             height: 70,
                             child: ElevatedButton(
-
                               onPressed: () async {
                                 bool canExit = await _checkConversationCompleted();
-                                if (canExit) {
-                                  Navigator.push(
+                                if (canExit && mounted) {
+                                  await _sendPatientMessage(msg: 'Chatul s-a încheiat din partea pacientului. Apreciem timpul acordat! 🕒');
+                                  Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => TestimonialScreenSimple(
-                                          idMedic:  int.parse(widget.doctorId)
+                                        idMedic: int.parse(widget.doctorId),
                                       ),
                                     ),
+                                        (Route<dynamic> route) => false,
                                   );
-
-                                  // Navigator.pushAndRemoveUntil(
-                                  //   context,
-                                  //   MaterialPageRoute(builder: (context) => const IntroScreen()),
-                                  //       (Route<dynamic> route) => false,
-                                  // );
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -575,22 +779,44 @@ class _ChatScreenState extends State<ChatScreen> {
                           SizedBox(
                             height: 70,
                             child: ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                bool canPay = await _checkConversationCompleted();
+                                if (!canPay || !mounted) return;
+                                await _sendPatientMessage(
+                                    msg: "🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.");
+                                await _setConversationCompletedFalse();
                                 showPaymentModalBottomSheet(
+
+                                  whenCompleteFunction: (paymentResults) async {
+
+                                    if(paymentResults)
+                                      return;
+                                    await _setConversationCompletedTrue();
+                                    await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
+
+
+                                  },
+                                  onClose: () async {
+                                    await _setConversationCompletedTrue();
+                                    await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
+                                  },
                                   context: context,
                                   amount: widget.amount,
-                                  onSuccess: (){
-                                    _timer.cancel(); // Cancel existing timer
-                                    setState(() {
-                                      _timerEnded = false;
-                                      _showTimerDialog = true;
-                                      _secondsRemaining = 10 * 60;
-                                      _timerNotifier.value = 10 * 60;
-                                    });
-                                    _startTimer(); // Restart the timer
+                                  onSuccess: () {
 
-
-                                  }
+                                   _sendPatientMessage(msg: 'Pacientul a efectuat plata cu succes ✅. Te rugăm să aștepți întrebarea lui 🕒.'  , conversationCompleted:  false );
+                                    _timer.cancel();
+                                    if (mounted) {
+                                      setState(() {
+                                        _timerEnded = false;
+                                        _showTimerDialog = true;
+                                        _secondsRemaining = 10 * 60;
+                                        _timerNotifier.value = 10 * 60;
+                                        _messageSent = false; // Reset for new session
+                                      });
+                                      _startTimer();
+                                    }
+                                  },
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -612,24 +838,26 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
           ),
-          if (_showTimerDialog && !_timerEnded)
+          if (_showTimerDialog && !_timerEnded && !_messageSent && !widget.recommendation)
             ValueListenableBuilder<int>(
               valueListenable: _timerNotifier,
               builder: (context, seconds, child) {
-                if(widget.recommendation)
-                  return SizedBox();
                 return TimerDialog(
                   onSend: (message) {
                     _messageController.text = message;
                     _sendMessage();
-                    setState(() {
-                      _showTimerDialog = false;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _showTimerDialog = false;
+                      });
+                    }
                   },
                   onClose: () {
-                    setState(() {
-                      _showTimerDialog = false;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _showTimerDialog = false;
+                      });
+                    }
                   },
                   secondsRemaining: seconds,
                 );
@@ -645,6 +873,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _timer.cancel();
     _timerNotifier.dispose();
     _messageController.dispose();
+    _completionTimer?.cancel();
+    _completionTimerNotifier?.dispose();
+    _scrollController.dispose(); // Add this
     super.dispose();
   }
 }
@@ -671,6 +902,7 @@ class _TimerDialogState extends State<TimerDialog> {
   @override
   void initState() {
     super.initState();
+
   }
 
   void _sendMessage() {
@@ -783,12 +1015,45 @@ class _TimerDialogState extends State<TimerDialog> {
 }
 
 
-
-
-
+// import 'dart:async';
+// import 'dart:convert';
+// import 'dart:io';
+// import 'package:file_picker/file_picker.dart';
+// import 'package:flutter/material.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:intl/intl.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'package:permission_handler/permission_handler.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:sos_bebe_app/fixing/screens/rev.dart';
+// import 'package:sos_bebe_app/fixing/services/showPaymentModalBottomSheet.dart';
+// import 'package:url_launcher/url_launcher.dart';
+// import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
+// import '../datefacturare/date_facturare_completare_rapida.dart' as s ;
+// import 'package:path/path.dart' as path;
+// import '../intro_screen.dart';
+//
 // class ChatScreen extends StatefulWidget {
 //   final bool isDoctor;
-//   const ChatScreen({super.key, required this.isDoctor});
+//   final String doctorId;
+//   final String patientId;
+//   final String doctorName;
+//   final String patientName;
+//   final String chatRoomId;
+//   final bool recommendation ;
+//   final double amount;
+//
+//   const ChatScreen({
+//     super.key,
+//     required this.isDoctor,
+//     required this.doctorId,
+//     required this.patientId,
+//     required this.doctorName,
+//     required this.patientName,
+//     required this.chatRoomId,
+//     required this.amount ,
+//     this.recommendation = false
+//   });
 //
 //   @override
 //   _ChatScreenState createState() => _ChatScreenState();
@@ -798,12 +1063,6 @@ class _TimerDialogState extends State<TimerDialog> {
 //   final TextEditingController _messageController = TextEditingController();
 //   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 //
-//   static const String doctorId = 'DOCTOR_12345';
-//   static const String doctorName = 'Dr. Smith';
-//   static const String patientId = 'PATIENT_67890';
-//   static const String patientName = 'John Doe';
-//
-//   late String chatRoomId;
 //   late String currentUserId;
 //   late String currentUserName;
 //   late String otherUserId;
@@ -822,36 +1081,107 @@ class _TimerDialogState extends State<TimerDialog> {
 //   bool _isLoading = false;
 //   String? _errorMessage;
 //
+//   int _completionTimerSeconds = 60; // Persist remaining seconds
+//   Timer? _completionTimer; // Timer for conversationCompleted
+//   ValueNotifier<int>? _completionTimerNotifier; // Notifier for the completion timer
+//
+//
 //   @override
 //   void initState() {
 //     super.initState();
+//     // Assign values from widget parameters
 //     if (widget.isDoctor) {
-//       currentUserId = doctorId;
-//       currentUserName = doctorName;
-//       otherUserId = patientId;
-//       otherUserName = patientName;
+//       currentUserId = widget.doctorId;
+//       currentUserName = widget.doctorName;
+//       otherUserId = widget.patientId;
+//       otherUserName = widget.patientName;
 //     } else {
-//       currentUserId = patientId;
-//       currentUserName = patientName;
-//       otherUserId = doctorId;
-//       otherUserName = doctorName;
+//       currentUserId = widget.patientId;
+//       currentUserName = widget.patientName;
+//       otherUserId = widget.doctorId;
+//       otherUserName = widget.doctorName;
 //     }
-//
-//     final ids = [currentUserId, otherUserId]..sort();
-//     chatRoomId = '${ids[0]}_${ids[1]}';
 //
 //     _initializeChatRoom();
 //     _startTimer();
 //   }
 //
+//   Future<void> _setConversationCompletedTrue() async {
+//     try {
+//       final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+//       await chatRoomRef.update({
+//         'conversationCompleted': true,
+//       });
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Conversation marked as completed.')),
+//         );
+//       }
+//     } catch (e) {
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Error setting conversation completed: $e')),
+//         );
+//       }
+//     }
+//   }
+//
+//   Future<void> _setConversationCompletedFalse() async {
+//     try {
+//       final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+//       await chatRoomRef.update({
+//         'conversationCompleted': false,
+//       });
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Conversation marked as not completed.')),
+//         );
+//       }
+//     } catch (e) {
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Error setting conversation not completed: $e')),
+//         );
+//       }
+//     }
+//   }
+//
+//   Future<bool> _checkConversationCompleted() async {
+//     try {
+//       final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+//       final chatRoomSnapshot = await chatRoomRef.get();
+//       if (chatRoomSnapshot.exists) {
+//         final data = chatRoomSnapshot.data();
+//         bool conversationCompleted = data?['conversationCompleted'] ?? false;
+//         if (!conversationCompleted) {
+//           ScaffoldMessenger.of(context).showSnackBar(
+//             SnackBar(content: Text('Așteaptă răspunsul medicului înainte să ieși.')),
+//           );
+//           return false;
+//         }
+//         return true;
+//       } else {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Chat room not found.')),
+//         );
+//         return false;
+//       }
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Error checking conversation status: $e')),
+//       );
+//       return false;
+//     }
+//   }
+//
 //   Future<void> _initializeChatRoom() async {
 //     try {
-//       final chatRoomRef = _firestore.collection('chat_rooms').doc(chatRoomId);
+//       final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
 //       final chatRoomSnapshot = await chatRoomRef.get();
 //       if (!chatRoomSnapshot.exists) {
 //         await chatRoomRef.set({
 //           'createdAt': FieldValue.serverTimestamp(),
-//           'participants': [doctorId, patientId],
+//           'participants': [widget.doctorId, widget.patientId],
 //         });
 //       }
 //     } catch (e) {
@@ -879,7 +1209,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //     try {
 //       await _firestore
 //           .collection('chat_rooms')
-//           .doc(chatRoomId)
+//           .doc(widget.chatRoomId)
 //           .collection('messages')
 //           .add(message);
 //       _messageController.clear();
@@ -889,18 +1219,17 @@ class _TimerDialogState extends State<TimerDialog> {
 //         _fileExtension = null;
 //         _fileBase64 = null;
 //       });
-//       if(fileUrl != null)
-//         return ;
-//           if (!_messageSent  ) {
-//             _messageSent = true;
-//             _timer.cancel();
-//             setState(() {
-//               _timerEnded = true;
-//               _showTimerDialog = false;
-//               _secondsRemaining = 0;
-//               _timerNotifier.value = 0;
-//             });
-//           }
+//       if (fileUrl != null) return;
+//       if (!_messageSent) {
+//         _messageSent = true;
+//         _timer.cancel();
+//         setState(() {
+//           _timerEnded = true;
+//           _showTimerDialog = false;
+//           _secondsRemaining = 0;
+//           _timerNotifier.value = 0;
+//         });
+//       }
 //     } catch (e) {
 //       if (mounted) {
 //         ScaffoldMessenger.of(context).showSnackBar(
@@ -909,36 +1238,6 @@ class _TimerDialogState extends State<TimerDialog> {
 //       }
 //     }
 //   }
-//   // Future<void> _sendMessage(String message) async {
-//   //   try {
-//   //     await _firestore
-//   //         .collection('chat_rooms')
-//   //         .doc(chatRoomId)
-//   //         .collection('messages')
-//   //         .add({
-//   //       'senderId': currentUserId,
-//   //       'senderName': currentUserName,
-//   //       'message': message,
-//   //       'timestamp': FieldValue.serverTimestamp(),
-//   //     });
-//   //     if (!_messageSent) {
-//   //       _messageSent = true;
-//   //       _timer.cancel();
-//   //       setState(() {
-//   //         _timerEnded = true;
-//   //         _showTimerDialog = false;
-//   //         _secondsRemaining = 0;
-//   //         _timerNotifier.value = 0;
-//   //       });
-//   //     }
-//   //   } catch (e) {
-//   //     if (mounted) {
-//   //       ScaffoldMessenger.of(context).showSnackBar(
-//   //         SnackBar(content: Text('Error sending message: $e')),
-//   //       );
-//   //     }
-//   //   }
-//   // }
 //
 //   void _startTimer() {
 //     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -1020,12 +1319,11 @@ class _TimerDialogState extends State<TimerDialog> {
 //     try {
 //       SharedPreferences prefs = await SharedPreferences.getInstance();
 //
-//       // Get actual user credentials
-//       String user =  'dr@d.com';
+//       // TODO: Replace hardcoded credentials with dynamic values
+//       String user = 'dr@d.com';
 //       String userPassMD5 = 'e10adc3949ba59abbe56e057f20f883e';
-//       String pIdMedic = '9'; // Your hardcoded doctor ID
+//       String pIdMedic = '9'; // Use dynamic ID
 //
-//       // Debug prints for all parameters
 //       print("=== Upload Debug Info ===");
 //       print("User: $user");
 //       print("Password MD5: $userPassMD5");
@@ -1057,7 +1355,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //           _uploadedFileUrl = fileUrl;
 //           _errorMessage = null;
 //           print("Upload successful! URL: $fileUrl");
-//           _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension' ,);
+//           _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
 //         } else {
 //           _errorMessage = 'Upload failed - no URL returned';
 //           print("Upload failed - no URL returned");
@@ -1073,370 +1371,39 @@ class _TimerDialogState extends State<TimerDialog> {
 //     }
 //   }
 //
-//   Future<void> _openFile(String url, String fileName, BuildContext context) async {
-//     showDialog(
-//       context: context,
-//       builder: (context) => AlertDialog(
 //
-//         backgroundColor: Colors.white,
-//         title: Text('File: $fileName'),
-//         content: const Text('Would you like to view or download the file?'),
-//         actions: [
-//           TextButton(
-//             onPressed: () async {
-//               Navigator.pop(context);
-//               // Ensure URL is trimmed and valid
-//               final cleanUrl = url.trim();
-//               final uri = Uri.parse(cleanUrl);
-//               if (await canLaunchUrl(uri)) {
-//                 await launchUrl(uri, mode: LaunchMode.externalApplication);
-//               } else {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(content: Text('Could not open file')),
-//                 );
-//               }
-//             },
-//             child: const Text('View'),
-//           ),
-//           TextButton(
-//             onPressed: () async {
-//
-//               _downloadFile(url, "filename", context);
-//
-//             },
-//             child: const Text('Download'),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar:  AppBar(
-//         title: Center(
-//           child: Text(
-//             doctorName,
-//             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-//           ),
-//         ),
-//         backgroundColor: Color(0xFF62CD9C),
-//       ),
-//       body: Stack(
-//         children: [
-//           Column(
-//             children: [
-//               Expanded(
-//                 child: StreamBuilder<QuerySnapshot>(
-//                   stream: _firestore
-//                       .collection('chat_rooms')
-//                       .doc(chatRoomId)
-//                       .collection('messages')
-//                       .orderBy('timestamp', descending: true)
-//                       .snapshots(),
-//                   builder: (context, snapshot) {
-//                     if (snapshot.hasError) {
-//                       return const Center(child: Text('Error: '));
-//                     }
-//                     if (snapshot.connectionState == ConnectionState.waiting) {
-//                       return const Center(child: CircularProgressIndicator());
-//                     }
-//
-//                     final messages = snapshot.data?.docs ?? [];
-//
-//                     if (messages.isEmpty) {
-//                       return const Center(child: Text('No messages yet.'));
-//                     }
-//
-//                     // return ListView.builder(
-//                     //   reverse: true,
-//                     //   padding: const EdgeInsets.all(8.0),
-//                     //   itemCount: messages.length,
-//                     //   itemBuilder: (context, index) {
-//                     //     final message = messages[index].data() as Map<String, dynamic>?;
-//                     //     if (message == null) {
-//                     //       return const SizedBox.shrink();
-//                     //     }
-//                     //     final isMe = message['senderId'] == currentUserId;
-//                     //     final timestamp = (message['timestamp'] as Timestamp?)?.toDate();
-//                     //     final formattedTime = timestamp != null
-//                     //         ? DateFormat('HH:mm').format(timestamp)
-//                     //         : '';
-//                     //
-//                     //     return Align(
-//                     //       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-//                     //       child: Column(
-//                     //         crossAxisAlignment:
-//                     //         isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-//                     //         children: [
-//                     //           Container(
-//                     //             margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-//                     //             padding: const EdgeInsets.all(30.0),
-//                     //             decoration: BoxDecoration(
-//                     //               color: isMe ? const Color(0xFF62CD9C) : Colors.grey[200],
-//                     //               borderRadius: BorderRadius.circular(12.0),
-//                     //             ),
-//                     //             child: Text(
-//                     //               message['message'] ?? '',
-//                     //               style: TextStyle(
-//                     //                 fontSize: 16.0,
-//                     //                 color: isMe ? Colors.white : Colors.black,
-//                     //               ),
-//                     //             ),
-//                     //           ),
-//                     //           Padding(
-//                     //             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-//                     //             child: Text(
-//                     //               formattedTime,
-//                     //               style: const TextStyle(
-//                     //                 fontSize: 10.0,
-//                     //                 color: Colors.grey,
-//                     //               ),
-//                     //             ),
-//                     //           ),
-//                     //         ],
-//                     //       ),
-//                     //     );
-//                     //   },
-//                     // );
-//
-//                     return ListView.builder(
-//                       reverse: true,
-//                       padding: EdgeInsets.all(8.0),
-//                       itemCount: messages.length,
-//                       itemBuilder: (context, index) {
-//                         final message = messages[index].data() as Map<String, dynamic>?;
-//                         if (message == null) {
-//                           return SizedBox.shrink();
-//                         }
-//                         final isMe = message['senderId'] == currentUserId;
-//                         return _buildMessage(message, isMe);
-//                       },
-//                       //physics: NeverScrollableScrollPhysics(),
-//                     );
-//
-//
-//                   },
-//                 ),
-//               ),
-//               if (!_timerEnded)
-//                 Row(mainAxisAlignment:MainAxisAlignment.center,
-//                   children: [
-//                   ValueListenableBuilder<int>(
-//                     valueListenable: _timerNotifier,
-//                     builder: (context, seconds, child) {
-//                       return Row(
-//                         children: [
-//                           Text(
-//                             _formatTime(seconds),
-//                             style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-//                           ),
-//                           const SizedBox(width: 5),
-//                           const Icon(Icons.timer, color: Colors.red),
-//                         ],
-//                       );
-//                     },
-//                   ),
-//                 ],),
-//
-//               Padding(
-//                 padding: const EdgeInsets.all(8.0),
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-//                   children: [
-//
-//                     if (_secondsRemaining > 0 && !_timerEnded)
-//                       ElevatedButton(
-//
-//                         onPressed: _showTimerDialogg,
-//                         style: ElevatedButton.styleFrom(
-//                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-//
-//                           backgroundColor: const Color(0xFF62CD9C),
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(8.0),
-//                           ),
-//                         ),
-//                         child: const Text('TRIMITE ÎNTREBAREA', style: TextStyle(color: Colors.white  ,fontWeight:  FontWeight.w500)),
-//                       ),
-//                     if (_secondsRemaining > 0 && !_timerEnded)
-//                       ElevatedButton.icon(
-//                       onPressed:  () async {
-//                                 await _pickFile();
-//                                 if (_fileBase64 != null) {
-//                                 await _uploadFile();
-//                                 }
-//                                 },
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Color(0xFF62CD9C), // Green background
-//                         foregroundColor: Colors.white,      // White icon/text
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(12),
-//                         ),
-//                         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-//                       ),
-//                       icon: Icon(Icons.attach_file), // Paperclip icon
-//                       label: Text(
-//                         'Trimite fișier',
-//                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-//                       ),
-//                     ),
-//
-//                     if (_timerEnded)
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         children: [
-//                           SizedBox(
-//                             height: 70,
-//                             child: ElevatedButton(
-//                               onPressed: () {
-//                                // Navigator.pop(context);
-//                               },
-//                               style: ElevatedButton.styleFrom(
-//                                 backgroundColor: Colors.white,
-//                                 shape: RoundedRectangleBorder(
-//                                   borderRadius: BorderRadius.circular(8.0),
-//                                   side: const BorderSide(color: Color(0xFF697191)
-//                                       , width: 1), // Add black border
-//                                 ),
-//                               ),
-//                               child: const Text('NU\nVă mulțumesc', style: TextStyle(color: Color(0xFF697191)
-//                               )),
-//                             ),
-//                           ),
-//                           const SizedBox(width: 10),
-//                           SizedBox(
-//                             height: 70,
-//                             child: ElevatedButton(
-//                               onPressed: () {
-//                                 // setState(() {
-//                                 //   _timerEnded = false;
-//                                 //   _secondsRemaining = 10 * 60;
-//                                 //   _showTimerDialog = true;
-//                                 //   _timerNotifier.value = _secondsRemaining;
-//                                 //   _startTimer();
-//                                 // });
-//                               },
-//                               style: ElevatedButton.styleFrom(
-//
-//                                 backgroundColor: const Color(0xFF62CD9C),
-//                                 shape: RoundedRectangleBorder(
-//                                   borderRadius: BorderRadius.circular(8.0),
-//                                 ),
-//                               ),
-//                               child: const Text('DA\nMai dorești o întrebare', style: TextStyle(color: Colors.white)),
-//                             ),
-//                           ),
-//
-//
-//                         ],
-//                       ),
-//                   ],
-//                 ),
-//               ),
-//
-//
-//             ],
-//           ),
-//           if (_showTimerDialog && !_timerEnded)
-//             ValueListenableBuilder<int>(
-//               valueListenable: _timerNotifier,
-//               builder: (context, seconds, child) {
-//                 return TimerDialog(
-//                   onSend: (message) {
-//                     _messageController.text = message ;
-//                     _sendMessage();
-//                     setState(() {
-//                       _showTimerDialog = false;
-//                     });
-//                   },
-//                   onClose: () {
-//                     setState(() {
-//                       _showTimerDialog = false;
-//                     });
-//                   },
-//                   secondsRemaining: seconds,
-//                 );
-//               },
-//             ),
-//
-//         ],
-//       ),
-//     );
-//   }
-//
-//   @override
-//   void dispose() {
-//     _timer.cancel();
-//     _timerNotifier.dispose();
-//     _messageController.dispose();
-//     super.dispose();
-//   }
-//
-//
-//   Future<File?> _downloadFile(String? url, String? filename, BuildContext context) async {
-//     if (url == null || url.trim().isEmpty || filename == null || filename.trim().isEmpty) {
-//       print('Invalid download parameters: url=$url, filename=$filename');
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Invalid file data')),
-//       );
-//       return null;
-//     }
+//   Future<void> _sendPatientMessage({required String msg}) async {
 //     try {
-//       // Check storage permission
-//       final permissionStatus = await Permission.storage.request();
-//       if (!permissionStatus.isGranted) {
-//         if (permissionStatus.isPermanentlyDenied) {
-//           print('Storage permission permanently denied');
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(content: Text('Storage permission permanently denied. Please enable in settings.')),
-//           );
-//           await openAppSettings(); // Prompt user to enable in settings
-//         } else {
-//           print('Storage permission denied');
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(content: Text('Storage permission denied')),
-//           );
-//         }
-//         return null;
-//       }
+//       final message = {
+//         'senderId': 'system', // Using 'system' to indicate this is not a user message
+//         'senderName': 'System',
+//         'type': 'text',
+//         'message': msg,
+//         'timestamp': FieldValue.serverTimestamp(),
+//       };
 //
-//       final cleanUrl = url.trim(); // Handle URL spaces
-//       final response = await http.get(Uri.parse(cleanUrl));
-//       if (response.statusCode != 200) {
-//         print('Download failed: HTTP ${response.statusCode}');
+//       await _firestore
+//           .collection('chat_rooms')
+//           .doc(widget.chatRoomId)
+//           .collection('messages')
+//           .add(message);
+//
+//       // Optionally mark the conversation as completed
+//       await _firestore.collection('chat_rooms').doc(widget.chatRoomId).update({
+//         'conversationCompleted': true,
+//       });
+//
+//       if (mounted) {
 //         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('Failed to download file')),
+//           SnackBar(content: Text('System message sent: Patient left the chat')),
 //         );
-//         return null;
 //       }
-//
-//       // Try external storage first, fall back to temporary directory
-//       Directory? dir;
-//       try {
-//         dir = await getExternalStorageDirectory();
-//       } catch (e) {
-//         print('Failed to get external storage: $e');
-//       }
-//       if (dir == null) {
-//         dir = await getTemporaryDirectory();
-//         print('Falling back to temporary directory: ${dir.path}');
-//       }
-//
-//       final file = File('${dir.path}/$filename');
-//       await file.writeAsBytes(response.bodyBytes);
-//       print('Downloaded file path: ${file.path}');
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('File downloaded to ${file.path}')),
-//       );
-//       return file;
 //     } catch (e) {
-//       print('Download error: $e');
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Error downloading file')),
-//       );
-//       return null;
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Error sending system message: $e')),
+//         );
+//       }
 //     }
 //   }
 //
@@ -1458,38 +1425,32 @@ class _TimerDialogState extends State<TimerDialog> {
 //           child: isFile
 //               ? GestureDetector(
 //             onTap: () async {
-//               {
-//                 String url = message['fileUrl'] ;
-//                 final cleanUrl = url.trim();
-//                 final uri = Uri.parse(cleanUrl);
-//                 if (await canLaunchUrl(uri)) {
+//               String url = message['fileUrl'];
+//               final cleanUrl = url.trim();
+//               final uri = Uri.parse(cleanUrl);
+//               if (await canLaunchUrl(uri)) {
 //                 await launchUrl(uri, mode: LaunchMode.externalApplication);
+//               } else {
+//                 ScaffoldMessenger.of(context).showSnackBar(
+//                   const SnackBar(content: Text('Could not open file')),
+//                 );
 //               }
-//                 else {
-//               ScaffoldMessenger.of(context).showSnackBar(
-//               const SnackBar(content: Text('Could not open file')),
-//               );
-//               }
-//             }
 //             },
 //             child: Row(
 //               mainAxisSize: MainAxisSize.min,
 //               children: [
-//                // _getFileIcon(message['fileName'] ?? 'file'),
 //                 const SizedBox(width: 8),
-//                 Flexible(
-//                   child: Text(
-//                     message['fileName'] ?? 'File',
-//                     style: TextStyle(
-//                       color: isMe ? Colors.white : Colors.blue,
-//                    //   decoration: TextDecoration.underline,
-//                       fontSize: 16.0,
-//                     ),
-//                     overflow: TextOverflow.ellipsis,
-//                   ),
+//                Image.asset('assets/img.png' , height: 150,),
+//                 const SizedBox(width: 8),
+//                 Icon(
+//                   Icons.download,
+//                   color: isMe ? Colors.white : Colors.blue,
+//                   size: 24.0,
 //                 ),
+//                 const SizedBox(width: 8),
 //               ],
 //             ),
+//
 //           )
 //               : Text(
 //             message['message'] ?? '',
@@ -1512,6 +1473,413 @@ class _TimerDialogState extends State<TimerDialog> {
 //       ],
 //     );
 //   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         automaticallyImplyLeading: false, // Removes the
+//         title: Center(
+//           child: Text(
+//             widget.isDoctor ? widget.patientName : widget.doctorName,
+//             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+//           ),
+//         ),
+//         backgroundColor: Color(0xFF62CD9C),
+//       ),
+//       body: Stack(
+//         children: [
+//           Column(
+//             children: [
+//               Expanded(
+//                 child: StreamBuilder<QuerySnapshot>(
+//                   stream: _firestore
+//                       .collection('chat_rooms')
+//                       .doc(widget.chatRoomId)
+//                       .collection('messages')
+//                       .orderBy('timestamp', descending: true)
+//                       .snapshots(),
+//                   builder: (context, snapshot) {
+//                     if (snapshot.hasError) {
+//                       return const Center(child: Text('Error: '));
+//                     }
+//                     if (snapshot.connectionState == ConnectionState.waiting) {
+//                       return const Center(child: CircularProgressIndicator());
+//                     }
+//
+//                     final messages = snapshot.data?.docs ?? [];
+//
+//                     if (messages.isEmpty) {
+//                       return const Center(child: Text('No messages yet.'));
+//                     }
+//
+//                     return ListView.builder(
+//                       reverse: true,
+//                       padding: EdgeInsets.all(8.0),
+//                       itemCount: messages.length,
+//                       itemBuilder: (context, index) {
+//                         final message = messages[index].data() as Map<String, dynamic>?;
+//                         if (message == null) {
+//                           return SizedBox.shrink();
+//                         }
+//                         final isMe = message['senderId'] == currentUserId;
+//                         return _buildMessage(message, isMe);
+//                       },
+//                     );
+//                   },
+//                 ),
+//               ),
+//               if (!_timerEnded)
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   children: [
+//                     ValueListenableBuilder<int>(
+//                       valueListenable: _timerNotifier,
+//                       builder: (context, seconds, child) {
+//                         return Row(
+//                           children: [
+//                             Text(
+//                               _formatTime(seconds),
+//                               style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+//                             ),
+//                             const SizedBox(width: 5),
+//                             const Icon(Icons.timer, color: Colors.red),
+//                           ],
+//                         );
+//                       },
+//                     ),
+//                   ],
+//                 ),
+//
+//
+//
+//               StreamBuilder<DocumentSnapshot>(
+//                 stream: _firestore.collection('chat_rooms').doc(widget.chatRoomId).snapshots(),
+//                 builder: (context, snapshot) {
+//                   if (snapshot.connectionState == ConnectionState.waiting ||
+//                       !snapshot.hasData ||
+//                       !snapshot.data!.exists) {
+//                     // Cancel timer if conversationCompleted is false or no data
+//                     _completionTimer?.cancel();
+//                     return const SizedBox.shrink(); // Show nothing while loading or if no data
+//                   }
+//
+//                   final isCompleted = snapshot.data?.data() != null
+//                       ? (snapshot.data!.data() as Map<String, dynamic>)['conversationCompleted'] as bool? ?? false
+//                       : false;
+//
+//                   if (!isCompleted) {
+//                     // Cancel timer when conversationCompleted is false
+//                     _completionTimer?.cancel();
+//                     return const SizedBox.shrink(); // Show nothing if conversationCompleted is false
+//                   }
+//
+//                   // Initialize notifier if not already set
+//                   _completionTimerNotifier ??= ValueNotifier<int>(_completionTimerSeconds);
+//
+//                   // Start the timer if not already running
+//                   if (_completionTimer == null || !_completionTimer!.isActive) {
+//                     _completionTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+//                       if (_completionTimerNotifier!.value <= 0) {
+//                         t.cancel();
+//                         _completionTimer = null;
+//                         _completionTimerNotifier?.dispose();
+//                         _completionTimerNotifier = null;
+//                         // Navigate to TestimonialScreenSimple when timer ends
+//                         Navigator.pushAndRemoveUntil(
+//                           context,
+//                           MaterialPageRoute(
+//                             builder: (context) => TestimonialScreenSimple(
+//                               idMedic: int.parse(widget.doctorId),
+//                             ),
+//                           ),
+//                               (Route<dynamic> route) => false, // Remove all previous routes
+//                         );
+//                       } else {
+//                         _completionTimerNotifier!.value--;
+//                         _completionTimerSeconds = _completionTimerNotifier!.value; // Update persisted seconds
+//                       }
+//                     });
+//                   }
+//
+//                   return ValueListenableBuilder<int>(
+//                     valueListenable: _completionTimerNotifier!,
+//                     builder: (context, secondsLeft, child) {
+//                       return Padding(
+//                         padding: const EdgeInsets.all(8.0),
+//                         child: Visibility(
+//                           visible: secondsLeft > 0,
+//                           child: Text(
+//                             secondsLeft == 0 ? 'Calculating...' : 'Time remaining: ${_formatTime(secondsLeft)}',
+//                             style: const TextStyle(fontSize: 16, color: Colors.red),
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                   );
+//                 },
+//               ),
+//
+//
+//               // StreamBuilder<DocumentSnapshot>(
+//               //   stream: _firestore.collection('chat_rooms').doc(widget.chatRoomId).snapshots(),
+//               //   builder: (context, snapshot) {
+//               //     if (snapshot.connectionState == ConnectionState.waiting ||
+//               //         !snapshot.hasData ||
+//               //         !snapshot.data!.exists) {
+//               //       return const SizedBox.shrink();
+//               //     }
+//               //
+//               //     final isCompleted = snapshot.data?.data() != null
+//               //         ? (snapshot.data!.data() as Map<String, dynamic>)['conversationCompleted'] as bool? ?? false
+//               //         : false;
+//               //
+//               //     if (!isCompleted) {
+//               //       return const SizedBox.shrink();
+//               //     }
+//               //
+//               //     Widget startTimer(VoidCallback onComplete) {
+//               //       int secondsLeft = 60;
+//               //       final timerText = ValueNotifier<String>('01:00');
+//               //
+//               //       Timer.periodic(const Duration(seconds: 1), (timer) {
+//               //         secondsLeft--;
+//               //         if (secondsLeft <= 0) {
+//               //           timer.cancel();
+//               //           timerText.value = '';
+//               //           timerText.dispose(); // Clean up the ValueNotifier
+//               //           onComplete();
+//               //         } else {
+//               //           timerText.value = '00:${secondsLeft.toString().padLeft(2, '0')}';
+//               //         }
+//               //       });
+//               //
+//               //       return ValueListenableBuilder<String>(
+//               //         valueListenable: timerText,
+//               //         builder: (context, value, child) {
+//               //           return Padding(
+//               //             padding: const EdgeInsets.all(8.0),
+//               //             child: Visibility(
+//               //               visible: value.isNotEmpty,
+//               //               child: Text(
+//               //                 value.isEmpty ? 'Calculating...' : 'Time remaining: $value',
+//               //                 style: const TextStyle(fontSize: 16, color: Colors.red),
+//               //               ),
+//               //             ),
+//               //           );
+//               //         },
+//               //       );
+//               //     }
+//               //
+//               //     return startTimer(() {
+//               //       // Your callback implementation here
+//               //       print('Timer done, do your thing!');
+//               //
+//               //       if(isCompleted)
+//               //         return ;
+//               //       Navigator.pushAndRemoveUntil(
+//               //         context,
+//               //         MaterialPageRoute(
+//               //           builder: (context) => TestimonialScreenSimple(
+//               //             idMedic: int.parse(widget.doctorId),
+//               //           ),
+//               //         ),
+//               //             (Route<dynamic> route) => false, // Remove all previous routes
+//               //       );
+//               //
+//               //     });
+//               //   },
+//               // ),
+//               Padding(
+//                 padding: const EdgeInsets.all(8.0),
+//                 child: Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                   children: [
+//                     if (_secondsRemaining > 0 && !_timerEnded && widget.recommendation == false )
+//                       Expanded(
+//                         child: ElevatedButton(
+//                           onPressed: _showTimerDialogg,
+//                           style: ElevatedButton.styleFrom(
+//                             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+//                             backgroundColor: const Color(0xFF62CD9C),
+//                             shape: RoundedRectangleBorder(
+//                               borderRadius: BorderRadius.circular(8.0),
+//                             ),
+//                           ),
+//                           child: const Text(
+//                             'TRIMITE ÎNTREBAREA',
+//                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+//                           ),
+//                         ),
+//                       ),
+//                     if (_secondsRemaining > 0 && !_timerEnded)
+//                       if(widget.recommendation)
+//                       Expanded(
+//                         child: ElevatedButton.icon(
+//                           onPressed: () async {
+//                            try{
+//                              await _pickFile();
+//                              if (_fileBase64 != null) {
+//                                await _uploadFile();
+//                                _messageSent = true;
+//                                _timer.cancel();
+//                                setState(() {
+//                                  _timerEnded = true;
+//                                  _showTimerDialog = false;
+//                                  _secondsRemaining = 0;
+//                                  _timerNotifier.value = 0;
+//                                });
+//                              }
+//
+//                            }
+//                            catch(e){
+//
+//
+//                            }
+//                           },
+//                           style: ElevatedButton.styleFrom(
+//                             backgroundColor: Color(0xFF62CD9C),
+//                             foregroundColor: Colors.white,
+//                             shape: RoundedRectangleBorder(
+//                               borderRadius: BorderRadius.circular(12),
+//                             ),
+//                             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+//                           ),
+//                           icon: Icon(Icons.attach_file),
+//                           label: Text(
+//                             'Trimite fișier',
+//                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+//                           ),
+//                         ),
+//                       ),
+//                     if (_timerEnded)
+//                       Row(
+//                         mainAxisAlignment: MainAxisAlignment.center,
+//                         children: [
+//                           SizedBox(
+//                             height: 70,
+//                             child: ElevatedButton(
+//
+//                               onPressed: () async {
+//                                 bool canExit = await _checkConversationCompleted();
+//                                 if (canExit) {
+//                                   _sendPatientMessage(msg:  'Pacientul a ieșit din chat.');
+//                                   Navigator.pushAndRemoveUntil(
+//                                     context,
+//                                     MaterialPageRoute(
+//                                       builder: (context) => TestimonialScreenSimple(
+//                                         idMedic: int.parse(widget.doctorId),
+//                                       ),
+//                                     ),
+//                                         (Route<dynamic> route) => false, // Remove all previous routes
+//                                   );
+//
+//                                 }
+//                               },
+//                               style: ElevatedButton.styleFrom(
+//                                 backgroundColor: Colors.white,
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(8.0),
+//                                   side: const BorderSide(color: Color(0xFF697191), width: 1),
+//                                 ),
+//                               ),
+//                               child: const Text(
+//                                 'NU\nVă mulțumesc',
+//                                 style: TextStyle(color: Color(0xFF697191)),
+//                               ),
+//                             ),
+//                           ),
+//                           const SizedBox(width: 10),
+//                           SizedBox(
+//                             height: 70,
+//                             child: ElevatedButton(
+//                               onPressed: () async {
+//                                 bool canPay = await _checkConversationCompleted();
+//                                 if(canPay == false )
+//                                   return;
+//
+//                                 await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.");
+//                                 _setConversationCompletedFalse();
+//                                 showPaymentModalBottomSheet(
+//                                   onClose: () async {
+//                                     await _setConversationCompletedTrue();
+//                                     _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
+//                                   },
+//                                   context: context,
+//                                   amount: widget.amount,
+//                                   onSuccess: (){
+//                                     _timer.cancel(); // Cancel existing timer
+//                                     setState(() {
+//                                       _timerEnded = false;
+//                                       _showTimerDialog = true;
+//                                       _secondsRemaining = 10 * 60;
+//                                       _timerNotifier.value = 10 * 60;
+//                                     });
+//                                     _startTimer(); // Restart the timer
+//                                   }
+//                                 );
+//                               },
+//                               style: ElevatedButton.styleFrom(
+//                                 backgroundColor: const Color(0xFF62CD9C),
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(8.0),
+//                                 ),
+//                               ),
+//                               child: const Text(
+//                                 'DA\nMai dorești o întrebare',
+//                                 style: TextStyle(color: Colors.white),
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                   ],
+//                 ),
+//               ),
+//             ],
+//           ),
+//           if (_showTimerDialog && !_timerEnded)
+//             ValueListenableBuilder<int>(
+//               valueListenable: _timerNotifier,
+//               builder: (context, seconds, child) {
+//                 if(widget.recommendation)
+//                   return SizedBox();
+//                 return TimerDialog(
+//                   onSend: (message) {
+//                     _messageController.text = message;
+//                     _sendMessage();
+//                     setState(() {
+//                       _showTimerDialog = false;
+//                     });
+//                   },
+//                   onClose: () {
+//                     setState(() {
+//                       _showTimerDialog = false;
+//                     });
+//                   },
+//                   secondsRemaining: seconds,
+//                 );
+//               },
+//             ),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   @override
+//   void dispose() {
+//     _timer.cancel();
+//     _timerNotifier.dispose();
+//     _messageController.dispose();
+//
+//     _timer.cancel();
+//     _timerNotifier.dispose();
+//     _messageController.dispose();
+//     _completionTimer?.cancel();
+//     _completionTimerNotifier?.dispose();
+//     super.dispose();
+//   }
+//
 // }
 //
 // class TimerDialog extends StatefulWidget {
@@ -1519,7 +1887,12 @@ class _TimerDialogState extends State<TimerDialog> {
 //   final VoidCallback onClose;
 //   final int secondsRemaining;
 //
-//   const TimerDialog({super.key, required this.onSend, required this.onClose, required this.secondsRemaining});
+//   const TimerDialog({
+//     super.key,
+//     required this.onSend,
+//     required this.onClose,
+//     required this.secondsRemaining,
+//   });
 //
 //   @override
 //   _TimerDialogState createState() => _TimerDialogState();
@@ -1641,7 +2014,4 @@ class _TimerDialogState extends State<TimerDialog> {
 //     );
 //   }
 // }
-
-
-
 
