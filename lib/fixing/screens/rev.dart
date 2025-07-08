@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sos_bebe_app/intro_screen.dart';
 import 'package:sos_bebe_app/utils_api/api_call_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:sos_bebe_app/utils_api/classes.dart';
@@ -320,12 +321,23 @@ class _TestimonialScreenSimpleState extends State<TestimonialScreenSimple> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            "Întoarce-te la ecranul anterior",
-                            style: GoogleFonts.rubik(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
+                          GestureDetector(
+                            onTap: (){
+                              /// HERE \
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => IntroScreen()
+                              ));
+                            },
+                            child: Text(
+                              "OMITE",
+                              style: GoogleFonts.rubik(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ],

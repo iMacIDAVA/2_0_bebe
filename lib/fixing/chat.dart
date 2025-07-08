@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -99,9 +100,9 @@ class _ChatScreenState extends State<ChatScreen> {
         'conversationCompleted': true,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Conversation marked as completed.')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Conversation marked as completed.')),
+        // );
       }
     } catch (e) {
       if (mounted) {
@@ -119,9 +120,9 @@ class _ChatScreenState extends State<ChatScreen> {
         'conversationCompleted': false,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Conversation marked as not completed.')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Conversation marked as not completed.')),
+        // );
       }
     } catch (e) {
       if (mounted) {
@@ -279,6 +280,87 @@ class _ChatScreenState extends State<ChatScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
   }
 
+
+  // Future<void> _pickFile() async {
+  //   if (_messageSent) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Poți trimite doar un singur fișier pe sesiune.')),
+  //       );
+  //     }
+  //     return;
+  //   }
+  //
+  //   final choice = await showDialog<String>(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return SimpleDialog(
+  //         title: const Text('Alege tipul fișierului'),
+  //         children: [
+  //           SimpleDialogOption(
+  //             onPressed: () => Navigator.pop(context, 'imagine'),
+  //             child: const Text('Imagine din galerie'),
+  //           ),
+  //           SimpleDialogOption(
+  //             onPressed: () => Navigator.pop(context, 'fisier'),
+  //             child: const Text('Fișier (PDF sau imagine)'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  //
+  //   if (choice == null) return;
+  //
+  //   try {
+  //     File? file;
+  //
+  //     if (choice == 'imagine') {
+  //       final ImagePicker _picker = ImagePicker();
+  //       final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
+  //       if (pickedImage != null) {
+  //         file = File(pickedImage.path);
+  //       } else {
+  //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectată nicio imagine.');
+  //         return;
+  //       }
+  //     } else if (choice == 'fisier') {
+  //       FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //         type: FileType.custom,
+  //         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+  //       );
+  //       if (result?.files.single.path != null) {
+  //         file = File(result!.files.single.path!);
+  //       } else {
+  //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectat niciun fișier.');
+  //         return;
+  //       }
+  //     }
+  //
+  //     if (file != null) {
+  //       _fileName = path.basenameWithoutExtension(file.path);
+  //       _fileExtension = path.extension(file.path);
+  //
+  //       List<int> fileBytes = await file.readAsBytes();
+  //       _fileBase64 = base64Encode(fileBytes);
+  //
+  //       if (mounted) {
+  //         setState(() {
+  //           _errorMessage = null;
+  //           _messageSent = true; // marchează fișierul ca trimis
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       setState(() {
+  //         _errorMessage = 'Eroare la selectarea fișierului: $e';
+  //       });
+  //     }
+  //   }
+  // }
+
+
   Future<void> _pickFile() async {
     if (_messageSent) {
       if (mounted) {
@@ -419,9 +501,9 @@ class _ChatScreenState extends State<ChatScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('System message sent: Patient left the chat')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('System message sent: Patient left the chat')),
+        // );
       }
     } catch (e) {
       if (mounted) {

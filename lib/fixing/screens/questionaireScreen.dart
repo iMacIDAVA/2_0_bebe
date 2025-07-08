@@ -135,37 +135,37 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Reprezentant legal al copilului',
-                style: GoogleFonts.rubik(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Nume și Prenume',
-                    style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
-                  ),
-                  SizedBox(
-                    width: 150,
-                    child: TextFormField(
-                      controller: _numeReprezentantController,
-                      textAlign: TextAlign.end,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Introduceți numele',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Vă rugăm să introduceți numele și prenumele reprezentantului';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              Divider(),
+              // Text(
+              //   'Reprezentant legal al copilului',
+              //   style: GoogleFonts.rubik(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+              // ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     Text(
+              //       'Nume și Prenume',
+              //       style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
+              //     ),
+              //     SizedBox(
+              //       width: 150,
+              //       child: TextFormField(
+              //         controller: _numeReprezentantController,
+              //         textAlign: TextAlign.end,
+              //         decoration: InputDecoration(
+              //           border: InputBorder.none,
+              //           hintText: 'Introduceți numele',
+              //         ),
+              //         validator: (value) {
+              //           if (value == null || value.isEmpty) {
+              //             return 'Vă rugăm să introduceți numele și prenumele reprezentantului';
+              //           }
+              //           return null;
+              //         },
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              //Divider(),
               Text(
                 'Nume și Prenume Pacient',
                 style: GoogleFonts.rubik(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
@@ -212,33 +212,67 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                 ],
               ),
               Divider(),
-              SwitchListTile(
-                contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
-                title: Text(
-                  'Alergic la vreun medicament?',
-                  style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
-                ),
-                value: _alergicLaMedicament,
-                activeColor: Color(0xFF0EBE7F),
-                onChanged: (bool value) {
-                  setState(() {
-                    _alergicLaMedicament = value;
-                    if (!value) _medicamentController.clear();
-                  });
-                },
-                secondary: _alergicLaMedicament
-                    ? SizedBox(
-                  width: 200,
-                  child: TextFormField(
-                    controller: _medicamentController,
-                    decoration: InputDecoration(
-                      hintText: 'La ce medicament este alergie?',
-                      border: OutlineInputBorder(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                    title: Text(
+                      'Alergic la vreun medicament?',
+                      style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
                     ),
+                    value: _alergicLaMedicament,
+                    activeColor: Color(0xFF0EBE7F),
+                    onChanged: (bool value) {
+                      setState(() {
+                        _alergicLaMedicament = value;
+                        if (!value) _medicamentController.clear();
+                      });
+                    },
                   ),
-                )
-                    : null,
+                  if (_alergicLaMedicament)
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: TextFormField(
+                          controller: _medicamentController,
+                          decoration: InputDecoration(
+                            hintText: 'La ce medicament este alergie?',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
+              // SwitchListTile(
+              //   contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+              //   title: Text(
+              //     'Alergic la vreun medicament?',
+              //     style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
+              //   ),
+              //   value: _alergicLaMedicament,
+              //   activeColor: Color(0xFF0EBE7F),
+              //   onChanged: (bool value) {
+              //     setState(() {
+              //       _alergicLaMedicament = value;
+              //       if (!value) _medicamentController.clear();
+              //     });
+              //   },
+              //   secondary: _alergicLaMedicament
+              //       ? SizedBox(
+              //     width: 200,
+              //     child: TextFormField(
+              //       controller: _medicamentController,
+              //       decoration: InputDecoration(
+              //         hintText: 'La ce medicament este alergie?',
+              //         border: OutlineInputBorder(),
+              //       ),
+              //     ),
+              //   )
+              //       : null,
+              // ),
               Divider(),
               SwitchListTile(
                 contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
@@ -280,6 +314,37 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                   ],
                 );
               }).toList(),
+              Text(
+                'Reprezentant legal al copilului',
+                style: GoogleFonts.rubik(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Nume și Prenume',
+                    style: GoogleFonts.rubik(fontSize: 16, color: Colors.grey[700]),
+                  ),
+                  SizedBox(
+                    width: 150,
+                    child: TextFormField(
+                      controller: _numeReprezentantController,
+                      textAlign: TextAlign.end,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Introduceți numele',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Vă rugăm să introduceți numele și prenumele reprezentantului';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              Divider(),
               SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -298,6 +363,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                   ),
                 ),
               ),
+
               SizedBox(height: 20),
             ],
           ),

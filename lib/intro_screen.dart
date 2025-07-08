@@ -173,8 +173,23 @@ Future<void> manuallyFetchOneSignalId() async {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    Center(
-                      child: Image.asset(width: 100, height: 136, './assets/images/Sosbebe.png'),
+                    SizedBox(height: 20,),
+                    Row(
+                      children: [
+                        Container(
+                          height: 100,
+                          width: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(150),
+                            image: DecorationImage(
+                              image: AssetImage('./assets/8.png'),
+                              fit: BoxFit.cover,
+                            ),
+
+                          ),
+
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     Row(
