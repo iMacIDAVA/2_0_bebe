@@ -120,9 +120,15 @@ flutter:
 #lansarea logo-ului Sos Bebe la inițializarea aplicației
 
 flutter_icons:
-  image_path: "assets/images/Sosbebe.png"
+  image_path: "assets/last.png"
   android: true
   ios: true
+#  background_color: "#61F2D4"
+# adaptive_icon_background: "assets/back.png"
+#  adaptive_icon_foreground: "assets/10n.png"
+
+
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

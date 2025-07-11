@@ -1255,7 +1255,54 @@ Future<ContClientMobile?> getContClient({
 
     return device;
   }
+
+  /// new shit
+  Future<bool> anuntaMedicDePlataEfectuata2({
+    required String pCheie,
+    required String pUser,
+    required String pParolaMD5,
+    required String pIdMedic,
+    required String pTipPlata,
+  }) async
+  {
+    final url = Uri.parse('${api_config.apiUrl}/AnuntaMedicDePlataEfectuata');
+
+    // Create the request body
+    final body = {
+      'Cheie': pCheie,
+      'User': pUser,
+      'ParolaMD5': pParolaMD5,
+      'IdMedic': pIdMedic,
+      'TipPlata': pTipPlata,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        // Successfully notified the doctor of payment
+        return true;
+      } else if (response.statusCode == 401) {
+        print('Unauthorized: Invalid credentials');
+        return false;
+      } else {
+        print('Error: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception occurred: $e');
+      return false;
+    }
+  }
+
 }
+
 
 //////////////////////////////////////old
 /*

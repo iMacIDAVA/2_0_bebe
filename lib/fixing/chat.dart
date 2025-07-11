@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -46,8 +45,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-
   late String currentUserId;
   late String currentUserName;
   late String otherUserId;
@@ -58,24 +55,20 @@ class _ChatScreenState extends State<ChatScreen> {
   late Timer _timer;
   bool _messageSent = false;
   final ValueNotifier<int> _timerNotifier = ValueNotifier<int>(10 * 60);
-
   String? _fileName;
   String? _fileExtension;
   String? _fileBase64;
   String? _uploadedFileUrl;
   bool _isLoading = false;
   String? _errorMessage;
-
-  int _completionTimerSeconds = 60; // Persist remaining seconds
-  Timer? _completionTimer; // Timer for conversationCompleted
-  ValueNotifier<int>? _completionTimerNotifier; // Notifier for the completion timer
-
-  final ScrollController _scrollController = ScrollController(); // Add this
+  int _completionTimerSeconds = 60;
+  Timer? _completionTimer;
+  ValueNotifier<int>? _completionTimerNotifier;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    // Assign values from widget parameters
     if (widget.isDoctor) {
       currentUserId = widget.doctorId;
       currentUserName = widget.doctorName;
@@ -88,9 +81,28 @@ class _ChatScreenState extends State<ChatScreen> {
       otherUserName = widget.doctorName;
     }
 
-    // Initialize chat room safely
     _initializeChatRoom();
     _startTimer();
+  }
+
+  Future<void> _initializeChatRoom() async {
+    try {
+      final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
+      final chatRoomSnapshot = await chatRoomRef.get();
+      if (!chatRoomSnapshot.exists) {
+        await chatRoomRef.set({
+          'createdAt': FieldValue.serverTimestamp(),
+          'participants': [widget.doctorId, widget.patientId],
+          'conversationCompleted': false,
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error initializing chat room: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _setConversationCompletedTrue() async {
@@ -99,11 +111,6 @@ class _ChatScreenState extends State<ChatScreen> {
       await chatRoomRef.update({
         'conversationCompleted': true,
       });
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('Conversation marked as completed.')),
-        // );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,11 +126,6 @@ class _ChatScreenState extends State<ChatScreen> {
       await chatRoomRef.update({
         'conversationCompleted': false,
       });
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('Conversation marked as not completed.')),
-        // );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -167,27 +169,46 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _initializeChatRoom() async {
+  Future<void> _sendFeedbackMessage({
+    required String message,
+    required String visibility,
+    String senderId = 'system',
+    String senderName = 'System',
+    bool conversationCompleted = true,
+  }) async {
     try {
-      final chatRoomRef = _firestore.collection('chat_rooms').doc(widget.chatRoomId);
-      final chatRoomSnapshot = await chatRoomRef.get();
-      if (!chatRoomSnapshot.exists) {
-        await chatRoomRef.set({
-          'createdAt': FieldValue.serverTimestamp(),
-          'participants': [widget.doctorId, widget.patientId],
-          'conversationCompleted': false, // Ensure initial state
+      final feedbackMessage = {
+        'senderId': senderId,
+        'senderName': senderName,
+        'type': 'text',
+        'message': message,
+        'fileUrl': null,
+        'fileName': null,
+        'timestamp': FieldValue.serverTimestamp(),
+        'visibility': visibility,
+      };
+
+      await _firestore
+          .collection('chat_rooms')
+          .doc(widget.chatRoomId)
+          .collection('messages')
+          .add(feedbackMessage);
+
+      if (conversationCompleted) {
+        await _firestore.collection('chat_rooms').doc(widget.chatRoomId).update({
+          'conversationCompleted': true,
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error initializing chat room: $e')),
+          SnackBar(content: Text('Error sending feedback message: $e')),
         );
       }
     }
   }
 
-  void _sendMessage({String? fileUrl, String? fileName}) async {
+  void _sendMessage({String? fileUrl, String? fileName, String visibility = 'both'}) async {
     if (_messageController.text.trim().isEmpty && fileUrl == null) return;
     if (_messageSent) {
       if (mounted) {
@@ -206,6 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
       'fileUrl': fileUrl,
       'fileName': fileName,
       'timestamp': FieldValue.serverTimestamp(),
+      'visibility': visibility,
     };
 
     try {
@@ -220,17 +242,16 @@ class _ChatScreenState extends State<ChatScreen> {
           _fileName = null;
           _fileExtension = null;
           _fileBase64 = null;
-          _messageSent = true; // Mark message as sent
-          _timerEnded = true; // End session after one message
-          _showTimerDialog = false; // Hide dialog
-          _secondsRemaining = 0; // Reset timer
-          _timerNotifier.value = 0; // Update notifier
-          _timer.cancel(); // Cancel timer
+          _messageSent = true;
+          _timerEnded = true;
+          _showTimerDialog = false;
+          _secondsRemaining = 0;
+          _timerNotifier.value = 0;
+          _timer.cancel();
         });
         _messageController.clear();
-        // Scroll to the latest message
         if (_scrollController.hasClients) {
-          _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+          _scrollController.jumpTo(_scrollController.position.minScrollExtent);
         }
       }
     } catch (e) {
@@ -279,87 +300,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final remaining = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
   }
-
-
-  // Future<void> _pickFile() async {
-  //   if (_messageSent) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Poți trimite doar un singur fișier pe sesiune.')),
-  //       );
-  //     }
-  //     return;
-  //   }
-  //
-  //   final choice = await showDialog<String>(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return SimpleDialog(
-  //         title: const Text('Alege tipul fișierului'),
-  //         children: [
-  //           SimpleDialogOption(
-  //             onPressed: () => Navigator.pop(context, 'imagine'),
-  //             child: const Text('Imagine din galerie'),
-  //           ),
-  //           SimpleDialogOption(
-  //             onPressed: () => Navigator.pop(context, 'fisier'),
-  //             child: const Text('Fișier (PDF sau imagine)'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  //
-  //   if (choice == null) return;
-  //
-  //   try {
-  //     File? file;
-  //
-  //     if (choice == 'imagine') {
-  //       final ImagePicker _picker = ImagePicker();
-  //       final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
-  //       if (pickedImage != null) {
-  //         file = File(pickedImage.path);
-  //       } else {
-  //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectată nicio imagine.');
-  //         return;
-  //       }
-  //     } else if (choice == 'fisier') {
-  //       FilePickerResult? result = await FilePicker.platform.pickFiles(
-  //         type: FileType.custom,
-  //         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-  //       );
-  //       if (result?.files.single.path != null) {
-  //         file = File(result!.files.single.path!);
-  //       } else {
-  //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectat niciun fișier.');
-  //         return;
-  //       }
-  //     }
-  //
-  //     if (file != null) {
-  //       _fileName = path.basenameWithoutExtension(file.path);
-  //       _fileExtension = path.extension(file.path);
-  //
-  //       List<int> fileBytes = await file.readAsBytes();
-  //       _fileBase64 = base64Encode(fileBytes);
-  //
-  //       if (mounted) {
-  //         setState(() {
-  //           _errorMessage = null;
-  //           _messageSent = true; // marchează fișierul ca trimis
-  //         });
-  //       }
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       setState(() {
-  //         _errorMessage = 'Eroare la selectarea fișierului: $e';
-  //       });
-  //     }
-  //   }
-  // }
-
 
   Future<void> _pickFile() async {
     if (_messageSent) {
@@ -423,20 +363,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-
-      // TODO: Replace hardcoded credentials with dynamic values
-      String user = 'dr@d.com';
-      String userPassMD5 = 'e10adc3949ba59abbe56e057f20f883e';
-      String pIdMedic = '9'; // Use dynamic ID
-
-      print("=== Upload Debug Info ===");
-      print("User: $user");
-      print("Password MD5: $userPassMD5");
-      print("Doctor ID: $pIdMedic");
-      print("File Name: $_fileName");
-      print("File Extension: $_fileExtension");
-      print("File Base64 Length: ${_fileBase64?.length}");
-      print("API Key: 6nDjtwV4kPUsIuBtgLhV4bTZNerrxzThPGImSsFa");
+      String user = 'dr@d.com'; // TODO: Replace with dynamic value
+      String userPassMD5 = 'e10adc3949ba59abbe56e057f20f883e'; // TODO: Replace with dynamic value
+      String pIdMedic = '9'; // TODO: Replace with dynamic value
 
       String? fileUrl = await apiCallFunctions.adaugaMesajCuAtasamentDinContMedic(
         pCheie: '6nDjtwV4kPUsIuBtgLhV4bTZNerrxzThPGImSsFa',
@@ -449,67 +378,26 @@ class _ChatScreenState extends State<ChatScreen> {
         pSirBitiDocument: _fileBase64!,
       );
 
-      print("=== Upload Response ===");
-      print("File URL: $fileUrl");
-
       if (mounted) {
         setState(() {
           _isLoading = false;
           if (fileUrl != null) {
-            fileUrl = fileUrl?.trim();
+            fileUrl = fileUrl!.trim();
             fileUrl = Uri.encodeFull(fileUrl!);
             _uploadedFileUrl = fileUrl;
             _errorMessage = null;
-            print("Upload successful! URL: $fileUrl");
-            _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
+            _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension', visibility: 'both');
           } else {
             _errorMessage = 'Upload failed - no URL returned';
-            print("Upload failed - no URL returned");
           }
         });
       }
     } catch (e) {
-      print("=== Upload Error ===");
-      print("Error details: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
           _errorMessage = 'Error uploading file: $e';
         });
-      }
-    }
-  }
-
-  Future<void> _sendPatientMessage({required String msg , bool conversationCompleted = true}) async {
-    try {
-      final message = {
-        'senderId': 'system',
-        'senderName': 'System',
-        'type': 'text',
-        'message': msg,
-        'timestamp': FieldValue.serverTimestamp(),
-      };
-
-      await _firestore
-          .collection('chat_rooms')
-          .doc(widget.chatRoomId)
-          .collection('messages')
-          .add(message);
-
-      await _firestore.collection('chat_rooms').doc(widget.chatRoomId).update({
-        'conversationCompleted': conversationCompleted,
-      });
-
-      if (mounted) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('System message sent: Patient left the chat')),
-        // );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending system message: $e')),
-        );
       }
     }
   }
@@ -599,52 +487,13 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Column(
             children: [
-              // Expanded(
-              //   child: StreamBuilder<QuerySnapshot>(
-              //     stream: _firestore
-              //         .collection('chat_rooms')
-              //         .doc(widget.chatRoomId)
-              //         .collection('messages')
-              //         .orderBy('timestamp', descending: false)
-              //         .snapshots(),
-              //     builder: (context, snapshot) {
-              //       if (snapshot.hasError) {
-              //         return Center(child: Text('Error: ${snapshot.error}'));
-              //       }
-              //       if (snapshot.connectionState == ConnectionState.waiting) {
-              //         return const Center(child: CircularProgressIndicator());
-              //       }
-              //
-              //       final messages = snapshot.data?.docs ?? [];
-              //
-              //       if (messages.isEmpty) {
-              //         return const Center(child: Text('No messages yet.'));
-              //       }
-              //
-              //       return ListView.builder(
-              //
-              //
-              //         padding: EdgeInsets.all(8.0),
-              //         itemCount: messages.length,
-              //         itemBuilder: (context, index) {
-              //           final message = messages[index].data() as Map<String, dynamic>?;
-              //           if (message == null) {
-              //             return SizedBox.shrink();
-              //           }
-              //           final isMe = message['senderId'] == currentUserId;
-              //           return _buildMessage(message, isMe);
-              //         },
-              //       );
-              //     },
-              //   ),
-              // ),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _firestore
                       .collection('chat_rooms')
                       .doc(widget.chatRoomId)
                       .collection('messages')
-                      .orderBy('timestamp', descending: true) // Change to descending: true
+                      .orderBy('timestamp', descending: true)
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
@@ -660,20 +509,29 @@ class _ChatScreenState extends State<ChatScreen> {
                       return const Center(child: Text('No messages yet.'));
                     }
 
-                    // Scroll to the latest message after the frame is built
+                    final filteredMessages = messages.where((doc) {
+                      final message = doc.data() as Map<String, dynamic>?;
+                      if (message == null) return false;
+                      final visibility = message['visibility'] as String? ?? 'both';
+                      if (visibility == 'both') return true;
+                      if (widget.isDoctor && visibility == 'doctor') return true;
+                      if (!widget.isDoctor && visibility == 'patient') return true;
+                      return false;
+                    }).toList();
+
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (_scrollController.hasClients) {
-                        _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+                        _scrollController.jumpTo(_scrollController.position.minScrollExtent);
                       }
                     });
 
                     return ListView.builder(
-                      controller: _scrollController, // Attach ScrollController
-                      reverse: true, // Newest messages at bottom
+                      controller: _scrollController,
+                      reverse: true,
                       padding: EdgeInsets.all(8.0),
-                      itemCount: messages.length,
+                      itemCount: filteredMessages.length,
                       itemBuilder: (context, index) {
-                        final message = messages[index].data() as Map<String, dynamic>?;
+                        final message = filteredMessages[index].data() as Map<String, dynamic>?;
                         if (message == null) {
                           return SizedBox.shrink();
                         }
@@ -832,7 +690,10 @@ class _ChatScreenState extends State<ChatScreen> {
                               onPressed: () async {
                                 bool canExit = await _checkConversationCompleted();
                                 if (canExit && mounted) {
-                                  await _sendPatientMessage(msg: 'Chatul s-a încheiat din partea pacientului. Apreciem timpul acordat! 🕒');
+                                  await _sendFeedbackMessage(
+                                    message: 'Chatul s-a încheiat din partea pacientului. Apreciem timpul acordat! 🕒',
+                                    visibility: 'doctor',
+                                  );
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
@@ -864,29 +725,38 @@ class _ChatScreenState extends State<ChatScreen> {
                               onPressed: () async {
                                 bool canPay = await _checkConversationCompleted();
                                 if (!canPay || !mounted) return;
-                                await _sendPatientMessage(
-                                    msg: "🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.");
+                                await _sendFeedbackMessage(
+                                  message: '🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬 Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.',
+                                  visibility: 'doctor',
+                                  conversationCompleted: false,
+                                );
                                 await _setConversationCompletedFalse();
                                 showPaymentModalBottomSheet(
-
                                   whenCompleteFunction: (paymentResults) async {
-
-                                    if(paymentResults)
-                                      return;
-                                    await _setConversationCompletedTrue();
-                                    await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
-
-
+                                    if (!paymentResults) {
+                                      await _sendFeedbackMessage(
+                                        message: '🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳. Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.',
+                                        visibility: 'doctor',
+                                      );
+                                      await _setConversationCompletedTrue();
+                                    }
                                   },
                                   onClose: () async {
+                                    await _sendFeedbackMessage(
+                                      message: '🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳. Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.',
+                                      visibility: 'doctor',
+                                    );
                                     await _setConversationCompletedTrue();
-                                    await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
                                   },
                                   context: context,
                                   amount: widget.amount,
                                   onSuccess: () {
-
-                                   _sendPatientMessage(msg: 'Pacientul a efectuat plata cu succes ✅. Te rugăm să aștepți întrebarea lui 🕒.'  , conversationCompleted:  false );
+                                    _sendFeedbackMessage(
+                                      message: ' PLATA EFECTUATĂ. POȚI ÎNTREBA MEDICUL ✅🕒.',
+                                      visibility: 'doctor',
+                                      conversationCompleted: false,
+                                    );
+                                    _setConversationCompletedFalse();
                                     _timer.cancel();
                                     if (mounted) {
                                       setState(() {
@@ -894,7 +764,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                         _showTimerDialog = true;
                                         _secondsRemaining = 10 * 60;
                                         _timerNotifier.value = 10 * 60;
-                                        _messageSent = false; // Reset for new session
+                                        _messageSent = false;
                                       });
                                       _startTimer();
                                     }
@@ -927,7 +797,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 return TimerDialog(
                   onSend: (message) {
                     _messageController.text = message;
-                    _sendMessage();
+                    _sendMessage(visibility: 'both');
                     if (mounted) {
                       setState(() {
                         _showTimerDialog = false;
@@ -957,7 +827,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.dispose();
     _completionTimer?.cancel();
     _completionTimerNotifier?.dispose();
-    _scrollController.dispose(); // Add this
+    _scrollController.dispose();
     super.dispose();
   }
 }
@@ -984,7 +854,6 @@ class _TimerDialogState extends State<TimerDialog> {
   @override
   void initState() {
     super.initState();
-
   }
 
   void _sendMessage() {
@@ -1095,14 +964,13 @@ class _TimerDialogState extends State<TimerDialog> {
     );
   }
 }
-
-
 // import 'dart:async';
 // import 'dart:convert';
 // import 'dart:io';
 // import 'package:file_picker/file_picker.dart';
 // import 'package:flutter/material.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:image_picker/image_picker.dart';
 // import 'package:intl/intl.dart';
 // import 'package:path_provider/path_provider.dart';
 // import 'package:permission_handler/permission_handler.dart';
@@ -1111,7 +979,7 @@ class _TimerDialogState extends State<TimerDialog> {
 // import 'package:sos_bebe_app/fixing/services/showPaymentModalBottomSheet.dart';
 // import 'package:url_launcher/url_launcher.dart';
 // import 'package:sos_bebe_app/utils_api/shared_pref_keys.dart' as pref_keys;
-// import '../datefacturare/date_facturare_completare_rapida.dart' as s ;
+// import '../datefacturare/date_facturare_completare_rapida.dart' as s;
 // import 'package:path/path.dart' as path;
 // import '../intro_screen.dart';
 //
@@ -1122,7 +990,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //   final String doctorName;
 //   final String patientName;
 //   final String chatRoomId;
-//   final bool recommendation ;
+//   final bool recommendation;
 //   final double amount;
 //
 //   const ChatScreen({
@@ -1133,8 +1001,8 @@ class _TimerDialogState extends State<TimerDialog> {
 //     required this.doctorName,
 //     required this.patientName,
 //     required this.chatRoomId,
-//     required this.amount ,
-//     this.recommendation = false
+//     required this.amount,
+//     this.recommendation = false,
 //   });
 //
 //   @override
@@ -1144,6 +1012,7 @@ class _TimerDialogState extends State<TimerDialog> {
 // class _ChatScreenState extends State<ChatScreen> {
 //   final TextEditingController _messageController = TextEditingController();
 //   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+//
 //
 //   late String currentUserId;
 //   late String currentUserName;
@@ -1167,6 +1036,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //   Timer? _completionTimer; // Timer for conversationCompleted
 //   ValueNotifier<int>? _completionTimerNotifier; // Notifier for the completion timer
 //
+//   final ScrollController _scrollController = ScrollController(); // Add this
 //
 //   @override
 //   void initState() {
@@ -1184,6 +1054,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //       otherUserName = widget.doctorName;
 //     }
 //
+//     // Initialize chat room safely
 //     _initializeChatRoom();
 //     _startTimer();
 //   }
@@ -1195,9 +1066,9 @@ class _TimerDialogState extends State<TimerDialog> {
 //         'conversationCompleted': true,
 //       });
 //       if (mounted) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Conversation marked as completed.')),
-//         );
+//         // ScaffoldMessenger.of(context).showSnackBar(
+//         //   SnackBar(content: Text('Conversation marked as completed.')),
+//         // );
 //       }
 //     } catch (e) {
 //       if (mounted) {
@@ -1215,9 +1086,9 @@ class _TimerDialogState extends State<TimerDialog> {
 //         'conversationCompleted': false,
 //       });
 //       if (mounted) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Conversation marked as not completed.')),
-//         );
+//         // ScaffoldMessenger.of(context).showSnackBar(
+//         //   SnackBar(content: Text('Conversation marked as not completed.')),
+//         // );
 //       }
 //     } catch (e) {
 //       if (mounted) {
@@ -1236,22 +1107,28 @@ class _TimerDialogState extends State<TimerDialog> {
 //         final data = chatRoomSnapshot.data();
 //         bool conversationCompleted = data?['conversationCompleted'] ?? false;
 //         if (!conversationCompleted) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(content: Text('Așteaptă răspunsul medicului înainte să ieși.')),
-//           );
+//           if (mounted) {
+//             ScaffoldMessenger.of(context).showSnackBar(
+//               SnackBar(content: Text('Așteaptă răspunsul medicului înainte să ieși.')),
+//             );
+//           }
 //           return false;
 //         }
 //         return true;
 //       } else {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Chat room not found.')),
-//         );
+//         if (mounted) {
+//           ScaffoldMessenger.of(context).showSnackBar(
+//             SnackBar(content: Text('Chat room not found.')),
+//           );
+//         }
 //         return false;
 //       }
 //     } catch (e) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Error checking conversation status: $e')),
-//       );
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Error checking conversation status: $e')),
+//         );
+//       }
 //       return false;
 //     }
 //   }
@@ -1264,6 +1141,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //         await chatRoomRef.set({
 //           'createdAt': FieldValue.serverTimestamp(),
 //           'participants': [widget.doctorId, widget.patientId],
+//           'conversationCompleted': false, // Ensure initial state
 //         });
 //       }
 //     } catch (e) {
@@ -1277,6 +1155,14 @@ class _TimerDialogState extends State<TimerDialog> {
 //
 //   void _sendMessage({String? fileUrl, String? fileName}) async {
 //     if (_messageController.text.trim().isEmpty && fileUrl == null) return;
+//     if (_messageSent) {
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('You can only send one message per session.')),
+//         );
+//       }
+//       return;
+//     }
 //
 //     final message = {
 //       'senderId': currentUserId,
@@ -1294,23 +1180,24 @@ class _TimerDialogState extends State<TimerDialog> {
 //           .doc(widget.chatRoomId)
 //           .collection('messages')
 //           .add(message);
-//       _messageController.clear();
-//       setState(() {
-//         _uploadedFileUrl = null;
-//         _fileName = null;
-//         _fileExtension = null;
-//         _fileBase64 = null;
-//       });
-//       if (fileUrl != null) return;
-//       if (!_messageSent) {
-//         _messageSent = true;
-//         _timer.cancel();
+//       if (mounted) {
 //         setState(() {
-//           _timerEnded = true;
-//           _showTimerDialog = false;
-//           _secondsRemaining = 0;
-//           _timerNotifier.value = 0;
+//           _uploadedFileUrl = null;
+//           _fileName = null;
+//           _fileExtension = null;
+//           _fileBase64 = null;
+//           _messageSent = true; // Mark message as sent
+//           _timerEnded = true; // End session after one message
+//           _showTimerDialog = false; // Hide dialog
+//           _secondsRemaining = 0; // Reset timer
+//           _timerNotifier.value = 0; // Update notifier
+//           _timer.cancel(); // Cancel timer
 //         });
+//         _messageController.clear();
+//         // Scroll to the latest message
+//         if (_scrollController.hasClients) {
+//           _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+//         }
 //       }
 //     } catch (e) {
 //       if (mounted) {
@@ -1323,7 +1210,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //
 //   void _startTimer() {
 //     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-//       if (mounted && _secondsRemaining > 0 && !_timerEnded) {
+//       if (mounted && _secondsRemaining > 0 && !_timerEnded && !_messageSent) {
 //         _secondsRemaining--;
 //         _timerNotifier.value = _secondsRemaining;
 //       } else {
@@ -1344,10 +1231,12 @@ class _TimerDialogState extends State<TimerDialog> {
 //   }
 //
 //   void _showTimerDialogg() {
-//     if (!_timerEnded) {
-//       setState(() {
-//         _showTimerDialog = true;
-//       });
+//     if (!_timerEnded && !_messageSent) {
+//       if (mounted) {
+//         setState(() {
+//           _showTimerDialog = true;
+//         });
+//       }
 //     }
 //   }
 //
@@ -1357,47 +1246,147 @@ class _TimerDialogState extends State<TimerDialog> {
 //     return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
 //   }
 //
+//
+//   // Future<void> _pickFile() async {
+//   //   if (_messageSent) {
+//   //     if (mounted) {
+//   //       ScaffoldMessenger.of(context).showSnackBar(
+//   //         const SnackBar(content: Text('Poți trimite doar un singur fișier pe sesiune.')),
+//   //       );
+//   //     }
+//   //     return;
+//   //   }
+//   //
+//   //   final choice = await showDialog<String>(
+//   //     context: context,
+//   //     builder: (BuildContext context) {
+//   //       return SimpleDialog(
+//   //         title: const Text('Alege tipul fișierului'),
+//   //         children: [
+//   //           SimpleDialogOption(
+//   //             onPressed: () => Navigator.pop(context, 'imagine'),
+//   //             child: const Text('Imagine din galerie'),
+//   //           ),
+//   //           SimpleDialogOption(
+//   //             onPressed: () => Navigator.pop(context, 'fisier'),
+//   //             child: const Text('Fișier (PDF sau imagine)'),
+//   //           ),
+//   //         ],
+//   //       );
+//   //     },
+//   //   );
+//   //
+//   //   if (choice == null) return;
+//   //
+//   //   try {
+//   //     File? file;
+//   //
+//   //     if (choice == 'imagine') {
+//   //       final ImagePicker _picker = ImagePicker();
+//   //       final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
+//   //       if (pickedImage != null) {
+//   //         file = File(pickedImage.path);
+//   //       } else {
+//   //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectată nicio imagine.');
+//   //         return;
+//   //       }
+//   //     } else if (choice == 'fisier') {
+//   //       FilePickerResult? result = await FilePicker.platform.pickFiles(
+//   //         type: FileType.custom,
+//   //         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+//   //       );
+//   //       if (result?.files.single.path != null) {
+//   //         file = File(result!.files.single.path!);
+//   //       } else {
+//   //         if (mounted) setState(() => _errorMessage = 'Nu a fost selectat niciun fișier.');
+//   //         return;
+//   //       }
+//   //     }
+//   //
+//   //     if (file != null) {
+//   //       _fileName = path.basenameWithoutExtension(file.path);
+//   //       _fileExtension = path.extension(file.path);
+//   //
+//   //       List<int> fileBytes = await file.readAsBytes();
+//   //       _fileBase64 = base64Encode(fileBytes);
+//   //
+//   //       if (mounted) {
+//   //         setState(() {
+//   //           _errorMessage = null;
+//   //           _messageSent = true; // marchează fișierul ca trimis
+//   //         });
+//   //       }
+//   //     }
+//   //   } catch (e) {
+//   //     if (mounted) {
+//   //       setState(() {
+//   //         _errorMessage = 'Eroare la selectarea fișierului: $e';
+//   //       });
+//   //     }
+//   //   }
+//   // }
+//
+//
 //   Future<void> _pickFile() async {
+//     if (_messageSent) {
+//       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('You can only send one file per session.')),
+//         );
+//       }
+//       return;
+//     }
 //     try {
 //       FilePickerResult? result = await FilePicker.platform.pickFiles(
 //         type: FileType.custom,
 //         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
 //       );
 //
-//       if (result != null && result.files.single.path != null) {
-//         File file = File(result.files.single.path!);
+//       final filePath = result?.files.single.path;
+//       if (filePath != null) {
+//         File file = File(filePath);
 //         _fileName = path.basenameWithoutExtension(file.path);
 //         _fileExtension = path.extension(file.path);
 //
 //         List<int> fileBytes = await file.readAsBytes();
 //         _fileBase64 = base64Encode(fileBytes);
 //
-//         setState(() {
-//           _errorMessage = null;
-//         });
+//         if (mounted) {
+//           setState(() {
+//             _errorMessage = null;
+//           });
+//         }
 //       } else {
-//         setState(() {
-//           _errorMessage = 'No file selected';
-//         });
+//         if (mounted) {
+//           setState(() {
+//             _errorMessage = 'No file selected';
+//           });
+//         }
 //       }
 //     } catch (e) {
-//       setState(() {
-//         _errorMessage = 'Error picking file: $e';
-//       });
+//       if (mounted) {
+//         setState(() {
+//           _errorMessage = 'Error picking file: $e';
+//         });
+//       }
 //     }
 //   }
 //
 //   Future<void> _uploadFile() async {
 //     if (_fileBase64 == null || _fileName == null || _fileExtension == null) {
-//       setState(() {
-//         _errorMessage = 'Please select a file first';
-//       });
+//       if (mounted) {
+//         setState(() {
+//           _errorMessage = 'Please select a file first';
+//         });
+//       }
 //       return;
 //     }
-//     setState(() {
-//       _isLoading = true;
-//       _errorMessage = null;
-//     });
+//     if (mounted) {
+//       setState(() {
+//         _isLoading = true;
+//         _errorMessage = null;
+//       });
+//     }
 //     try {
 //       SharedPreferences prefs = await SharedPreferences.getInstance();
 //
@@ -1429,35 +1418,38 @@ class _TimerDialogState extends State<TimerDialog> {
 //       print("=== Upload Response ===");
 //       print("File URL: $fileUrl");
 //
-//       setState(() {
-//         _isLoading = false;
-//         if (fileUrl != null) {
-//           fileUrl = fileUrl?.trim();
-//           fileUrl = Uri.encodeFull(fileUrl!);
-//           _uploadedFileUrl = fileUrl;
-//           _errorMessage = null;
-//           print("Upload successful! URL: $fileUrl");
-//           _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
-//         } else {
-//           _errorMessage = 'Upload failed - no URL returned';
-//           print("Upload failed - no URL returned");
-//         }
-//       });
+//       if (mounted) {
+//         setState(() {
+//           _isLoading = false;
+//           if (fileUrl != null) {
+//             fileUrl = fileUrl?.trim();
+//             fileUrl = Uri.encodeFull(fileUrl!);
+//             _uploadedFileUrl = fileUrl;
+//             _errorMessage = null;
+//             print("Upload successful! URL: $fileUrl");
+//             _sendMessage(fileUrl: fileUrl, fileName: '$_fileName$_fileExtension');
+//           } else {
+//             _errorMessage = 'Upload failed - no URL returned';
+//             print("Upload failed - no URL returned");
+//           }
+//         });
+//       }
 //     } catch (e) {
 //       print("=== Upload Error ===");
 //       print("Error details: $e");
-//       setState(() {
-//         _isLoading = false;
-//         _errorMessage = 'Error uploading file: $e';
-//       });
+//       if (mounted) {
+//         setState(() {
+//           _isLoading = false;
+//           _errorMessage = 'Error uploading file: $e';
+//         });
+//       }
 //     }
 //   }
 //
-//
-//   Future<void> _sendPatientMessage({required String msg}) async {
+//   Future<void> _sendPatientMessage({required String msg , bool conversationCompleted = true}) async {
 //     try {
 //       final message = {
-//         'senderId': 'system', // Using 'system' to indicate this is not a user message
+//         'senderId': 'system',
 //         'senderName': 'System',
 //         'type': 'text',
 //         'message': msg,
@@ -1470,15 +1462,14 @@ class _TimerDialogState extends State<TimerDialog> {
 //           .collection('messages')
 //           .add(message);
 //
-//       // Optionally mark the conversation as completed
 //       await _firestore.collection('chat_rooms').doc(widget.chatRoomId).update({
-//         'conversationCompleted': true,
+//         'conversationCompleted': conversationCompleted,
 //       });
 //
 //       if (mounted) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('System message sent: Patient left the chat')),
-//         );
+//         // ScaffoldMessenger.of(context).showSnackBar(
+//         //   SnackBar(content: Text('System message sent: Patient left the chat')),
+//         // );
 //       }
 //     } catch (e) {
 //       if (mounted) {
@@ -1507,22 +1498,24 @@ class _TimerDialogState extends State<TimerDialog> {
 //           child: isFile
 //               ? GestureDetector(
 //             onTap: () async {
-//               String url = message['fileUrl'];
+//               String url = message['fileUrl'] ?? '';
 //               final cleanUrl = url.trim();
-//               final uri = Uri.parse(cleanUrl);
-//               if (await canLaunchUrl(uri)) {
+//               final uri = Uri.tryParse(cleanUrl);
+//               if (uri != null && await canLaunchUrl(uri)) {
 //                 await launchUrl(uri, mode: LaunchMode.externalApplication);
 //               } else {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(content: Text('Could not open file')),
-//                 );
+//                 if (mounted) {
+//                   ScaffoldMessenger.of(context).showSnackBar(
+//                     const SnackBar(content: Text('Could not open file')),
+//                   );
+//                 }
 //               }
 //             },
 //             child: Row(
 //               mainAxisSize: MainAxisSize.min,
 //               children: [
 //                 const SizedBox(width: 8),
-//                Image.asset('assets/img.png' , height: 150,),
+//                 Image.asset('assets/img.png', height: 150),
 //                 const SizedBox(width: 8),
 //                 Icon(
 //                   Icons.download,
@@ -1532,7 +1525,6 @@ class _TimerDialogState extends State<TimerDialog> {
 //                 const SizedBox(width: 8),
 //               ],
 //             ),
-//
 //           )
 //               : Text(
 //             message['message'] ?? '',
@@ -1560,7 +1552,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //   Widget build(BuildContext context) {
 //     return Scaffold(
 //       appBar: AppBar(
-//         automaticallyImplyLeading: false, // Removes the
+//         automaticallyImplyLeading: false,
 //         title: Center(
 //           child: Text(
 //             widget.isDoctor ? widget.patientName : widget.doctorName,
@@ -1573,17 +1565,56 @@ class _TimerDialogState extends State<TimerDialog> {
 //         children: [
 //           Column(
 //             children: [
+//               // Expanded(
+//               //   child: StreamBuilder<QuerySnapshot>(
+//               //     stream: _firestore
+//               //         .collection('chat_rooms')
+//               //         .doc(widget.chatRoomId)
+//               //         .collection('messages')
+//               //         .orderBy('timestamp', descending: false)
+//               //         .snapshots(),
+//               //     builder: (context, snapshot) {
+//               //       if (snapshot.hasError) {
+//               //         return Center(child: Text('Error: ${snapshot.error}'));
+//               //       }
+//               //       if (snapshot.connectionState == ConnectionState.waiting) {
+//               //         return const Center(child: CircularProgressIndicator());
+//               //       }
+//               //
+//               //       final messages = snapshot.data?.docs ?? [];
+//               //
+//               //       if (messages.isEmpty) {
+//               //         return const Center(child: Text('No messages yet.'));
+//               //       }
+//               //
+//               //       return ListView.builder(
+//               //
+//               //
+//               //         padding: EdgeInsets.all(8.0),
+//               //         itemCount: messages.length,
+//               //         itemBuilder: (context, index) {
+//               //           final message = messages[index].data() as Map<String, dynamic>?;
+//               //           if (message == null) {
+//               //             return SizedBox.shrink();
+//               //           }
+//               //           final isMe = message['senderId'] == currentUserId;
+//               //           return _buildMessage(message, isMe);
+//               //         },
+//               //       );
+//               //     },
+//               //   ),
+//               // ),
 //               Expanded(
 //                 child: StreamBuilder<QuerySnapshot>(
 //                   stream: _firestore
 //                       .collection('chat_rooms')
 //                       .doc(widget.chatRoomId)
 //                       .collection('messages')
-//                       .orderBy('timestamp', descending: true)
+//                       .orderBy('timestamp', descending: true) // Change to descending: true
 //                       .snapshots(),
 //                   builder: (context, snapshot) {
 //                     if (snapshot.hasError) {
-//                       return const Center(child: Text('Error: '));
+//                       return Center(child: Text('Error: ${snapshot.error}'));
 //                     }
 //                     if (snapshot.connectionState == ConnectionState.waiting) {
 //                       return const Center(child: CircularProgressIndicator());
@@ -1595,8 +1626,16 @@ class _TimerDialogState extends State<TimerDialog> {
 //                       return const Center(child: Text('No messages yet.'));
 //                     }
 //
+//                     // Scroll to the latest message after the frame is built
+//                     WidgetsBinding.instance.addPostFrameCallback((_) {
+//                       if (_scrollController.hasClients) {
+//                         _scrollController.jumpTo(_scrollController.position.minScrollExtent); // Scroll to top (latest message)
+//                       }
+//                     });
+//
 //                     return ListView.builder(
-//                       reverse: true,
+//                       controller: _scrollController, // Attach ScrollController
+//                       reverse: true, // Newest messages at bottom
 //                       padding: EdgeInsets.all(8.0),
 //                       itemCount: messages.length,
 //                       itemBuilder: (context, index) {
@@ -1611,7 +1650,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //                   },
 //                 ),
 //               ),
-//               if (!_timerEnded)
+//               if (!_timerEnded && !_messageSent)
 //                 Row(
 //                   mainAxisAlignment: MainAxisAlignment.center,
 //                   children: [
@@ -1632,18 +1671,14 @@ class _TimerDialogState extends State<TimerDialog> {
 //                     ),
 //                   ],
 //                 ),
-//
-//
-//
 //               StreamBuilder<DocumentSnapshot>(
 //                 stream: _firestore.collection('chat_rooms').doc(widget.chatRoomId).snapshots(),
 //                 builder: (context, snapshot) {
 //                   if (snapshot.connectionState == ConnectionState.waiting ||
 //                       !snapshot.hasData ||
 //                       !snapshot.data!.exists) {
-//                     // Cancel timer if conversationCompleted is false or no data
 //                     _completionTimer?.cancel();
-//                     return const SizedBox.shrink(); // Show nothing while loading or if no data
+//                     return const SizedBox.shrink();
 //                   }
 //
 //                   final isCompleted = snapshot.data?.data() != null
@@ -1651,15 +1686,12 @@ class _TimerDialogState extends State<TimerDialog> {
 //                       : false;
 //
 //                   if (!isCompleted) {
-//                     // Cancel timer when conversationCompleted is false
 //                     _completionTimer?.cancel();
-//                     return const SizedBox.shrink(); // Show nothing if conversationCompleted is false
+//                     return const SizedBox.shrink();
 //                   }
 //
-//                   // Initialize notifier if not already set
 //                   _completionTimerNotifier ??= ValueNotifier<int>(_completionTimerSeconds);
 //
-//                   // Start the timer if not already running
 //                   if (_completionTimer == null || !_completionTimer!.isActive) {
 //                     _completionTimer = Timer.periodic(const Duration(seconds: 1), (t) {
 //                       if (_completionTimerNotifier!.value <= 0) {
@@ -1667,19 +1699,20 @@ class _TimerDialogState extends State<TimerDialog> {
 //                         _completionTimer = null;
 //                         _completionTimerNotifier?.dispose();
 //                         _completionTimerNotifier = null;
-//                         // Navigate to TestimonialScreenSimple when timer ends
-//                         Navigator.pushAndRemoveUntil(
-//                           context,
-//                           MaterialPageRoute(
-//                             builder: (context) => TestimonialScreenSimple(
-//                               idMedic: int.parse(widget.doctorId),
+//                         if (mounted) {
+//                           Navigator.pushAndRemoveUntil(
+//                             context,
+//                             MaterialPageRoute(
+//                               builder: (context) => TestimonialScreenSimple(
+//                                 idMedic: int.parse(widget.doctorId),
+//                               ),
 //                             ),
-//                           ),
-//                               (Route<dynamic> route) => false, // Remove all previous routes
-//                         );
+//                                 (Route<dynamic> route) => false,
+//                           );
+//                         }
 //                       } else {
 //                         _completionTimerNotifier!.value--;
-//                         _completionTimerSeconds = _completionTimerNotifier!.value; // Update persisted seconds
+//                         _completionTimerSeconds = _completionTimerNotifier!.value;
 //                       }
 //                     });
 //                   }
@@ -1701,83 +1734,12 @@ class _TimerDialogState extends State<TimerDialog> {
 //                   );
 //                 },
 //               ),
-//
-//
-//               // StreamBuilder<DocumentSnapshot>(
-//               //   stream: _firestore.collection('chat_rooms').doc(widget.chatRoomId).snapshots(),
-//               //   builder: (context, snapshot) {
-//               //     if (snapshot.connectionState == ConnectionState.waiting ||
-//               //         !snapshot.hasData ||
-//               //         !snapshot.data!.exists) {
-//               //       return const SizedBox.shrink();
-//               //     }
-//               //
-//               //     final isCompleted = snapshot.data?.data() != null
-//               //         ? (snapshot.data!.data() as Map<String, dynamic>)['conversationCompleted'] as bool? ?? false
-//               //         : false;
-//               //
-//               //     if (!isCompleted) {
-//               //       return const SizedBox.shrink();
-//               //     }
-//               //
-//               //     Widget startTimer(VoidCallback onComplete) {
-//               //       int secondsLeft = 60;
-//               //       final timerText = ValueNotifier<String>('01:00');
-//               //
-//               //       Timer.periodic(const Duration(seconds: 1), (timer) {
-//               //         secondsLeft--;
-//               //         if (secondsLeft <= 0) {
-//               //           timer.cancel();
-//               //           timerText.value = '';
-//               //           timerText.dispose(); // Clean up the ValueNotifier
-//               //           onComplete();
-//               //         } else {
-//               //           timerText.value = '00:${secondsLeft.toString().padLeft(2, '0')}';
-//               //         }
-//               //       });
-//               //
-//               //       return ValueListenableBuilder<String>(
-//               //         valueListenable: timerText,
-//               //         builder: (context, value, child) {
-//               //           return Padding(
-//               //             padding: const EdgeInsets.all(8.0),
-//               //             child: Visibility(
-//               //               visible: value.isNotEmpty,
-//               //               child: Text(
-//               //                 value.isEmpty ? 'Calculating...' : 'Time remaining: $value',
-//               //                 style: const TextStyle(fontSize: 16, color: Colors.red),
-//               //               ),
-//               //             ),
-//               //           );
-//               //         },
-//               //       );
-//               //     }
-//               //
-//               //     return startTimer(() {
-//               //       // Your callback implementation here
-//               //       print('Timer done, do your thing!');
-//               //
-//               //       if(isCompleted)
-//               //         return ;
-//               //       Navigator.pushAndRemoveUntil(
-//               //         context,
-//               //         MaterialPageRoute(
-//               //           builder: (context) => TestimonialScreenSimple(
-//               //             idMedic: int.parse(widget.doctorId),
-//               //           ),
-//               //         ),
-//               //             (Route<dynamic> route) => false, // Remove all previous routes
-//               //       );
-//               //
-//               //     });
-//               //   },
-//               // ),
 //               Padding(
 //                 padding: const EdgeInsets.all(8.0),
 //                 child: Row(
 //                   mainAxisAlignment: MainAxisAlignment.spaceAround,
 //                   children: [
-//                     if (_secondsRemaining > 0 && !_timerEnded && widget.recommendation == false )
+//                     if (_secondsRemaining > 0 && !_timerEnded && !_messageSent && !widget.recommendation)
 //                       Expanded(
 //                         child: ElevatedButton(
 //                           onPressed: _showTimerDialogg,
@@ -1794,30 +1756,22 @@ class _TimerDialogState extends State<TimerDialog> {
 //                           ),
 //                         ),
 //                       ),
-//                     if (_secondsRemaining > 0 && !_timerEnded)
-//                       if(widget.recommendation)
+//                     if (_secondsRemaining > 0 && !_timerEnded && !_messageSent && widget.recommendation)
 //                       Expanded(
 //                         child: ElevatedButton.icon(
 //                           onPressed: () async {
-//                            try{
-//                              await _pickFile();
-//                              if (_fileBase64 != null) {
-//                                await _uploadFile();
-//                                _messageSent = true;
-//                                _timer.cancel();
-//                                setState(() {
-//                                  _timerEnded = true;
-//                                  _showTimerDialog = false;
-//                                  _secondsRemaining = 0;
-//                                  _timerNotifier.value = 0;
-//                                });
-//                              }
-//
-//                            }
-//                            catch(e){
-//
-//
-//                            }
+//                             try {
+//                               await _pickFile();
+//                               if (_fileBase64 != null) {
+//                                 await _uploadFile();
+//                               }
+//                             } catch (e) {
+//                               if (mounted) {
+//                                 ScaffoldMessenger.of(context).showSnackBar(
+//                                   SnackBar(content: Text('Error uploading file: $e')),
+//                                 );
+//                               }
+//                             }
 //                           },
 //                           style: ElevatedButton.styleFrom(
 //                             backgroundColor: Color(0xFF62CD9C),
@@ -1834,18 +1788,17 @@ class _TimerDialogState extends State<TimerDialog> {
 //                           ),
 //                         ),
 //                       ),
-//                     if (_timerEnded)
+//                     if (_timerEnded || _messageSent)
 //                       Row(
 //                         mainAxisAlignment: MainAxisAlignment.center,
 //                         children: [
 //                           SizedBox(
 //                             height: 70,
 //                             child: ElevatedButton(
-//
 //                               onPressed: () async {
 //                                 bool canExit = await _checkConversationCompleted();
-//                                 if (canExit) {
-//                                   _sendPatientMessage(msg:  'Pacientul a ieșit din chat.');
+//                                 if (canExit && mounted) {
+//                                   await _sendPatientMessage(msg: 'SESIUNE FINALIZATĂ');
 //                                   Navigator.pushAndRemoveUntil(
 //                                     context,
 //                                     MaterialPageRoute(
@@ -1853,9 +1806,8 @@ class _TimerDialogState extends State<TimerDialog> {
 //                                         idMedic: int.parse(widget.doctorId),
 //                                       ),
 //                                     ),
-//                                         (Route<dynamic> route) => false, // Remove all previous routes
+//                                         (Route<dynamic> route) => false,
 //                                   );
-//
 //                                 }
 //                               },
 //                               style: ElevatedButton.styleFrom(
@@ -1877,28 +1829,42 @@ class _TimerDialogState extends State<TimerDialog> {
 //                             child: ElevatedButton(
 //                               onPressed: () async {
 //                                 bool canPay = await _checkConversationCompleted();
-//                                 if(canPay == false )
-//                                   return;
-//
-//                                 await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.");
-//                                 _setConversationCompletedFalse();
+//                                 if (!canPay || !mounted) return;
+//                                 await _sendPatientMessage(
+//                                     msg: "🧑‍⚕️ „Pacientul dorește să mai pună o întrebare. 💬Este în curs de efectuare a plății 💳 — te rugăm să aștepți ⏳.");
+//                                 await _setConversationCompletedFalse();
 //                                 showPaymentModalBottomSheet(
+//
+//                                   whenCompleteFunction: (paymentResults) async {
+//
+//                                     if(paymentResults)
+//                                       return;
+//                                     await _setConversationCompletedTrue();
+//                                     await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
+//
+//
+//                                   },
 //                                   onClose: () async {
 //                                     await _setConversationCompletedTrue();
-//                                     _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
+//                                     await _sendPatientMessage(msg: "🧑‍⚕️ „Pacientul tocmai a anulat procesul de plată ❌💳.Sesiunea se va încheia în 1 minut ⏱️ dacă nu efectuează plata sau nu iese.");
 //                                   },
 //                                   context: context,
 //                                   amount: widget.amount,
-//                                   onSuccess: (){
-//                                     _timer.cancel(); // Cancel existing timer
-//                                     setState(() {
-//                                       _timerEnded = false;
-//                                       _showTimerDialog = true;
-//                                       _secondsRemaining = 10 * 60;
-//                                       _timerNotifier.value = 10 * 60;
-//                                     });
-//                                     _startTimer(); // Restart the timer
-//                                   }
+//                                   onSuccess: () {
+//
+//                                    _sendPatientMessage(msg: 'Pacientul a efectuat plata cu succes ✅. Te rugăm să aștepți întrebarea lui 🕒.'  , conversationCompleted:  false );
+//                                     _timer.cancel();
+//                                     if (mounted) {
+//                                       setState(() {
+//                                         _timerEnded = false;
+//                                         _showTimerDialog = true;
+//                                         _secondsRemaining = 10 * 60;
+//                                         _timerNotifier.value = 10 * 60;
+//                                         _messageSent = false; // Reset for new session
+//                                       });
+//                                       _startTimer();
+//                                     }
+//                                   },
 //                                 );
 //                               },
 //                               style: ElevatedButton.styleFrom(
@@ -1920,24 +1886,26 @@ class _TimerDialogState extends State<TimerDialog> {
 //               ),
 //             ],
 //           ),
-//           if (_showTimerDialog && !_timerEnded)
+//           if (_showTimerDialog && !_timerEnded && !_messageSent && !widget.recommendation)
 //             ValueListenableBuilder<int>(
 //               valueListenable: _timerNotifier,
 //               builder: (context, seconds, child) {
-//                 if(widget.recommendation)
-//                   return SizedBox();
 //                 return TimerDialog(
 //                   onSend: (message) {
 //                     _messageController.text = message;
 //                     _sendMessage();
-//                     setState(() {
-//                       _showTimerDialog = false;
-//                     });
+//                     if (mounted) {
+//                       setState(() {
+//                         _showTimerDialog = false;
+//                       });
+//                     }
 //                   },
 //                   onClose: () {
-//                     setState(() {
-//                       _showTimerDialog = false;
-//                     });
+//                     if (mounted) {
+//                       setState(() {
+//                         _showTimerDialog = false;
+//                       });
+//                     }
 //                   },
 //                   secondsRemaining: seconds,
 //                 );
@@ -1953,15 +1921,11 @@ class _TimerDialogState extends State<TimerDialog> {
 //     _timer.cancel();
 //     _timerNotifier.dispose();
 //     _messageController.dispose();
-//
-//     _timer.cancel();
-//     _timerNotifier.dispose();
-//     _messageController.dispose();
 //     _completionTimer?.cancel();
 //     _completionTimerNotifier?.dispose();
+//     _scrollController.dispose(); // Add this
 //     super.dispose();
 //   }
-//
 // }
 //
 // class TimerDialog extends StatefulWidget {
@@ -1986,6 +1950,7 @@ class _TimerDialogState extends State<TimerDialog> {
 //   @override
 //   void initState() {
 //     super.initState();
+//
 //   }
 //
 //   void _sendMessage() {
@@ -2096,4 +2061,5 @@ class _TimerDialogState extends State<TimerDialog> {
 //     );
 //   }
 // }
-
+//
+//

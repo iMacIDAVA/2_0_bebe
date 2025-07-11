@@ -17,12 +17,14 @@ import '../services/consultation_service.dart';
 class PaymentScreen extends StatefulWidget {
   final double amount;
   final int currentConsultation ;
+  final int doctorID ;
 
 
   const PaymentScreen({
     Key? key,
     required this.amount,
     required this.currentConsultation ,
+    required this.doctorID
 
   }) : super(key: key);
 
@@ -469,10 +471,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         await apiCallFunctions.anuntaMedicDeServiciuTerminat(
                           pUser: user,
                           pParola: userPassMD5,
-                          pIdMedic: "7" ,//widget.doctorId.toString(),
+                          pIdMedic: widget.doctorID.toString() ,//widget.doctorId.toString(),
                           tipPlata: "1",
                         );
-
 
                       } catch (e) {
                         setState(() {
@@ -500,7 +501,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   )
                       : Text(
-                    'Plăti \$${widget.amount.toStringAsFixed(2)}',
+                    'Plătește ${widget.amount.toStringAsFixed(2)} RON',
                     style: GoogleFonts.rubik(
                       fontSize: 16,
                       color: Colors.white,

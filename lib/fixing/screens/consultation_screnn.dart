@@ -206,7 +206,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             children: [
 
               Text(
-                'Aşteptağı râspunsul medicului',
+                'Așteptați',
                 style: GoogleFonts.rubik(
                   fontSize: 24,
                   fontWeight: FontWeight.w500,
@@ -259,8 +259,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                   _currentConsultation!['id'],
                   'payment_pending',
                 );
-                // print("_currentConsultation");
-                // print(_currentConsultation!['amount'].toDouble);
+                print("_currentConsultation");
+                print(_currentConsultation);
                 // print(_currentConsultation!['amount'].runtimeType);
 
                 // Navigate to payment screen
@@ -270,6 +270,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                     builder: (context) => PaymentScreen(
                       amount:double.parse(_currentConsultation!['amount'] ?? 0.0),
                         currentConsultation :  _currentConsultation!['id'],
+                      doctorID: _currentConsultation!["doctor_id"],
+                      ///here
 
 
 
@@ -991,6 +993,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                             builder: (context) => PaymentScreen(
                               amount: double.parse(_currentConsultation!['amount'] ?? '0.0'),
                               currentConsultation: _currentConsultation!['id'],
+                              doctorID: _currentConsultation!["doctor_id"],
 
                             ),
                           ),
