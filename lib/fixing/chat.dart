@@ -26,6 +26,7 @@ class ChatScreen extends StatefulWidget {
   final bool recommendation;
   final double amount;
 
+
   const ChatScreen({
     super.key,
     required this.isDoctor,
@@ -732,6 +733,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 );
                                 await _setConversationCompletedFalse();
                                 showPaymentModalBottomSheet(
+                                  paientId: widget.patientId,
                                   whenCompleteFunction: (paymentResults) async {
                                     if (!paymentResults) {
                                       await _sendFeedbackMessage(
@@ -753,9 +755,16 @@ class _ChatScreenState extends State<ChatScreen> {
                                   onSuccess: () {
                                     _sendFeedbackMessage(
                                       message: ' PLATA EFECTUATĂ. POȚI ÎNTREBA MEDICUL ✅🕒.',
+                                      visibility: 'patient',
+                                      conversationCompleted: false,
+                                    );
+                                    _sendFeedbackMessage(
+                                      message: ' PLATA EFECTUATĂ ✅.',
                                       visibility: 'doctor',
                                       conversationCompleted: false,
                                     );
+
+
                                     _setConversationCompletedFalse();
                                     _timer.cancel();
                                     if (mounted) {

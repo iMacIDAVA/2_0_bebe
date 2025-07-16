@@ -418,12 +418,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             code = "1";
                         }
 
-
-
-
-
-
-
                         await createPaymentIntent();
 
                         SharedPreferences prefs = await SharedPreferences.getInstance();
