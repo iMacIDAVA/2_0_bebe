@@ -77,9 +77,19 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         final sessionId = consultation['data']['id'];
         final questionnaireData = {
           'nume_si_prenume_reprezentant_legal': _numeReprezentantController.text,
-          'nume_si_prenume': widget.numePacient,
-          "data_nastere": widget.dataNasterii,
-          'greutate': _parseGreutate(widget.greutate),
+          'nume_si_prenume': (widget.numePacient == null || widget.numePacient.trim().isEmpty)
+              ? 'Nume Necunoscut'
+              : widget.numePacient,
+          "data_nastere": (widget.dataNasterii == null || widget.dataNasterii == '0001-01-01' || widget.dataNasterii.trim().isEmpty)
+              ? '2000-01-01'
+              : widget.dataNasterii,
+          'greutate': (widget.greutate == null || widget.greutate == '0.0' || widget.greutate.trim().isEmpty)
+              ? 3.0
+              : _parseGreutate(widget.greutate),
+          // 'nume_si_prenume_reprezentant_legal': _numeReprezentantController.text,
+          // 'nume_si_prenume': widget.numePacient,
+          // "data_nastere": widget.dataNasterii,
+          // 'greutate': _parseGreutate(widget.greutate),
           'alergic_la_vreun_medicament': _alergicLaMedicament,
           'la_ce_medicament_este_alergic': _alergicLaMedicament ? _medicamentController.text : null,
           'febra': _symptoms['Febră']!,
@@ -96,7 +106,12 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           'rinoree': _symptoms['Rinoree']!,
         };
 
+
+
+
+
         final result = await _consultationService.submitQuestionnaire(sessionId, questionnaireData);
+
 
         if (result['status'] == 'success') {
           if (mounted) {
@@ -107,9 +122,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           }
         }
       } catch (e) {
+        print('Error ${e.toString()}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Errorxxx: ${e.toString()}')),
+            SnackBar(content: Text('Error 221 : ${e.toString()}')),
           );
         }
       }

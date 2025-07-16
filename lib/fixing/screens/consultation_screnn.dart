@@ -92,8 +92,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       print("_loadCurrentConsultation id  ${widget.patientId }");
 
       final response = await _consultationService.getCurrentConsultation(patientId: widget.patientId);
-      print("responsexxx");
-      print(response);
       if (response['has_active_session']) {
         final newStatus = response['data']['status'];
         final oldStatus = _currentConsultation?['status'];
@@ -254,14 +252,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ElevatedButton(
             onPressed: () async {
               try {
+
                 // First, update status to PaymentPending
                 await _consultationService.updateConsultationStatus(
                   _currentConsultation!['id'],
                   'payment_pending',
                 );
-                print("_currentConsultation");
-                print(_currentConsultation);
-                // print(_currentConsultation!['amount'].runtimeType);
 
                 // Navigate to payment screen
                 final result = await Navigator.push(
@@ -271,6 +267,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                       amount:double.parse(_currentConsultation!['amount'] ?? 0.0),
                         currentConsultation :  _currentConsultation!['id'],
                       doctorID: _currentConsultation!["doctor_id"],
+                      session_type: _currentConsultation!['session_type'] ?? 'Chat',
                       ///here
 
 
@@ -620,17 +617,17 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
             Column(
               children: [
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Scrie text',
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
+                // TextField(
+                //   decoration: InputDecoration(
+                //     hintText: 'Scrie text',
+                //     filled: true,
+                //     fillColor: Colors.grey[200],
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(10),
+                //       borderSide: BorderSide.none,
+                //     ),
+                //   ),
+                // ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
@@ -994,6 +991,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                               amount: double.parse(_currentConsultation!['amount'] ?? '0.0'),
                               currentConsultation: _currentConsultation!['id'],
                               doctorID: _currentConsultation!["doctor_id"],
+                              session_type: _currentConsultation!['session_type'] ?? 'Chat',
+
 
                             ),
                           ),
@@ -1037,106 +1036,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       ),
     );
   }
-  // Widget _buildAcceptedScreen() {
-  //   return CountdownWrapper(
-  //     onTimeout: () async {
-  //       await _consultationService.updateConsultationStatus(
-  //         _currentConsultation!['id'],
-  //         'callEnded',
-  //       );
-  //       _loadCurrentConsultation();
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) => const IntroScreen(),
-  //         ),
-  //       );
-  //     },
-  //     child: Center(
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           const Icon(
-  //             Icons.check_circle,
-  //             size: 80,
-  //             color: Color(0xFF0EBE7F),
-  //           ),
-  //           const SizedBox(height: 24),
-  //           Text(
-  //             'Medicul ți-a acceptat cererea',
-  //             style: GoogleFonts.rubik(
-  //               fontSize: 24,
-  //               fontWeight: FontWeight.w500,
-  //               color: const Color(0xFF0EBE7F),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 12),
-  //           Text(
-  //             'Te rugăm să continui cu plata pentru a putea continua consultația',
-  //             textAlign: TextAlign.center,
-  //             style: GoogleFonts.rubik(
-  //               fontSize: 16,
-  //               color: Colors.black87,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 32),
-  //           ElevatedButton(
-  //             onPressed: () async {
-  //               try {
-  //                 await _consultationService.updateConsultationStatus(
-  //                   _currentConsultation!['id'],
-  //                   'payment_pending',
-  //                 );
-  //
-  //
-  //                 final result = await Navigator.push(
-  //                   context,
-  //                   MaterialPageRoute(
-  //                     builder: (context) => PaymentScreen(
-  //                       amount: double.parse(_currentConsultation!['amount'] ?? 0.0), currentConsultation: _currentConsultation!['id'] ,
-  //                       serviceType: '1',
-  //                       doctorId: 7,
-  //                       ///HERE
-  //
-  //                     ),
-  //                   ),
-  //                 );
-  //
-  //                 if (result == true) {
-  //                   await _consultationService.updateConsultationStatus(
-  //                     _currentConsultation!['id'],
-  //                     'payment_completed',
-  //                   );
-  //                   _loadCurrentConsultation();
-  //                 }
-  //               } catch (e) {
-  //                 setState(() {
-  //                   _error = e.toString();
-  //                 });
-  //               }
-  //             },
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: const Color(0xFF0EBE7F),
-  //               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //               ),
-  //             ),
-  //             child: Text(
-  //               'Continuă cu plata',
-  //               style: GoogleFonts.rubik(
-  //                 fontSize: 16,
-  //                 color: Colors.white,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     )
-  //   );
-  // }
-
 
 
   Widget _buildQuestionnaireScreen() {
@@ -1184,12 +1083,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
                 final data= map ;
 
+
                 final firstName = data!['PrenumeCompletat'] ?? '';
                 final lastName = data['NumeCompletat'] ?? '';
                 final fullName = '$firstName $lastName'.trim();
-                final weight = data['GreutateCompletata'];
+                final weight = data['GreutateCompletata'] ?? "0.0";
                 final birthDate = data['DataNastereCompletata'].split('T').first;
-
 
 
                 // First update status to FormPending
@@ -1197,6 +1096,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                   _currentConsultation!['id'],
                   'form_pending',
                 );
+
 
                 // Navigate to questionnaire screen
                 final result = await Navigator.push(
@@ -1208,6 +1108,9 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                     ),
                   ),
                 );
+
+
+                return;
 
                 if (result == true) {
                   // Questionnaire submitted successfully

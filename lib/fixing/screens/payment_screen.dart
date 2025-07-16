@@ -18,13 +18,15 @@ class PaymentScreen extends StatefulWidget {
   final double amount;
   final int currentConsultation ;
   final int doctorID ;
+  final String session_type ;
 
 
   const PaymentScreen({
     Key? key,
     required this.amount,
     required this.currentConsultation ,
-    required this.doctorID
+    required this.doctorID ,
+    required this.session_type
 
   }) : super(key: key);
 
@@ -230,30 +232,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  // Future<void> processPayment(String paymentMethodId, String customerId) async {
-  //   final calculatedAmount = (widget.amount * 100).toInt();
-  //
-  //   final response = await http.post(
-  //     Uri.parse('https://api.stripe.com/v1/payment_intents'),
-  //     headers: {
-  //       'Authorization': 'Bearer $stripeSecretKey',
-  //       'Content-Type': 'application/x-www-form-urlencoded',
-  //     },
-  //     body: {
-  //       'amount': calculatedAmount.toString(),
-  //       'currency': 'RON',
-  //       'customer': customerId,
-  //       'payment_method': paymentMethodId,
-  //       'confirm': 'true',
-  //     },
-  //   );
-  //
-  //   if (response.statusCode == 200) {
-  //     Navigator.pop(context, true); // Return success
-  //   } else {
-  //     throw Exception('Payment failed');
-  //   }
-  // }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -296,45 +276,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Consultation Details
-                // Container(
-                //   decoration: BoxDecoration(
-                //     color: Colors.white,
-                //     borderRadius: BorderRadius.circular(8),
-                //     boxShadow: [
-                //       BoxShadow(
-                //         color: Colors.black.withOpacity(0.1),
-                //         blurRadius: 4,
-                //         offset: const Offset(0, 2),
-                //       ),
-                //     ],
-                //   ),
-                //   padding: const EdgeInsets.all(16),
-                //   child: Column(
-                //     crossAxisAlignment: CrossAxisAlignment.start,
-                //     children: [
-                //       Text(
-                //         'Detalii consultație',
-                //         style: GoogleFonts.rubik(
-                //           fontSize: 18,
-                //           fontWeight: FontWeight.w500,
-                //           color: const Color(0xFF0EBE7F),
-                //         ),
-                //       ),
-                //       const SizedBox(height: 12),
-                //
-                //       const SizedBox(height: 8),
-                //       Text(
-                //         'sumă: \$${widget.amount.toStringAsFixed(2)}',
-                //         style: GoogleFonts.rubik(
-                //           fontSize: 16,
-                //           fontWeight: FontWeight.bold,
-                //           color: Colors.black87,
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
                 Container(
                   height: 200,
                   decoration: BoxDecoration(
@@ -462,6 +403,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       });
 
                       try {
+                        String  code;
+                        switch (widget.session_type) {
+                          case 'Chat':
+                            code = "4";
+                            break;
+                          case 'Call':
+                            code = "2";
+                            break;
+                          case 'Recommendation':
+                            code = "1";
+                            break;
+                          default:
+                            code = "1";
+                        }
+
+
+
+
+
+
+
                         await createPaymentIntent();
 
                         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -472,12 +434,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           pUser: user,
                           pParola: userPassMD5,
                           pIdMedic: widget.doctorID.toString() ,//widget.doctorId.toString(),
-                          tipPlata: "1",
+                          tipPlata: code,
+                          ///Here do the change
                         );
+
+                        await apiCallFunctions.anuntaMedicDePlataEfectuata(pUser: user, pParola: userPassMD5, pIdMedic: widget.doctorID.toString(), tipPlata: code);
 
                       } catch (e) {
                         setState(() {
-                          _error = e.toString()+ "<<<<<";
+                          _error = e.toString();
                           print(_error);
                           _isProcessingPayment = false;
                         });

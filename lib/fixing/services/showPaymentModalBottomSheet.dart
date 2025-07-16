@@ -15,6 +15,7 @@ Future<bool> showPaymentModalBottomSheet({
   required VoidCallback onSuccess,
   required VoidCallback onClose,
   required Function(bool) whenCompleteFunction, // Changed to accept boolean
+
 }) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
@@ -382,6 +383,23 @@ class __PaymentModalContentState extends State<_PaymentModalContent> {
                           });
 
                           await createPaymentIntent(); // Result is handled in createPaymentIntent
+
+                          // String  code;
+                          // switch (widget.session_type) {
+                          //   case 'Chat':
+                          //     code = "4";
+                          //     break;
+                          //   case 'Call':
+                          //     code = "2";
+                          //     break;
+                          //   case 'Recommendation':
+                          //     code = "1";
+                          //     break;
+                          //   default:
+                          //     code = "1";
+                          // }
+                          // await apiCallFunctions.anuntaMedicDePlataEfectuata(pUser: user, pParola: userPassMD5, pIdMedic: widget.doctorID.toString(), tipPlata: code);
+
                         }
                       },
                       style: ElevatedButton.styleFrom(
