@@ -374,8 +374,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
   }
 
 
-
-
   Widget _buildNoConsultationScreen() {
     return Center(
       child: Column(
@@ -388,7 +386,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'No Active Consultation',
+            'Nicio consultație activă',
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -397,7 +395,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Request a consultation with a doctor',
+            'Solicită o consultație cu un medic',
             textAlign: TextAlign.center,
             style: GoogleFonts.rubik(
               fontSize: 16,
@@ -407,12 +405,12 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () {
-             // _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call', amount: widget.);
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => IntroScreen()
-                ),(Route<dynamic> route) => false,
+                  builder: (context) => IntroScreen(),
+                ),
+                    (Route<dynamic> route) => false,
               );
             },
             style: ElevatedButton.styleFrom(
@@ -426,7 +424,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               ),
             ),
             child: Text(
-              'Request Consultation',
+              'Solicită consultație',
               style: GoogleFonts.rubik(
                 fontSize: 16,
                 color: Colors.white,
@@ -438,6 +436,71 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       ),
     );
   }
+
+
+
+  // Widget _buildNoConsultationScreen() {
+  //   return Center(
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         const Icon(
+  //           Icons.medical_services,
+  //           size: 80,
+  //           color: Color(0xFF0EBE7F),
+  //         ),
+  //         const SizedBox(height: 24),
+  //         Text(
+  //           'No Active Consultation',
+  //           style: GoogleFonts.rubik(
+  //             fontSize: 24,
+  //             fontWeight: FontWeight.w500,
+  //             color: const Color(0xFF0EBE7F),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           'Request a consultation with a doctor',
+  //           textAlign: TextAlign.center,
+  //           style: GoogleFonts.rubik(
+  //             fontSize: 16,
+  //             color: Colors.black87,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 32),
+  //         ElevatedButton(
+  //           onPressed: () {
+  //            // _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call', amount: widget.);
+  //             Navigator.pushAndRemoveUntil(
+  //               context,
+  //               MaterialPageRoute(
+  //                 builder: (context) => IntroScreen()
+  //               ),(Route<dynamic> route) => false,
+  //             );
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: const Color(0xFF2196F3),
+  //             padding: const EdgeInsets.symmetric(
+  //               horizontal: 32,
+  //               vertical: 12,
+  //             ),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(8),
+  //             ),
+  //           ),
+  //           child: Text(
+  //             'Request Consultation',
+  //             style: GoogleFonts.rubik(
+  //               fontSize: 16,
+  //               color: Colors.white,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildContent() {
     if (_isLoading) {
@@ -635,6 +698,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ChatScreen(
+                          sessionId: _currentConsultation!['id'].toString(),
                           recommendation: _currentConsultation!['session_type'] == 'Recommendation',
                           isDoctor: false,
                           doctorId: _currentConsultation!['doctor_id'].toString(),
@@ -836,7 +900,8 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
 
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Call ended successfully')),
+                      const SnackBar(content: Text('Apel încheiat cu succes')
+                      ),
                     );
                   }
                 } catch (e) {

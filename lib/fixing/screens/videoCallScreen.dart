@@ -286,47 +286,8 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
                   ),
                 ),
                 const SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Column(
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isVideoEnabled = !isVideoEnabled;
-                          if (_engine != null) {
-                            isVideoEnabled ? _engine!.enableVideo() : _engine!.disableVideo();
-                          }
-                        });
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.grey.withOpacity(0.3),
-                        radius: 25,
-                        child: Icon(
-                          isVideoEnabled ? Icons.videocam : Icons.videocam_off,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isMicEnabled = !isMicEnabled;
-                          if (_engine != null) {
-                            _engine!.enableLocalAudio(isMicEnabled);
-                          }
-                        });
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.grey.withOpacity(0.3),
-                        radius: 25,
-                        child: Icon(
-                          isMicEnabled ? Icons.mic : Icons.mic_off,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ),
                     GestureDetector(
                       onTap: () async {
                         try {
@@ -336,11 +297,11 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => TestimonialScreenSimple(
-                                idMedic:  widget.drId
+                                  idMedic:  widget.drId
                               ),
                             ),
                           );
-                         // Navigator.of(context).pop();
+                          // Navigator.of(context).pop();
                         }
                         catch(e){
                           print("error while ending hte call $e");
@@ -354,45 +315,91 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
                         child: Icon(Icons.call_end, color: Colors.white, size: 30),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        await _engine?.switchCamera();
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.grey.withOpacity(0.3),
-                        radius: 25,
-                        child: const Icon(Icons.cameraswitch, color: Colors.white, size: 30),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        print("Chat button tapped. Channel: ${widget.channelName}");
-                      },
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
+                    SizedBox(height: 50,) ,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isVideoEnabled = !isVideoEnabled;
+                              if (_engine != null) {
+                                isVideoEnabled ? _engine!.enableVideo() : _engine!.disableVideo();
+                              }
+                            });
+                          },
+                          child: CircleAvatar(
                             backgroundColor: Colors.grey.withOpacity(0.3),
                             radius: 25,
-                            child: const Icon(Icons.chat, color: Colors.white, size: 30),
-                          ),
-                          if (receivedFilesCount > 0)
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  "$receivedFilesCount",
-                                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                            child: Icon(
+                              isVideoEnabled ? Icons.videocam : Icons.videocam_off,
+                              color: Colors.white,
+                              size: 30,
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
+                        SizedBox(width: 50,),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isMicEnabled = !isMicEnabled;
+                              if (_engine != null) {
+                                _engine!.enableLocalAudio(isMicEnabled);
+                              }
+                            });
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: Colors.grey.withOpacity(0.3),
+                            radius: 25,
+                            child: Icon(
+                              isMicEnabled ? Icons.mic : Icons.mic_off,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 50,),
+                        GestureDetector(
+                          onTap: () async {
+                            await _engine?.switchCamera();
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: Colors.grey.withOpacity(0.3),
+                            radius: 25,
+                            child: const Icon(Icons.cameraswitch, color: Colors.white, size: 30),
+                          ),
+                        ),
+                        // GestureDetector(
+                        //   onTap: () {
+                        //     print("Chat button tapped. Channel: ${widget.channelName}");
+                        //   },
+                        //   child: Stack(
+                        //     children: [
+                        //       // CircleAvatar(
+                        //       //   backgroundColor: Colors.grey.withOpacity(0.3),
+                        //       //   radius: 25,
+                        //       //   child: const Icon(Icons.chat, color: Colors.white, size: 30),
+                        //       // ),
+                        //       if (receivedFilesCount > 0)
+                        //         Positioned(
+                        //           right: 0,
+                        //           top: 0,
+                        //           child: Container(
+                        //             padding: const EdgeInsets.all(6),
+                        //             decoration: const BoxDecoration(
+                        //               color: Colors.red,
+                        //               shape: BoxShape.circle,
+                        //             ),
+                        //             child: Text(
+                        //               "$receivedFilesCount",
+                        //               style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        //             ),
+                        //           ),
+                        //         ),
+                        //     ],
+                        //   ),
+                        // ),
+                      ],
                     ),
                   ],
                 ),
