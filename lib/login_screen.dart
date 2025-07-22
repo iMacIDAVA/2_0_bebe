@@ -404,7 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 */
                 // end added by George Valentin Iordache
                 const SizedBox(height: 10),
-                Center(child: Image.asset('./assets/images/Sosbebe.png', height: 102, width: 81)),
+                Center(child: Image.asset('./assets/images/12n.png', height: 200)),
                 const SizedBox(height: 25),
                 Form(
                   key: loginKey,

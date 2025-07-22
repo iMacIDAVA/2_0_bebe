@@ -1000,7 +1000,7 @@ class _ButtonServiciiProfilDoctorState extends State<ButtonServiciiProfilDoctor>
             print(widget.medicDetalii.numeleComplet) ;
             await sendNotificationToDoctor(
               doctorId: widget.medicDetalii.id, // The ID of the doctor you want to notify
-              message: "Your notification message here",
+              message: "Ai primit o cerere nouă de la pacient",
               notificationType: "1", // Type of notification (consultation, question, etc.)
             );
 

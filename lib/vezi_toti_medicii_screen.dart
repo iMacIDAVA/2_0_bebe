@@ -461,13 +461,14 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                                   print("Filtered Chat Doctors (${listaFiltrata.length}): ${listaFiltrata.map((d) => d.numeleComplet).toList()}");
                                 });
                               },
-                              child: ButtonSelectareOptiuni(
+                              child:ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(241, 248, 251, 1),
-                                colorScris: const Color.fromRGBO(30, 166, 219, 1),
+                                colorScris: const Color(0xFF2C3E50), // darker, elegant text color
                                 iconLocation: './assets/images/intrebare_icon.png',
                                 textServiciu: l.veziTotiMediciiScrieOIntrebare,
                                 widthScris: 60,
                               ),
+
                             ),
                             GestureDetector(
                               onTap: () {
@@ -492,11 +493,12 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
 
                               child: ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(236, 251, 247, 1),
-                                colorScris: const Color.fromRGBO(30, 214, 158, 1),
+                                colorScris: const Color(0xFF1E3D36), // darker greenish-black tone for elegance
                                 iconLocation: './assets/images/phone-call_apel_video.png',
                                 textServiciu: l.veziTotiMediciiConsultatieVideo,
                                 widthScris: 70,
                               ),
+
                             ),
                             GestureDetector(
                               onTap: () {
@@ -519,13 +521,14 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                                 });
                               },
 
-                              child: ButtonSelectareOptiuni(
+                              child:ButtonSelectareOptiuni(
                                 colorBackground: const Color.fromRGBO(253, 250, 234, 1),
-                                colorScris: const Color.fromRGBO(241, 201, 0, 1),
+                                colorScris: const Color(0xFF8A6E00), // deeper golden brown for better contrast
                                 iconLocation: './assets/images/analize_icon.png',
                                 textServiciu: l.veziTotiMediciiInterpretareAnalize,
                                 widthScris: 73,
                               ),
+
                             ),
                           ],
                         ),

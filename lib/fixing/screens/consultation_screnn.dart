@@ -379,23 +379,19 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.medical_services,
-            size: 80,
-            color: Color(0xFF0EBE7F),
-          ),
+          Image.asset('assets/no-entry.png', height: 80,) ,
           const SizedBox(height: 24),
           Text(
-            'Nicio consultație activă',
+            'Doctorul este ocupat ',
             style: GoogleFonts.rubik(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF0EBE7F),
+              color:  Colors.red,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Solicită o consultație cu un medic',
+            'Ne pare rău, doctorul este ocupat în acest moment.\nVă rugăm să încercați din nou peste 10 minute\nsau selectați un alt doctor.',
             textAlign: TextAlign.center,
             style: GoogleFonts.rubik(
               fontSize: 16,
@@ -414,7 +410,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF0EBE7F),
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
                 vertical: 12,
@@ -424,7 +420,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
               ),
             ),
             child: Text(
-              'Solicită consultație',
+              'Alege alt doctor',
               style: GoogleFonts.rubik(
                 fontSize: 16,
                 color: Colors.white,
@@ -437,70 +433,6 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     );
   }
 
-
-
-  // Widget _buildNoConsultationScreen() {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         const Icon(
-  //           Icons.medical_services,
-  //           size: 80,
-  //           color: Color(0xFF0EBE7F),
-  //         ),
-  //         const SizedBox(height: 24),
-  //         Text(
-  //           'No Active Consultation',
-  //           style: GoogleFonts.rubik(
-  //             fontSize: 24,
-  //             fontWeight: FontWeight.w500,
-  //             color: const Color(0xFF0EBE7F),
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Text(
-  //           'Request a consultation with a doctor',
-  //           textAlign: TextAlign.center,
-  //           style: GoogleFonts.rubik(
-  //             fontSize: 16,
-  //             color: Colors.black87,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 32),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //            // _requestConsultation(doctorId: widget.doctorId, sessionType: 'Call', amount: widget.);
-  //             Navigator.pushAndRemoveUntil(
-  //               context,
-  //               MaterialPageRoute(
-  //                 builder: (context) => IntroScreen()
-  //               ),(Route<dynamic> route) => false,
-  //             );
-  //           },
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: const Color(0xFF2196F3),
-  //             padding: const EdgeInsets.symmetric(
-  //               horizontal: 32,
-  //               vertical: 12,
-  //             ),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(8),
-  //             ),
-  //           ),
-  //           child: Text(
-  //             'Request Consultation',
-  //             style: GoogleFonts.rubik(
-  //               fontSize: 16,
-  //               color: Colors.white,
-  //               fontWeight: FontWeight.bold,
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildContent() {
     if (_isLoading) {

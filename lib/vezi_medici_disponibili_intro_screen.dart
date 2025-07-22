@@ -70,8 +70,9 @@ class VeziMediciDisponibiliIntroScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('./assets/images/Sosbebe.png',
-                    height: 102, width: 81),
+                // Image.asset('./assets/images/Sosbebe.png',
+                //     height: 102, width: 81),
+                SizedBox(height: 102,) ,
                 ShaderMask(
                   shaderCallback: (rect) {
                     return const LinearGradient(

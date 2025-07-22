@@ -170,20 +170,21 @@ Future<void> manuallyFetchOneSignalId() async {
                     './assets/images/splash_background_image.png'),
               ),
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   children: [
-                    SizedBox(height: 20,),
+
                     Row(
                       children: [
                         Container(
-                          height: 100,
-                          width: 100,
+                          height: 200,
+                          width: 200,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(150),
                             image: DecorationImage(
-                              image: AssetImage('./assets/8.png'),
+                              image: AssetImage('./assets/images/12n.png'),
                               fit: BoxFit.cover,
+
                             ),
 
                           ),
