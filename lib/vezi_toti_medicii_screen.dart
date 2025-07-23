@@ -60,12 +60,14 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
   void filterDoctors(String query) {
     setState(() {
       if (query.isEmpty) {
-        listaCautata = List.from(listaFiltrata);
+        listaCautata = List.from(listaMediciInitiala);
       } else {
-        listaCautata = listaFiltrata.where((doctor) {
+        listaCautata = listaMediciInitiala.where((doctor) {
           return doctor.numeleComplet.toLowerCase().contains(query.toLowerCase());
         }).toList();
       }
+      // Optionally, update listaFiltrata as well if needed for display
+      listaFiltrata = List.from(listaCautata);
     });
   }
 
@@ -339,87 +341,118 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                                         ? Image.memory(_profileImage!, width: 60, height: 60)
                                         : Image.asset('./assets/images/user_fara_poza.png', width: 60, height: 60),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    totiMediciiList = false;
+                              if (!showSearchField) ...[
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      totiMediciiList = false;
+                                      scrieOintrebareLista = false;
+                                      consultatieVideoLista = false;
+                                      interpretareAnalizeLista = false;
+                                      mediciOnlineList = true;
+
+                                      mediciOnline.clear();
+                                      for (var doctor in listaMediciInitiala) {
+                                        bool isOnline = doctor.status == 1 || doctor.status == 3;
+                                        print("Checking Doctor: ${doctor.numeleComplet} - Status: ${doctor.status} - Is Online: $isOnline");
+
+                                        if (isOnline) {
+                                          mediciOnline.add(
+                                            IconStatusNumeRatingSpitalLikesMedic(
+                                              medicItem: doctor,
+                                              contClientMobile: widget.contClientMobile,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    });
+                                  },
+                                  style: ButtonStyle(
+                                    backgroundColor: const MaterialStatePropertyAll(Color.fromRGBO(236, 251, 247, 1)),
+                                    shape: MaterialStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                                    shadowColor: const MaterialStatePropertyAll(Color.fromRGBO(0, 0, 0, 0.5)),
+                                    elevation: const MaterialStatePropertyAll(4),
+                                  ),
+                                  child: Text(
+                                    l.veziTotiMediciiMediciOnline,
+                                    style: GoogleFonts.rubik(
+                                      color: const Color.fromRGBO(0, 153, 112, 1), // Darker green
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400, // Slightly bolder for visibility
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    totiMediciiList = true;
                                     scrieOintrebareLista = false;
                                     consultatieVideoLista = false;
                                     interpretareAnalizeLista = false;
-                                    mediciOnlineList = true;
-
-                                    // Properly update mediciOnline list, which is used in the UI
-                                    mediciOnline.clear();
-                                    for (var doctor in listaMediciInitiala) {
-                                      bool isOnline = doctor.status == 1 || doctor.status == 3;
-                                      print("Checking Doctor: ${doctor.numeleComplet} - Status: ${doctor.status} - Is Online: $isOnline");
-
-                                      if (isOnline) {
-                                        mediciOnline.add(
-                                          IconStatusNumeRatingSpitalLikesMedic(
-                                            medicItem: doctor,
-                                            contClientMobile: widget.contClientMobile,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  });
-
-                                },
-                                style: const ButtonStyle(
-                                  backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(236, 251, 247, 1)),
-                                ),
-                                child: Text(l.veziTotiMediciiMediciOnline,
-                                    style: GoogleFonts.rubik(
-                                        color: const Color.fromRGBO(30, 214, 158, 1),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w300)),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  totiMediciiList = true;
-                                  scrieOintrebareLista = false;
-                                  consultatieVideoLista = false;
-                                  interpretareAnalizeLista = false;
-                                  mediciOnlineList = false;
-                                  setState(() {});
-                                },
-                                style: const ButtonStyle(
-                                  backgroundColor: MaterialStatePropertyAll(Color.fromRGBO(241, 248, 251, 1)),
-                                ),
-                                child: Text(l.veziTotiMediciiTotiMedicii,
-                                    style: GoogleFonts.rubik(
-                                        color: const Color.fromRGBO(30, 166, 219, 1),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w300)),
-                              ),
-                              showSearchField
-                                  ? Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                        child: TextField(
-                                          controller: searchController,
-                                          decoration: InputDecoration(
-                                            hintText: "Caută doctor...",
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10),
-                                              borderSide: BorderSide(color: Colors.grey.shade300),
-                                            ),
-                                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                                            suffixIcon: IconButton(
-                                              icon: const Icon(Icons.clear, color: Colors.grey),
-                                              onPressed: () {
-                                                searchController.clear();
-                                                filterDoctors('');
-                                                setState(() {
-                                                  showSearchField = false;
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                          onChanged: filterDoctors,
-                                        ),
+                                    mediciOnlineList = false;
+                                    setState(() {});
+                                  },
+                                  style: ButtonStyle(
+                                    backgroundColor: const MaterialStatePropertyAll(Color.fromRGBO(241, 248, 251, 1)),
+                                    shape: MaterialStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
+                                    ),
+                                    padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                                    shadowColor: const MaterialStatePropertyAll(Color.fromRGBO(0, 0, 0, 0.5)), // 50% opacity shadow
+                                    elevation: const MaterialStatePropertyAll(4),
+                                  ),
+                                  child: Text(
+                                    l.veziTotiMediciiTotiMedicii,
+                                    style: GoogleFonts.rubik(
+                                      color: const Color.fromRGBO(0, 122, 184, 1), // darker blue for contrast
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              showSearchField
+                                  ? Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                          child: SizedBox(
+                                            width: 250, // Set a fixed width or use MediaQuery for full width
+                                            child: TextField(
+                                              controller: searchController,
+                                              decoration: InputDecoration(
+                                                hintText: "Caută doctor...",
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                                ),
+                                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                                                suffixIcon: IconButton(
+                                                  icon: const Icon(Icons.close, color: Colors.red),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      showSearchField = false;
+                                                      searchController.clear();
+                                                      filterDoctors('');
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                              onChanged: (value) {
+                                                filterDoctors(value); // Ensure filtering works as you type
+                                              },
+                                              autofocus: true,
+                                            ),
+                                          ),
+                                        ),
+                            
+                                      ],
                                     )
                                   : IconButton(
                                       icon: const Icon(Icons.search, color: Colors.grey),
@@ -537,7 +570,13 @@ class _VeziTotiMediciiScreenState extends State<VeziTotiMediciiScreen> {
                         Center(
                           //here
                           child: Column(
-                            children: totiMediciiList
+                            children: showSearchField
+                                ? listaFiltrata.map((doctor) =>
+                                IconStatusNumeRatingSpitalLikesMedic(
+                              medicItem: doctor,
+                              contClientMobile: widget.contClientMobile,
+                            )).toList()
+                                : totiMediciiList
                                 ? allMedics
                                 : mediciOnlineList
                                 ? mediciOnline
@@ -608,6 +647,14 @@ class ButtonSelectareOptiuni extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2), // soft shadow
+              spreadRadius: 1,
+              blurRadius: 6,
+              offset: const Offset(0, 2), // vertical shadow
+            ),
+          ],
           border: Border.all(
             color: colorBackground,
           ),
