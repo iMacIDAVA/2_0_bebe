@@ -655,14 +655,14 @@ class ProfilulMeuPacientScreenState extends State<ProfilulMeuPacientScreen> {
             content: const Text('Ești sigur că vrei să îți dezactivezi contul?'),
             actions: <Widget>[
               GestureDetector(
-                child: const Text('Anulează'),
+                child: const Text('Nu'),
                 onTap: () {
                   Navigator.of(context).pop(false); // Return false when cancelled
                 },
               ),
               GestureDetector(
                 child: const Text(
-                  'Dezactivează',
+                  'Da',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onTap: () async {
