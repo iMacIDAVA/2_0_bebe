@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -308,67 +309,105 @@ class _ChatScreenState extends State<ChatScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _pickFile() async {
-    if (_messageSent) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Poți trimite doar un singur fișier pe sesiune.')
+
+
+
+
+
+
+// Show modal bottom sheet with picker options
+  void _showPickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text('Fă o poză'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFile(fromCamera: true);
+                  if (mounted && _fileBase64 != null) {
+                    await _uploadFile();
+                  }
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text('Alege din galerie'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickFile(fromCamera: false);
+                  if (mounted && _fileBase64 != null) {
+                    await _uploadFile();
+                  }
+                },
+              ),
+            ],
           ),
         );
-      }
-      return;
-    }
+      },
+    );
+  }
+
+  // Pick image from camera or gallery
+  Future<void> _pickFile({bool fromCamera = false}) async {
+    final picker = ImagePicker();
+    XFile? pickedFile;
+
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-      );
-
-      final filePath = result?.files.single.path;
-      if (filePath != null) {
-        File file = File(filePath);
-        _fileName = path.basenameWithoutExtension(file.path);
-        _fileExtension = path.extension(file.path);
-
-        List<int> fileBytes = await file.readAsBytes();
-        _fileBase64 = base64Encode(fileBytes);
-
-        if (mounted) {
-          setState(() {
-            _errorMessage = null;
-          });
-        }
+      if (fromCamera) {
+        pickedFile = await picker.pickImage(source: ImageSource.camera);
       } else {
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'No file selected';
-          });
-        }
+        pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      }
+
+      if (pickedFile != null && mounted) {
+        final file = File(pickedFile.path);
+        final fileBytes = await file.readAsBytes();
+        setState(() {
+          _fileBase64 = base64Encode(fileBytes);
+          _fileName = pickedFile!.name.split('.').first;
+          _fileExtension = '.' + (pickedFile.name.split('.').last);
+          _errorMessage = null;
+        });
+      } else if (mounted) {
+        setState(() {
+          _errorMessage = 'No image selected';
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error picking file: $e';
+          _errorMessage = 'Error picking image: $e';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
       }
     }
   }
 
+  // Upload file method (with minor improvements)
   Future<void> _uploadFile() async {
     if (_fileBase64 == null || _fileName == null || _fileExtension == null) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Please select a file first';
+          _errorMessage = 'Please select an image first';
         });
       }
       return;
     }
+
     if (mounted) {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
     }
+
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String user = 'dr@d.com'; // TODO: Replace with dynamic value
@@ -380,7 +419,7 @@ class _ChatScreenState extends State<ChatScreen> {
         pUser: user,
         pParolaMD5: userPassMD5,
         pIdMedic: pIdMedic,
-        pMesaj: "File Attachment: $_fileName$_fileExtension",
+        pMesaj: 'File Attachment: $_fileName$_fileExtension',
         pDenumireFisier: _fileName!,
         pExtensie: _fileExtension!,
         pSirBitiDocument: _fileBase64!,
@@ -389,7 +428,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          if (fileUrl != null) {
+          if (fileUrl != null && fileUrl!.isNotEmpty) {
             fileUrl = fileUrl!.trim();
             fileUrl = Uri.encodeFull(fileUrl!);
             _uploadedFileUrl = fileUrl;
@@ -406,6 +445,9 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
           _errorMessage = 'Error uploading file: $e';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading file: $e')),
+        );
       }
     }
   }
@@ -661,18 +703,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            try {
-                              await _pickFile();
-                              if (_fileBase64 != null) {
-                                await _uploadFile();
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error uploading file: $e')),
-                                );
-                              }
-                            }
+
+                            _showPickerOptions();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF62CD9C),
@@ -695,6 +727,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         children: [
                           SizedBox(
                             height: 70,
+                            width: 180,
                             child: ElevatedButton(
                               onPressed: () async {
                                 bool canExit = await _checkConversationCompleted();
@@ -719,15 +752,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
+                                backgroundColor: Colors.red,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
-                                  side: const BorderSide(color: Color(0xFF697191), width: 1),
+                                  side:  BorderSide(color:Colors.red /*Color(0xFF697191)*/, width: 1),
                                 ),
                               ),
                               child: const Text(
                                 'NU\nVă mulțumesc',
-                                style: TextStyle(color: Color(0xFF697191)),
+                                style: TextStyle(color: Colors.white  /*Color(0xFF697191)*/),
                               ),
                             ),
                           ),
@@ -799,7 +832,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'DA\nMai dorești o întrebare',
+                                'DA\nMai doresc o întrebare',
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
@@ -851,6 +884,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollController.dispose();
     super.dispose();
   }
+
+
+
+
 }
 
 class TimerDialog extends StatefulWidget {

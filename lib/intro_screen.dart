@@ -213,7 +213,7 @@ Future<void> manuallyFetchOneSignalId() async {
                         Expanded(
                             child: AutoSizeText.rich(
                           TextSpan(
-                              text: l.introGasitiMediciSpecialisti,
+                              text:'Pentru cei mici, suntem mereu aici.' , // l.introGasitiMediciSpecialisti,
                               style: GoogleFonts.rubik(
                                 color: Colors.black,
                                 fontSize: 17,

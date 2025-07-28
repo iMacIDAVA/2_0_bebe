@@ -130,22 +130,144 @@ flutter_icons:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
+def pod():
+    onesignal.getnotfcation();
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails(sound: 'video_call.wav');
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails(sound: 'chat.wav');
+    var iOSPlatformChannelSpecifics = IOSNotificationDetails(sound: 'recommendation.wav');
+
+// Include the OneSignal package
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+
+void main() {
+  runApp(const MyApp());
+
+  // Enable verbose logging for debugging (remove in production)
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  // Initialize with your OneSignal App ID
+  OneSignal.initialize("");
+  // Use this method to prompt for push notifications.
+  // We recommend removing this method after testing and instead use In-App Messages to prompt for notification permission.
+  OneSignal.Notifications.requestPermission(false);
+
+
+
+  target 'OneSignalNotificationServiceExtension' do pod 'OneSignalXCFramework', '>= 5.0.0', '< 6.0' end
+
+}
+
+import UserNotifications
+import OneSignalExtension
+
+class NotificationService: UNNotificationServiceExtension {
+    var contentHandler: ((UNNotificationContent) -> Void)?
+    var bestAttemptContent: UNMutableNotificationContent?
+
+    // Note this extension only runs when `mutable_content` is set
+    // Setting an attachment or action buttons automatically sets the property to true
+    override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
+        self.receivedRequest = request
+        self.contentHandler = ContatHelper
+        self.bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+
+
+
+
+        // add the app id here
+        OneSignal.initialize("");
+        // add id here as well
+        OneSignal.login("");
+        final observer = (bool hasPermission) {
+          print("Notification permission: $hasPermission");
+        };
+
+        OneSignal.Notifications.addPermissionObserver(observer);
+
+        // Remove later if needed
+        OneSignal.Notifications.removePermissionObserver(observer);
+
+        if let bestAttemptContent = bestAttemptContent {
+            // DEBUGGING: Uncomment the 2 lines below to check this extension is executing
+//            print("Running NotificationServiceExtension")
+//            bestAttemptContent.body = "[Modified] " + bestAttemptContent.body
+
+            OneSignalExtension.didReceiveNotificationExtensionRequest(self.receivedRequest, with: bestAttemptContent, withContentHandler: self.contentHandler)
+        }}
+    override func serviceExtensionTimeWillExpire() {
+        // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
+        if let contentHandler = contentHandler, let bestAttemptContent =  bestAttemptContent {
+            OneSignalExtension.serviceExtensionTimeWillExpireRequest(self.receivedRequest, with: self.bestAttemptContent)
+            contentHandler(bestAttemptContent)
+        }
+    }
+
+    var permission = OneSignal.Notifications.permission;
+
+
+    OneSignal.InAppMessages.addTrigger("KEY", "VALUE");
+
+    OneSignal.InAppMessages.addTriggers({
+      "KEY_01": "VALUE_01",
+      "KEY_02": "VALUE_02"
+    });
+
+    // true if the device can display system notification permission prompt
+    var canRequest = OneSignal.Notifications.canRequestPermission;
+
+}
+
+
+serviceExtensionTimeWillExpire();
+setSload();
+
+
+OneSignal.InAppMessages.addWillDisplayListener((event) {
+	print("ON WILL DISPLAY IN APP MESSAGE ${event.message.messageId}");
+});
+OneSignal.InAppMessages.addDidDisplayListener((event) {
+	print("ON DID DISPLAY IN APP MESSAGE ${event.message.messageId}");
+});
+OneSignal.InAppMessages.addWillDismissListener((event) {
+	print("ON WILL DISMISS IN APP MESSAGE ${event.message.messageId}");
+});
+OneSignal.InAppMessages.addDidDismissListener((event) {
+	print("ON DID DISMISS IN APP MESSAGE ${event.message.messageId}");
+});
+
+import UserNotifications
+import OneSignalExtension
+
+class NotificationService: UNNotificationServiceExtension {
+    var contentHandler: ((UNNotificationContent) -> Void)?
+    var receivedRequest: UNNotificationRequest!
+    var bestAttemptContent: UNMutableNotificationContent?
+
+    // Note this extension only runs when `mutable_content` is set
+    // Setting an attachment or action buttons automatically sets the property to true
+    override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
+        self.receivedRequest = request
+        self.contentHandler = contentHandler
+        self.bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+
+        if let bestAttemptContent = bestAttemptContent {
+            // DEBUGGING: Uncomment the 2 lines below to check this extension is executing
+//            print("Running NotificationServiceExtension")
+//            bestAttemptContent.body = "[Modified] " + bestAttemptContent.body
+
+            OneSignalExtension.didReceiveNotificationExtensionRequest(self.receivedRequest, with: bestAttemptContent, withContentHandler: self.contentHandler)
+        }
+    }
+
+
+
+    // new funtion
+    override func serviceExtensionTimeWillExpire() {
+        // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
+        if let contentHandler = contentHandler, let bestAttemptContent =  bestAttemptContent {
+            OneSignalExtension.serviceExtensionTimeWillExpireRequest(self.receivedRequest, with: self.bestAttemptContent)
+            contentHandler(bestAttemptContent)
+        }
+    }
+}
+
+
