@@ -907,7 +907,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
             ),
             child: Text(
 
-              'Intră în sesiune,',
+              'Intră în sesiune',
               style: GoogleFonts.rubik(
                 fontSize: 16,
                 color: Colors.white,

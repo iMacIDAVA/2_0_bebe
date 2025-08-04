@@ -404,10 +404,7 @@ class _VideoCallScreeenState extends State<VideoCallScreeen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Glisați în sus pentru a afișa chatul',
-                  style: TextStyle(color: Colors.grey),
-                ),
+
                 const SizedBox(height: 20),
               ],
             ),
