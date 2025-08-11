@@ -35,7 +35,8 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 android {
-    compileSdkVersion 34
+//    compileSdkVersion 34
+    compileSdkVersion 35
     namespace "com.example.sos_bebe_app"
 
     sourceSets {
@@ -45,7 +46,7 @@ android {
     defaultConfig {
         applicationId "com.example.sos_bebe_app"
         minSdkVersion 23
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
 
