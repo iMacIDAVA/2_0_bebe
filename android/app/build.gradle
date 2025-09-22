@@ -37,14 +37,14 @@ if (keystorePropertiesFile.exists()) {
 android {
 //    compileSdkVersion 34
     compileSdkVersion 35
-    namespace "com.example.sos_bebe_app"
+    namespace "ro.crmonline.sosbebemobile"
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
     defaultConfig {
-        applicationId "com.example.sos_bebe_app"
+        applicationId "ro.crmonline.sosbebemobile"
         minSdkVersion 23
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()

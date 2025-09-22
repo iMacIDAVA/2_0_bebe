@@ -1,7 +1,8 @@
-package com.example.sos_bebe_app
+package ro.crmonline.sosbebemobile
 
-import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 
 class MainActivity: FlutterFragmentActivity() {
 }
+
+
