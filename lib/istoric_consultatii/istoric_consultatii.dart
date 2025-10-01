@@ -88,6 +88,7 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
         onTap: () async {
+          return ;
           SharedPreferences prefs = await SharedPreferences.getInstance();
           ContClientMobile? resGetCont;
           String user = prefs.getString('user') ?? '';
@@ -199,29 +200,29 @@ class _IstoricConsultatiiState extends State<IstoricConsultatii> {
               const SizedBox(
                 height: 10,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: consultatiiList[index].tipConsultatie == 1
-                      ? const Color(0xff0EBE7F)
-                      : consultatiiList[index].tipConsultatie == 2
-                          ? const Color.fromRGBO(241, 201, 0, 1)
-                          : consultatiiList[index].tipConsultatie == 3
-                              ? const Color.fromRGBO(30, 166, 219, 1)
-                              : const Color(0xff0EBE7F),
-                ),
-                child: Text(
-                  consultatiiList[index].tipConsultatie == 1
-                      ? "Apel video"
-                      : consultatiiList[index].tipConsultatie == 2
-                          ? "Recomandare"
-                          : consultatiiList[index].tipConsultatie == 3
-                              ? "Întrebare"
-                              : "",
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-                ),
-              ),
+              // Container(
+              //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              //   decoration: BoxDecoration(
+              //     borderRadius: BorderRadius.circular(8),
+              //     color: consultatiiList[index].tipConsultatie == 1
+              //         ? const Color(0xff0EBE7F)
+              //         : consultatiiList[index].tipConsultatie == 2
+              //             ? const Color.fromRGBO(241, 201, 0, 1)
+              //             : consultatiiList[index].tipConsultatie == 3
+              //                 ? const Color.fromRGBO(30, 166, 219, 1)
+              //                 : const Color(0xff0EBE7F),
+              //   ),
+              //   child: Text(
+              //     consultatiiList[index].tipConsultatie == 1
+              //         ? "Apel video"
+              //         : consultatiiList[index].tipConsultatie == 2
+              //             ? "Recomandare"
+              //             : consultatiiList[index].tipConsultatie == 3
+              //                 ? "Întrebare"
+              //                 : "",
+              //     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+              //   ),
+              // ),
             ],
           ),
         ),
