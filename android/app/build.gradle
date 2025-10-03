@@ -93,6 +93,11 @@ android {
 
 }
 
+// Exclude Agora screen sharing artifact that adds MEDIA_PROJECTION permission
+configurations.all {
+    exclude group: 'io.agora.rtc', module: 'full-screen-sharing'
+}
+
 flutter {
     source '../..'
 }

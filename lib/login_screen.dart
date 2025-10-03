@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
@@ -78,64 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // Future<void> checkLoginWithFacebook() async {
-  //   Map<String, dynamic> userData;
-  //   final LoginResult result = await FacebookAuth.instance.login();
-  //
-  //   if (result.status == LoginStatus.success) {
-  //     final user = await FacebookAuth.instance.getUserData();
-  //     userData = user;
-  //
-  //     ContClientMobile? resGetCont2 = await loginGoogleFunction(
-  //       context,
-  //       userData['email'],
-  //       userData['id'],
-  //     );
-  //
-  //     if (resGetCont2 != null) {
-  //       Navigator.push(
-  //           context,
-  //           MaterialPageRoute(
-  //             builder: (context) => VeziMediciDisponibiliIntroScreen(
-  //               contClientMobile: contClientMobile!,
-  //             ), //LoginScreen(),
-  //           ));
-  //     }
-  //   }
-  // }
-
   Future<void> checkLoginWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login(permissions: ['email', 'public_profile']);
-      print('bbbbbbbbbb : $result'); // Debugging
-
-      if (result.status == LoginStatus.success) {
-        final userData = await FacebookAuth.instance.getUserData();
-        final email = userData['email'];
-        final facebookUserId = userData['id'];
-
-        // Use the consolidated function for Facebook login
-        ContClientMobile? resGetCont2 = await loginWithSocialMedia(context, email, facebookUserId);
-
-        if (resGetCont2 != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VeziMediciDisponibiliIntroScreen(
-                contClientMobile: contClientMobile!,
-              ),
-            ),
-          );
-        }
-      } else if (result.status == LoginStatus.cancelled) {
-        showSnackbar(context, 'Login cancelled by user', Colors.red, Colors.white);
-      } else if (result.status == LoginStatus.failed) {
-        showSnackbar(context, 'Login failed: ${result.message}', Colors.red, Colors.white);
-      }
-    } catch (e) {
-      showSnackbar(context, 'An error occurred: $e', Colors.red, Colors.white);
-      print('aaaaaaaaa : $e'); // Debugging
-    }
+    showSnackbar(context, 'Facebook login is temporarily unavailable', Colors.red, Colors.white);
   }
 
 
@@ -594,39 +537,39 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: GoogleFonts.rubik(
                         color: const Color.fromRGBO(103, 114, 148, 1), fontWeight: FontWeight.w400, fontSize: 14)),
                 const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: () async {
-                    await checkLoginWithFacebook();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(50), // NEW
-                    side: const BorderSide(color: Colors.blue, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Image.asset(
-                          './assets/images/facebook_icon.png',
-                          width: 25,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10.0),
-                        child: Text(
-                          l.loginConectareCuFacebook,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.rubik(color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // OutlinedButton(
+                //   onPressed: () async {
+                //     await checkLoginWithFacebook();
+                //   },
+                //   style: OutlinedButton.styleFrom(
+                //     backgroundColor: Colors.white,
+                //     minimumSize: const Size.fromHeight(50), // NEW
+                //     side: const BorderSide(color: Colors.blue, width: 1.5),
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(10),
+                //     ),
+                //   ),
+                //   child: Stack(
+                //     alignment: Alignment.center,
+                //     children: [
+                //       Align(
+                //         alignment: Alignment.centerLeft,
+                //         child: Image.asset(
+                //           './assets/images/facebook_icon.png',
+                //           width: 25,
+                //         ),
+                //       ),
+                //       Padding(
+                //         padding: const EdgeInsets.only(left: 10.0),
+                //         child: Text(
+                //           l.loginConectareCuFacebook,
+                //           textAlign: TextAlign.center,
+                //           style: GoogleFonts.rubik(color: Colors.blue, fontWeight: FontWeight.w400, fontSize: 14),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
 
                 const SizedBox(height: 10),
                 OutlinedButton(
